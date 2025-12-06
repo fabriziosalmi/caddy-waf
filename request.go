@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"unsafe"
 
 	"go.uber.org/zap"
 )
@@ -215,7 +216,12 @@ func (rve *RequestValueExtractor) extractBody(r *http.Request, target string) (s
 		return "", fmt.Errorf("failed to read request body for target %s: %w", target, err)
 	}
 	r.Body = io.NopCloser(strings.NewReader(string(bodyBytes))) // Restore body for next read
-	return string(bodyBytes), nil
+
+	// SOTA Pattern: Zero-Copy (avoid allocation for string conversion)
+	if len(bodyBytes) == 0 {
+		return "", nil
+	}
+	return unsafe.String(&bodyBytes[0], len(bodyBytes)), nil
 }
 
 // Helper function to extract all headers

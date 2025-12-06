@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"sync/atomic"
 )
 
 func (m *Middleware) processRuleMatch(w http.ResponseWriter, r *http.Request, rule *Rule, target, value string, state *WAFState) bool {
@@ -112,14 +113,14 @@ func (m *Middleware) processRuleMatch(w http.ResponseWriter, r *http.Request, ru
 
 // incrementRuleHitCount increments the hit counter for a given rule ID.
 func (m *Middleware) incrementRuleHitCount(ruleID RuleID) {
-	hitCount := HitCount(1) // Default increment
-	if currentCount, loaded := m.ruleHits.Load(ruleID); loaded {
-		hitCount = currentCount.(HitCount) + 1
-	}
-	m.ruleHits.Store(ruleID, hitCount)
+	// SOTA Pattern: Wait-Free / Lock-Free Data Structures (using atomic)
+	counterInterface, _ := m.ruleHits.LoadOrStore(ruleID, &atomic.Int64{})
+	counter := counterInterface.(*atomic.Int64)
+	newVal := counter.Add(1)
+
 	m.logger.Debug("Rule hit count updated",
 		zap.String("rule_id", string(ruleID)),
-		zap.Int("hit_count", int(hitCount)), // More descriptive log field
+		zap.Int64("hit_count", newVal),
 	)
 }
 

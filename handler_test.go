@@ -1757,16 +1757,16 @@ func TestBlockedRequestPhase1_RateLimiting_MultiplePaths(t *testing.T) {
 	middleware := &Middleware{
 		logger: logger,
 		rateLimiter: func() *RateLimiter {
-			rl := &RateLimiter{
-				config: RateLimit{
-					Requests:        1,
-					Window:          time.Minute,
-					CleanupInterval: time.Minute,
-					Paths:           []string{"/api/v1/.*", "/admin/.*"},
-					MatchAllPaths:   false,
-				},
-				requests:    make(map[string]map[string]*requestCounter),
-				stopCleanup: make(chan struct{}),
+			config := RateLimit{
+				Requests:        1,
+				Window:          time.Minute,
+				CleanupInterval: time.Minute,
+				Paths:           []string{"/api/v1/.*", "/admin/.*"},
+				MatchAllPaths:   false,
+			}
+			rl, err := NewRateLimiter(config)
+			if err != nil {
+				t.Fatalf("Failed to create rate limiter: %v", err)
 			}
 			rl.startCleanup()
 			return rl

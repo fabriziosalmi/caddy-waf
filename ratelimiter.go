@@ -58,32 +58,40 @@ func NewRateLimiter(config RateLimit) (*RateLimiter, error) {
 
 // isRateLimited checks if a given IP is rate limited for a specific path.
 func (rl *RateLimiter) isRateLimited(ip, path string) bool {
-	now := time.Now()
-
-	rl.Lock() // Use Lock for write operations or potential creation of nested maps.
-	defer rl.Unlock()
-
-	rl.incrementTotalRequestsMetric() // Increment the total requests received
-
+	// SOTA Pattern: Reduce Lock Contention (move expensive regex out of critical section)
+	matched := false
 	var key string
+
+	// 1. Determine if this path needs limiting (Read-only config access, safe without lock if config is immutable)
 	if rl.config.MatchAllPaths {
+		matched = true
 		key = ip
 	} else {
-		// Check if path is matching
 		if len(rl.config.PathRegexes) > 0 {
-			matched := false
 			for _, regex := range rl.config.PathRegexes {
 				if regex.MatchString(path) {
 					matched = true
 					break
 				}
 			}
-			if !matched {
-				return false // Path does not match any configured paths, no rate limiting
+			if matched {
+				key = ip + path
 			}
 		}
-		key = ip + path
 	}
+
+	if !matched && !rl.config.MatchAllPaths {
+		// Optimization: If no path matched, we don't need to track this request
+		rl.incrementTotalRequestsMetric()
+		return false
+	}
+
+	now := time.Now()
+
+	rl.Lock() // Critical Section Start
+	defer rl.Unlock()
+
+	rl.incrementTotalRequestsMetric() // Metric under lock to ensure consistency (or use atomic outside)
 
 	// Initialize the nested map if it doesn't exist
 	if _, exists := rl.requests[ip]; !exists {

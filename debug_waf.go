@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"go.uber.org/zap"
@@ -25,10 +26,11 @@ func (m *Middleware) DebugRequest(r *http.Request, state *WAFState, msg string) 
 		if !ok {
 			return true
 		}
-		hitCount, ok := value.(HitCount)
+		atomicCounter, ok := value.(*atomic.Int64)
 		if !ok {
 			return true
 		}
+		hitCount := atomicCounter.Load()
 		ruleIDs = append(ruleIDs, string(ruleID))
 		scores = append(scores, fmt.Sprintf("%s:%d", string(ruleID), hitCount))
 		return true

@@ -24,6 +24,8 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
+
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/oschwald/maxminddb-golang"
@@ -358,15 +360,16 @@ func (m *Middleware) Shutdown(ctx context.Context) error {
 			return true
 		}
 
-		hitCount, ok := value.(HitCount)
+		atomicCounter, ok := value.(*atomic.Int64)
 		if !ok {
 			m.logger.Error("Invalid type for hit count in ruleHits map", zap.Any("value", value))
 			return true
 		}
+		hitCount := atomicCounter.Load()
 
 		m.logger.Info("Rule Hit",
 			zap.String("rule_id", string(ruleID)),
-			zap.Int("hits", int(hitCount)),
+			zap.Int64("hits", hitCount),
 		)
 		return true
 	})
@@ -529,12 +532,13 @@ func (m *Middleware) getRuleHitStats() map[string]int {
 			m.logger.Error("Invalid type for rule ID in ruleHits map", zap.Any("key", key))
 			return true // Continue iteration
 		}
-		hitCount, ok := value.(HitCount)
+		// SOTA Pattern: Wait-Free stats collection
+		atomicCounter, ok := value.(*atomic.Int64)
 		if !ok {
 			m.logger.Error("Invalid type for hit count in ruleHits map", zap.Any("value", value))
 			return true // Continue iteration
 		}
-		stats[string(ruleID)] = int(hitCount)
+		stats[string(ruleID)] = int(atomicCounter.Load())
 		return true
 	})
 	return stats
