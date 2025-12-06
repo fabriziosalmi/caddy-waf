@@ -230,11 +230,15 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 	m.geoIPHandler.WithGeoIPCache(m.geoIPCacheTTL)
 	m.geoIPHandler.WithGeoIPLookupFallbackBehavior(m.geoIPLookupFallbackBehavior)
 
-	// Load configuration from Caddyfile
-	dispenser := caddyfile.NewDispenser([]caddyfile.Token{})
-	err = m.configLoader.UnmarshalCaddyfile(dispenser, m)
-	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+	// Initialize TorConfig with default values if not set
+	if m.Tor.TORIPBlacklistFile == "" {
+		m.Tor.TORIPBlacklistFile = "tor_blacklist.txt"
+	}
+	if m.Tor.UpdateInterval == "" {
+		m.Tor.UpdateInterval = "24h"
+	}
+	if m.Tor.RetryInterval == "" {
+		m.Tor.RetryInterval = "5m"
 	}
 
 	// Load IP blacklist
