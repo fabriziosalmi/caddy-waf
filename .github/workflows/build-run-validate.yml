@@ -27,10 +27,10 @@ jobs:
           sudo apt update
           sudo apt install -y wget git build-essential curl python3 python3-pip
 
-      - name: Install Go 1.24
+      - name: Install Go 1.25
         uses: actions/setup-go@v4
         with:
-          go-version: '1.24'
+          go-version: '1.25'
             
       - name: Clone caddy-waf Repository
         run: |
