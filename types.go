@@ -47,11 +47,25 @@ type CountryAccessFilter struct {
 	geoIP       *maxminddb.Reader `json:"-"` // Explicitly mark as not serialized
 }
 
+// ASNAccessFilter struct
+type ASNAccessFilter struct {
+	Enabled     bool              `json:"enabled"`
+	BlockedASNs []string          `json:"blocked_asns"`
+	GeoIPDBPath string            `json:"geoip_db_path"`
+	geoIP       *maxminddb.Reader `json:"-"` // Explicitly mark as not serialized
+}
+
 // GeoIPRecord struct
 type GeoIPRecord struct {
 	Country struct {
 		ISOCode string `maxminddb:"iso_code"`
 	} `maxminddb:"country"`
+}
+
+// ASNRecord struct
+type ASNRecord struct {
+	AutonomousSystemOrganization string `maxminddb:"autonomous_system_organization"`
+	AutonomousSystemNumber       uint   `maxminddb:"autonomous_system_number"`
 }
 
 // Rule struct
@@ -106,6 +120,7 @@ type Middleware struct {
 	AnomalyThreshold int                 `json:"anomaly_threshold"`
 	CountryBlacklist CountryAccessFilter `json:"country_blacklist"`
 	CountryWhitelist CountryAccessFilter `json:"country_whitelist"`
+	BlockASNs        ASNAccessFilter     `json:"block_asns"`
 	Rules            map[int][]Rule      `json:"-"`
 	ipBlacklist      *iptrie.Trie        `json:"-"`
 	dnsBlacklist     map[string]struct{} `json:"-"` // Changed to map[string]struct{}

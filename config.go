@@ -145,6 +145,7 @@ func (cl *ConfigLoader) UnmarshalCaddyfile(d *caddyfile.Dispenser, m *Middleware
 	m.LogFilePath = "debug.json"
 	m.RedactSensitiveData = false
 	m.LogBuffer = 1000
+	m.BlockASNs.Enabled = false // Default to false
 
 	directiveHandlers := map[string]func(d *caddyfile.Dispenser, m *Middleware) error{
 		"metrics_endpoint":      cl.parseMetricsEndpoint,
@@ -152,6 +153,7 @@ func (cl *ConfigLoader) UnmarshalCaddyfile(d *caddyfile.Dispenser, m *Middleware
 		"rate_limit":            cl.parseRateLimit,
 		"block_countries":       cl.parseCountryBlockDirective(true),  // Use directive-specific helper
 		"whitelist_countries":   cl.parseCountryBlockDirective(false), // Use directive-specific helper
+		"block_asns":            cl.parseBlockASNsDirective,           // Add ASN block directive
 		"log_severity":          cl.parseLogSeverity,
 		"log_json":              cl.parseLogJSON,
 		"rule_file":             cl.parseRuleFile,
@@ -298,6 +300,31 @@ func (cl *ConfigLoader) parseCountryBlockDirective(isBlock bool) func(d *caddyfi
 		)
 		return nil
 	}
+}
+
+// parseBlockASNsDirective handles the block_asns directive
+func (cl *ConfigLoader) parseBlockASNsDirective(d *caddyfile.Dispenser, m *Middleware) error {
+	target := &m.BlockASNs
+	target.Enabled = true
+
+	if !d.NextArg() {
+		return d.ArgErr()
+	}
+	target.GeoIPDBPath = d.Val()
+	target.BlockedASNs = []string{}
+
+	for d.NextArg() {
+		asn := d.Val()
+		target.BlockedASNs = append(target.BlockedASNs, asn)
+	}
+
+	cl.logger.Debug("ASN block list configured",
+		zap.Strings("asns", target.BlockedASNs),
+		zap.String("geoip_db_path", target.GeoIPDBPath),
+		zap.String("file", d.File()),
+		zap.Int("line", d.Line()),
+	)
+	return nil
 }
 
 func (cl *ConfigLoader) parseLogSeverity(d *caddyfile.Dispenser, m *Middleware) error {

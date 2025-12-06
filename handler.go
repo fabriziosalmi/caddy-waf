@@ -353,6 +353,36 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 			m.incrementGeoIPRequestsMetric(false) // Increment with false for no block
 		}
 
+		// ASN Blocking
+		if m.BlockASNs.Enabled {
+			m.logger.Debug("Starting ASN blocking phase")
+			blocked, err := m.geoIPHandler.IsASNInList(r.RemoteAddr, m.BlockASNs.BlockedASNs, m.BlockASNs.geoIP)
+			if err != nil {
+				m.logRequest(zapcore.ErrorLevel, "Failed to check ASN blocking",
+					r,
+					zap.Error(err),
+				)
+				m.blockRequest(w, r, state, http.StatusForbidden, "internal_error", "asn_block_rule",
+					zap.String("message", "Request blocked due to internal error"),
+				)
+				m.logger.Debug("ASN blocking phase completed - blocked due to error")
+				m.incrementGeoIPRequestsMetric(false) // Increment with false for error
+				return
+			} else if blocked {
+				asnInfo := m.geoIPHandler.GetASN(r.RemoteAddr, m.BlockASNs.geoIP)
+				m.blockRequest(w, r, state, http.StatusForbidden, "asn_block", "asn_block_rule",
+					zap.String("message", "Request blocked by ASN"),
+					zap.String("asn", asnInfo),
+				)
+				m.incrementGeoIPRequestsMetric(true) // Increment with true for blocked
+				if m.CustomResponses != nil {
+					m.writeCustomResponse(w, state.StatusCode)
+				}
+				return
+			}
+			m.logger.Debug("ASN blocking phase completed - not blocked")
+		}
+
 		// Blacklisting
 		if m.CountryBlacklist.Enabled {
 			m.logger.Debug("Starting country blacklisting phase")

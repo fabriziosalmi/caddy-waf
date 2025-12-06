@@ -3,6 +3,7 @@ package caddywaf
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -196,4 +197,57 @@ func (gh *GeoIPHandler) cacheGeoIPRecord(ip string, record GeoIPRecord) {
 			gh.geoIPCacheMutex.Unlock()
 		})
 	}
+}
+
+// IsASNInList checks if an IP belongs to a list of blocked ASNs
+func (gh *GeoIPHandler) IsASNInList(remoteAddr string, blockedASNs []string, geoIP *maxminddb.Reader) (bool, error) {
+	if geoIP == nil {
+		return false, fmt.Errorf("geoip database not loaded")
+	}
+
+	// Extract IP address without port
+	ip := extractIP(remoteAddr)
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		gh.logger.Debug("Invalid IP address for ASN lookup", zap.String("ip", ip))
+		return false, fmt.Errorf("invalid IP address: %s", ip)
+	}
+
+	var record ASNRecord
+	err := geoIP.Lookup(parsedIP, &record)
+	if err != nil {
+		gh.logger.Error("GeoIP ASN lookup failed", zap.String("ip", ip), zap.Error(err))
+		return false, fmt.Errorf("geoip lookup failed: %w", err)
+	}
+
+	asnStr := strconv.FormatUint(uint64(record.AutonomousSystemNumber), 10)
+	for _, blockedASN := range blockedASNs {
+		if asnStr == blockedASN {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// GetASN extracts the ASN for logging purposes
+func (gh *GeoIPHandler) GetASN(remoteAddr string, geoIP *maxminddb.Reader) string {
+	if geoIP == nil {
+		return "N/A"
+	}
+	ipConf, _, err := net.SplitHostPort(remoteAddr)
+	if err != nil {
+		ipConf = remoteAddr
+	}
+
+	parsedIP := net.ParseIP(ipConf)
+	if parsedIP == nil {
+		return "N/A"
+	}
+
+	var record ASNRecord
+	err = geoIP.Lookup(parsedIP, &record)
+	if err != nil {
+		return "N/A"
+	}
+	return fmt.Sprintf("AS%d %s", record.AutonomousSystemNumber, record.AutonomousSystemOrganization)
 }

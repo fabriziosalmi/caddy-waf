@@ -220,6 +220,22 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 		}
 	}
 
+
+	// Configure ASN blocking
+	if m.BlockASNs.Enabled {
+		if !fileExists(m.BlockASNs.GeoIPDBPath) {
+			m.logger.Warn("ASN GeoIP database not found. ASN blocking will be disabled", zap.String("path", m.BlockASNs.GeoIPDBPath))
+		} else {
+			reader, err := maxminddb.Open(m.BlockASNs.GeoIPDBPath)
+			if err != nil {
+				m.logger.Error("Failed to load ASN GeoIP database", zap.String("path", m.BlockASNs.GeoIPDBPath), zap.Error(err))
+			} else {
+				m.logger.Info("ASN GeoIP database loaded successfully", zap.String("path", m.BlockASNs.GeoIPDBPath))
+				m.BlockASNs.geoIP = reader
+			}
+		}
+	}
+
 	// Initialize config and blacklist loaders
 	m.configLoader = NewConfigLoader(m.logger)
 	m.blacklistLoader = NewBlacklistLoader(m.logger)
@@ -319,6 +335,19 @@ func (m *Middleware) Shutdown(ctx context.Context) error {
 		m.CountryWhitelist.geoIP = nil
 	} else {
 		m.logger.Debug("Country whitelist GeoIP database was not open, skipping close.")
+	}
+
+	if m.BlockASNs.geoIP != nil {
+		m.logger.Debug("Closing ASN GeoIP database...")
+		if err := m.BlockASNs.geoIP.Close(); err != nil {
+			m.logger.Error("Error encountered while closing ASN GeoIP database", zap.Error(err))
+			if firstError == nil {
+				firstError = fmt.Errorf("error closing ASN GeoIP: %w", err)
+			}
+		} else {
+			m.logger.Debug("ASN GeoIP database closed successfully.")
+		}
+		m.BlockASNs.geoIP = nil
 	}
 
 	// Log rule hit statistics
