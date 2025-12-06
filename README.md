@@ -7,7 +7,7 @@ A robust, highly customizable, and feature-rich **Web Application Firewall (WAF)
 ## 🛡️ Core Protections
 
 *   **Regex-Based Filtering:** Deep URL, data & header inspection using powerful regex rules.
-*   **Blacklisting:** Blocks malicious IPs, domains & optionally TOR exit nodes.
+*   **Blacklisting:** Blocks malicious IPs, domains, ASNs & optionally TOR exit nodes.
 *   **Geo-Blocking:** Restricts access by country using GeoIP.
 *   **Rate Limiting:** Prevents abuse via customizable IP request limits.
 *   **Anomaly Scoring:** Dynamically blocks requests based on cumulative rule matches.
@@ -22,6 +22,13 @@ A robust, highly customizable, and feature-rich **Web Application Firewall (WAF)
 
 _Simple at a glance UI :)_
 ![demo](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/caddy-waf-ui.png?raw=true)  
+
+## Security & Performance (SOTA)
+*   **Zero-Copy Networking**: Uses `unsafe.String` to eliminate memory allocations during request body inspection.
+*   **Wait-Free Concurrency**: Atomic counters ensure accurate metrics and rule hit counting without lock contention.
+*   **Circuit Breaker**: `geoip_fail_open` prevents database failures from causing service outages.
+*   **DoS Protection**: `io.LimitReader` enforces strict request body limits to prevent memory exhaustion.
+*   **ReDoS Safety**: Built on top of Go's `regexp` (RE2), guaranteeing linear time execution for all regex rules.
 
 ## 🚀 Quick Start
 
