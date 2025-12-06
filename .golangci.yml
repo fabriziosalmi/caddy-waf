@@ -65,7 +65,7 @@ linters:
     rules:
       - linters:
           - gosec
-        text: G115 # TODO: Either we should fix the issues or nuke the linter if it's bad
+        text: G115 # Excluded due to potential noisy integer overflow warnings
       - linters:
           - gosec
         text: G107 # we aren't calling unknown URL

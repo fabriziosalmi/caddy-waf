@@ -7,7 +7,7 @@
 :8080 {
 	route {
 		waf {
-			rule_file /Users/fab/GitHub/caddy-waf/sample_rules.json
+			rule_file ./sample_rules.json
 			anomaly_threshold 5
 			log_severity debug
 			metrics_endpoint /metrics
