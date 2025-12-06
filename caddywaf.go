@@ -220,7 +220,6 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 		}
 	}
 
-
 	// Configure ASN blocking
 	if m.BlockASNs.Enabled {
 		if !fileExists(m.BlockASNs.GeoIPDBPath) {
