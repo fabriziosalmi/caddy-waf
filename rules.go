@@ -4,13 +4,14 @@ package caddywaf
 import (
 	"encoding/json"
 	"fmt"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"net/http"
 	"os"
 	"regexp"
 	"sort"
 	"sync/atomic"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func (m *Middleware) processRuleMatch(w http.ResponseWriter, r *http.Request, rule *Rule, target, value string, state *WAFState) bool {

@@ -5,14 +5,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/caddyserver/caddy/v2"
+	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
+	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/oschwald/maxminddb-golang"
 	"github.com/phemmer/go-iptrie"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"github.com/caddyserver/caddy/v2"
-	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
-	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 )
 
 // Package caddywaf is a Caddy module providing web application firewall functionality.
@@ -135,8 +134,8 @@ type Middleware struct {
 
 	CustomResponses     map[int]CustomBlockResponse `json:"custom_responses,omitempty"`
 	LogFilePath         string
-	LogBuffer           int  `json:"log_buffer,omitempty"` // Add the LogBuffer field
-	RedactSensitiveData bool `json:"redact_sensitive_data,omitempty"`
+	LogBuffer           int   `json:"log_buffer,omitempty"` // Add the LogBuffer field
+	RedactSensitiveData bool  `json:"redact_sensitive_data,omitempty"`
 	MaxRequestBodySize  int64 `json:"max_request_body_size,omitempty"`
 	GeoIPFailOpen       bool  `json:"geoip_fail_open,omitempty"`
 
