@@ -26,11 +26,11 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.2' # Use your desired go version
+          go-version: '1.23' # Use your desired go version
 
       - name: Extract Tag Name
         id: extract_tag
-        if: "!startsWith(github.ref, 'refs/heads/')"
+        if: startsWith(github.ref, 'refs/tags/')
         run: echo "TAG_NAME=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_OUTPUT
 
       - name: Build Binary
@@ -50,38 +50,31 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     needs: build-and-release # Ensure all builds complete before creating release
+    permissions:
+      contents: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Extract Tag Name
         id: extract_tag
-        if: "!startsWith(github.ref, 'refs/heads/')"
+        if: startsWith(github.ref, 'refs/tags/')
         run: echo "TAG_NAME=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_OUTPUT
-
-      - name: Create Release
-        id: create_release
-        if: "!startsWith(github.ref, 'refs/heads/')"
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.extract_tag.outputs.TAG_NAME }}
-          release_name: ${{ steps.extract_tag.outputs.TAG_NAME }}
-          body: |
-            This is a release of the Caddy WAF middleware version ${{ steps.extract_tag.outputs.TAG_NAME }}. Please download the appropriate binary for your OS/Architecture.
-          draft: false
-          prerelease: false
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
-      - name: Upload Release Assets
-        if: "!startsWith(github.ref, 'refs/heads/')"
-        run: |
-          for asset in $(ls *.tar.gz); do
-            echo "Uploading ${asset}"
-            gh release upload ${{ steps.create_release.outputs.upload_url }} ${asset} --clobber
-          done
+      - name: Release via GH CLI
+        if: startsWith(github.ref, 'refs/tags/')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ steps.extract_tag.outputs.TAG_NAME }}
+        run: |
+          # Flatten artifacts structure (download-artifact puts them in subdirs matches artifact name)
+          # But we want all .tar.gz in current dir
+          find . -name "*.tar.gz" -exec mv {} . \;
+          
+          echo "Creating or updating release for $TAG_NAME..."
+          # Try to create release with assets. If it fails (exists), upload assets.
+          gh release create "$TAG_NAME" *.tar.gz --title "$TAG_NAME" --generate-notes || \
+          gh release upload "$TAG_NAME" *.tar.gz --clobber
