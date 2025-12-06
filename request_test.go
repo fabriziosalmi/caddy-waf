@@ -21,7 +21,7 @@ import (
 
 func TestExtractValue(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, true)
+	rve := NewRequestValueExtractor(logger, true, 0)
 
 	tests := []struct {
 		name          string
@@ -144,7 +144,7 @@ func TestRedactValueIfSensitive(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rve := NewRequestValueExtractor(logger, tt.redactSensitive)
+			rve := NewRequestValueExtractor(logger, tt.redactSensitive, 0)
 			result := rve.RedactValueIfSensitive(tt.target, tt.value)
 
 			if tt.expectedRedacted && result != "REDACTED" {
@@ -159,7 +159,7 @@ func TestRedactValueIfSensitive(t *testing.T) {
 
 func TestExtractValue_HeaderCaseInsensitive(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("x-test-header", "test-value")
@@ -172,7 +172,7 @@ func TestExtractValue_HeaderCaseInsensitive(t *testing.T) {
 
 func TestExtractValue_EmptyTarget(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
@@ -184,7 +184,7 @@ func TestExtractValue_EmptyTarget(t *testing.T) {
 
 func TestExtractValue_Method(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
@@ -196,7 +196,7 @@ func TestExtractValue_Method(t *testing.T) {
 
 func TestExtractValue_RemoteIP(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	req.RemoteAddr = localIP
@@ -209,7 +209,7 @@ func TestExtractValue_RemoteIP(t *testing.T) {
 
 func TestExtractValue_Protocol(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Proto = "HTTP/1.1"
@@ -222,7 +222,7 @@ func TestExtractValue_Protocol(t *testing.T) {
 
 func TestExtractValue_Host(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Host = "example.com"
@@ -235,7 +235,7 @@ func TestExtractValue_Host(t *testing.T) {
 
 func TestExtractValue_Args(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/?foo=bar&baz=qux", nil)
 	w := httptest.NewRecorder()
@@ -247,7 +247,7 @@ func TestExtractValue_Args(t *testing.T) {
 
 func TestExtractValue_UserAgent(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("User-Agent", "test-agent")
@@ -260,7 +260,7 @@ func TestExtractValue_UserAgent(t *testing.T) {
 
 func TestExtractValue_Path(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/test-path", nil)
 	w := httptest.NewRecorder()
@@ -272,7 +272,7 @@ func TestExtractValue_Path(t *testing.T) {
 
 func TestExtractValue_URI(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/test-path?foo=bar", nil)
 	w := httptest.NewRecorder()
@@ -284,7 +284,7 @@ func TestExtractValue_URI(t *testing.T) {
 
 func TestExtractValue_Body(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	body := bytes.NewBufferString("test body")
 	req := httptest.NewRequest("POST", "/", body)
@@ -297,7 +297,7 @@ func TestExtractValue_Body(t *testing.T) {
 
 func TestExtractValue_Headers(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("X-Test-Header", "test-value")
@@ -310,7 +310,7 @@ func TestExtractValue_Headers(t *testing.T) {
 
 func TestExtractValue_Cookies(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	req.AddCookie(&http.Cookie{Name: "test-cookie", Value: "test-value"})
@@ -323,7 +323,7 @@ func TestExtractValue_Cookies(t *testing.T) {
 
 func TestExtractValue_UnknownTarget(t *testing.T) {
 	logger := zap.NewNop()
-	rve := NewRequestValueExtractor(logger, false)
+	rve := NewRequestValueExtractor(logger, false, 0)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
@@ -368,7 +368,7 @@ func TestProcessRuleMatch_HighScore(t *testing.T) {
 		AnomalyThreshold:      100, // High threshold
 		ruleHits:              sync.Map{},
 		muMetrics:             sync.RWMutex{},
-		requestValueExtractor: NewRequestValueExtractor(logger.Logger, false), // Initialize
+		requestValueExtractor: NewRequestValueExtractor(logger.Logger, false, 0), // Initialize
 	}
 
 	rule := &Rule{
@@ -420,7 +420,7 @@ func TestValidateRule_EmptyTargets(t *testing.T) {
 func TestNewRequestValueExtractor(t *testing.T) {
 	logger := zap.NewNop()
 	redactSensitiveData := true
-	rve := NewRequestValueExtractor(logger, redactSensitiveData)
+	rve := NewRequestValueExtractor(logger, redactSensitiveData, 0)
 
 	assert.NotNil(t, rve)
 	assert.Equal(t, logger, rve.logger)
@@ -448,7 +448,7 @@ func TestConcurrentRuleEvaluation(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 		rateLimiter: func() *RateLimiter {
 			rl, err := NewRateLimiter(RateLimit{
 				Requests:        10,

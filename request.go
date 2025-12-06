@@ -16,6 +16,7 @@ import (
 type RequestValueExtractor struct {
 	logger              *zap.Logger
 	redactSensitiveData bool // Add this field
+	maxBodySize         int64
 }
 
 // Extraction Target Constants - Improved Readability and Maintainability
@@ -47,8 +48,11 @@ const (
 var sensitiveTargets = []string{"password", "token", "apikey", "authorization", "secret"} // Define sensitive targets for redaction as package variable
 
 // NewRequestValueExtractor creates a new RequestValueExtractor with a given logger
-func NewRequestValueExtractor(logger *zap.Logger, redactSensitiveData bool) *RequestValueExtractor {
-	return &RequestValueExtractor{logger: logger, redactSensitiveData: redactSensitiveData}
+func NewRequestValueExtractor(logger *zap.Logger, redactSensitiveData bool, maxBodySize int64) *RequestValueExtractor {
+	if maxBodySize <= 0 {
+		maxBodySize = 10 * 1024 * 1024 // Default 10MB
+	}
+	return &RequestValueExtractor{logger: logger, redactSensitiveData: redactSensitiveData, maxBodySize: maxBodySize}
 }
 
 // ExtractValue extracts values based on the target, handling comma separated targets
@@ -204,7 +208,8 @@ func (rve *RequestValueExtractor) extractBody(r *http.Request, target string) (s
 		rve.logger.Debug("Request body is empty", zap.String("target", target))
 		return "", fmt.Errorf("request body is empty for target: %s", target)
 	}
-	bodyBytes, err := io.ReadAll(r.Body)
+	reader := io.LimitReader(r.Body, rve.maxBodySize)
+	bodyBytes, err := io.ReadAll(reader)
 	if err != nil {
 		rve.logger.Error("Failed to read request body", zap.Error(err))
 		return "", fmt.Errorf("failed to read request body for target %s: %w", target, err)
@@ -334,7 +339,8 @@ func (rve *RequestValueExtractor) extractValueForJSONPath(r *http.Request, jsonP
 		return "", fmt.Errorf("request body is empty for target: %s", target)
 	}
 
-	bodyBytes, err := io.ReadAll(r.Body)
+	reader := io.LimitReader(r.Body, rve.maxBodySize)
+	bodyBytes, err := io.ReadAll(reader)
 	if err != nil {
 		rve.logger.Error("Failed to read request body", zap.Error(err))
 		return "", fmt.Errorf("failed to read request body for JSON_PATH target %s: %w", target, err)

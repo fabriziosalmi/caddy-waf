@@ -24,3 +24,6 @@ lint:
 lintfix:
 	@echo "==> Checking source code with golangci-lint..."
 	@golangci-lint run --fix
+
+test-integration:
+	@docker run --rm -v $(PWD):/app -w /app python:3.9-slim python test.py

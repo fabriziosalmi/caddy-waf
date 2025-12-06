@@ -18,7 +18,7 @@ A robust, highly customizable, and feature-rich **Web Application Firewall (WAF)
 *   **Dynamic Config Reloads:** Seamless updates without restarts.
 *   **File Watchers:** Automatic reloads on rule/blacklist changes.
 *   **Observability:** Seamless integration with ELK stack and Prometheus.
-*   **Rules generator**: powered by custom GPT, [try it here](https://chatgpt.com/g/g-677d07dd07e48191b799b9e5d6da7828-caddy-waf-ruler)
+*   **Rules generator**: [available here](https://chatgpt.com/g/g-677d07dd07e48191b799b9e5d6da7828-caddy-waf-ruler)
 
 _Simple at a glance UI :)_
 ![demo](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/caddy-waf-ui.png?raw=true)  
@@ -176,7 +176,7 @@ If You like my projects, you may also like these ones:
 - [proxmox-vm-autoscale](https://github.com/fabriziosalmi/proxmox-vm-autoscale) Automatically scale virtual machines resources on Proxmox hosts 
 - [UglyFeed](https://github.com/fabriziosalmi/UglyFeed) Retrieve, aggregate, filter, evaluate, rewrite and serve RSS feeds using Large Language Models for fun, research and learning purposes 
 - [proxmox-lxc-autoscale](https://github.com/fabriziosalmi/proxmox-lxc-autoscale) Automatically scale LXC containers resources on Proxmox hosts 
-- [DevGPT](https://github.com/fabriziosalmi/DevGPT) Code togheter, right now! GPT powered code assistant to build project in minutes
+- [DevAssistant](https://github.com/fabriziosalmi/DevGPT) Code together, right now! AI powered code assistant to build project in minutes
 - [websites-monitor](https://github.com/fabriziosalmi/websites-monitor) Websites monitoring via GitHub Actions (expiration, security, performances, privacy, SEO)
 - [caddy-mib](https://github.com/fabriziosalmi/caddy-mib) Track and ban client IPs generating repetitive errors on Caddy 
 - [zonecontrol](https://github.com/fabriziosalmi/zonecontrol) Cloudflare Zones Settings Automation using GitHub Actions 

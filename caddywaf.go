@@ -239,7 +239,7 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 	m.configLoader = NewConfigLoader(m.logger)
 	m.blacklistLoader = NewBlacklistLoader(m.logger)
 	m.geoIPHandler = NewGeoIPHandler(m.logger)
-	m.requestValueExtractor = NewRequestValueExtractor(m.logger, m.RedactSensitiveData)
+	m.requestValueExtractor = NewRequestValueExtractor(m.logger, m.RedactSensitiveData, m.MaxRequestBodySize)
 
 	// Configure GeoIP handler
 	m.geoIPHandler.WithGeoIPCache(m.geoIPCacheTTL)

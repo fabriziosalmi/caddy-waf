@@ -334,12 +334,16 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 					r,
 					zap.Error(err),
 				)
-				m.blockRequest(w, r, state, http.StatusForbidden, "internal_error", "country_block_rule",
-					zap.String("message", "Request blocked due to internal error"),
-				)
-				m.logger.Debug("Country whitelisting phase completed - blocked due to error")
-				m.incrementGeoIPRequestsMetric(false) // Increment with false for error
-				return
+				if m.GeoIPFailOpen {
+					m.logger.Warn("GeoIP lookup failed (Whitelist); Failing OPEN")
+				} else {
+					m.blockRequest(w, r, state, http.StatusForbidden, "internal_error", "country_block_rule",
+						zap.String("message", "Request blocked due to internal error"),
+					)
+					m.logger.Debug("Country whitelisting phase completed - blocked due to error")
+					m.incrementGeoIPRequestsMetric(false) // Increment with false for error
+					return
+				}
 			} else if !allowed {
 				m.blockRequest(w, r, state, http.StatusForbidden, "country_block", "country_block_rule",
 					zap.String("message", "Request blocked by country"))
@@ -362,12 +366,16 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 					r,
 					zap.Error(err),
 				)
-				m.blockRequest(w, r, state, http.StatusForbidden, "internal_error", "asn_block_rule",
-					zap.String("message", "Request blocked due to internal error"),
-				)
-				m.logger.Debug("ASN blocking phase completed - blocked due to error")
-				m.incrementGeoIPRequestsMetric(false) // Increment with false for error
-				return
+				if m.GeoIPFailOpen {
+					m.logger.Warn("ASN lookup failed; Failing OPEN")
+				} else {
+					m.blockRequest(w, r, state, http.StatusForbidden, "internal_error", "asn_block_rule",
+						zap.String("message", "Request blocked due to internal error"),
+					)
+					m.logger.Debug("ASN blocking phase completed - blocked due to error")
+					m.incrementGeoIPRequestsMetric(false) // Increment with false for error
+					return
+				}
 			} else if blocked {
 				asnInfo := m.geoIPHandler.GetASN(r.RemoteAddr, m.BlockASNs.geoIP)
 				m.blockRequest(w, r, state, http.StatusForbidden, "asn_block", "asn_block_rule",
@@ -392,12 +400,16 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 					r,
 					zap.Error(err),
 				)
-				m.blockRequest(w, r, state, http.StatusForbidden, "internal_error", "country_block_rule",
-					zap.String("message", "Request blocked due to internal error"),
-				)
-				m.logger.Debug("Country blacklisting phase completed - blocked due to error")
-				m.incrementGeoIPRequestsMetric(false) // Increment with false for error
-				return
+				if m.GeoIPFailOpen {
+					m.logger.Warn("GeoIP lookup failed (Blacklist); Failing OPEN")
+				} else {
+					m.blockRequest(w, r, state, http.StatusForbidden, "internal_error", "country_block_rule",
+						zap.String("message", "Request blocked due to internal error"),
+					)
+					m.logger.Debug("Country blacklisting phase completed - blocked due to error")
+					m.incrementGeoIPRequestsMetric(false) // Increment with false for error
+					return
+				}
 			} else if blocked {
 				m.blockRequest(w, r, state, http.StatusForbidden, "country_block", "country_block_rule",
 					zap.String("message", "Request blocked by country"))

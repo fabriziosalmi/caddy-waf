@@ -1,6 +1,6 @@
 module github.com/fabriziosalmi/caddy-waf
 
-go 1.25
+go 1.25.5
 
 toolchain go1.25.3
 

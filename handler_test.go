@@ -29,7 +29,7 @@ func TestBlockedRequestPhase1_DNSBlacklist(t *testing.T) {
 		},
 		ipBlacklist:           iptrie.NewTrie(),
 		CustomResponses:       customResponse,
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	w := httptest.NewRecorder()
@@ -83,7 +83,7 @@ func TestBlockedRequestPhase1_GeoIPBlocking(t *testing.T) {
 			geoIP:       geoIPBlock,
 		},
 		CustomResponses:       customResponse,
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	wlMiddleware := &Middleware{
@@ -97,7 +97,7 @@ func TestBlockedRequestPhase1_GeoIPBlocking(t *testing.T) {
 			geoIP:       geoIPBlock,
 		},
 		CustomResponses:       customResponse,
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	blackWhiteMw := &Middleware{
@@ -117,7 +117,7 @@ func TestBlockedRequestPhase1_GeoIPBlocking(t *testing.T) {
 			geoIP:       geoIPBlock,
 		},
 		CustomResponses:       customResponse,
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil)
@@ -216,7 +216,7 @@ func TestBlockedRequestPhase1_IPBlocking(t *testing.T) {
 			logger:                logger,
 			ipBlacklist:           blackList,
 			CustomResponses:       customResponse,
-			requestValueExtractor: NewRequestValueExtractor(logger, false),
+			requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 		}
 
 		req := httptest.NewRequest("GET", testURL, nil)
@@ -234,7 +234,7 @@ func TestBlockedRequestPhase1_IPBlocking(t *testing.T) {
 			logger:                logger,
 			ipBlacklist:           blackList,
 			CustomResponses:       customResponse,
-			requestValueExtractor: NewRequestValueExtractor(logger, false),
+			requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 		}
 
 		req := httptest.NewRequest("GET", testURL, nil)
@@ -270,7 +270,7 @@ func TestHandlePhase_Phase2_NiktoUserAgent(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 		CustomResponses:       customResponse,
 	}
 
@@ -325,7 +325,7 @@ func TestBlockedRequestPhase1_HeaderRegex(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil)
@@ -378,7 +378,7 @@ func TestBlockedRequestPhase1_HeaderRegex_SpecificValue(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil)
@@ -431,7 +431,7 @@ func TestBlockedRequestPhase1_HeaderRegex_CommaSeparatedTargets(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil)
@@ -485,7 +485,7 @@ func TestBlockedRequestPhase1_CombinedConditions(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", "http://bad-host.com", nil)
@@ -538,7 +538,7 @@ func TestBlockedRequestPhase1_NoMatch(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil)
@@ -591,7 +591,7 @@ func TestBlockedRequestPhase1_HeaderRegex_EmptyHeader(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil)
@@ -643,7 +643,7 @@ func TestBlockedRequestPhase1_HeaderRegex_MissingHeader(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil) // Header not set
@@ -695,7 +695,7 @@ func TestBlockedRequestPhase1_HeaderRegex_ComplexPattern(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil)
@@ -748,7 +748,7 @@ func TestBlockedRequestPhase1_MultiTargetMatch(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil)
@@ -801,7 +801,7 @@ func TestBlockedRequestPhase1_MultiTargetNoMatch(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil)
@@ -855,7 +855,7 @@ func TestBlockedRequestPhase1_URLParameterRegex_NoMatch(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", "http://example.com?param1=good-param-value¶m2=good-value", nil)
@@ -915,7 +915,7 @@ func TestBlockedRequestPhase1_MultipleRules(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", "http://bad-host.com", nil)
@@ -991,7 +991,7 @@ func TestBlockedRequestPhase2_BodyRegex(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("POST", testURL,
@@ -1050,7 +1050,7 @@ func TestBlockedRequestPhase2_BodyRegex_JSON(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("POST", testURL,
@@ -1109,7 +1109,7 @@ func TestBlockedRequestPhase2_BodyRegex_FormURLEncoded(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("POST", testURL,
@@ -1164,7 +1164,7 @@ func TestBlockedRequestPhase2_BodyRegex_SpecificPattern(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("POST", testURL,
@@ -1223,7 +1223,7 @@ func TestBlockedRequestPhase2_BodyRegex_NoMatch(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("POST", testURL,
@@ -1282,7 +1282,7 @@ func TestBlockedRequestPhase2_BodyRegex_NoMatch_MultipartForm(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	body := &bytes.Buffer{}
@@ -1350,7 +1350,7 @@ func TestBlockedRequestPhase2_BodyRegex_NoBody(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("POST", testURL, nil)
@@ -1396,7 +1396,7 @@ func TestBlockedRequestPhase3_ResponseHeaderRegex_NoMatch(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	mockHandler := func() caddyhttp.Handler {
@@ -1452,7 +1452,7 @@ func TestBlockedRequestPhase4_ResponseBodyRegex_EmptyBody(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	mockHandler := func() caddyhttp.Handler {
@@ -1508,7 +1508,7 @@ func TestBlockedRequestPhase4_ResponseBodyRegex_NoBody(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	mockHandler := func() caddyhttp.Handler {
@@ -1562,7 +1562,7 @@ func TestBlockedRequestPhase3_ResponseHeaderRegex_NoSetCookie(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 	mockHandler := func() caddyhttp.Handler {
 		return caddyhttp.HandlerFunc(func(w http.ResponseWriter, r *http.Request) error {
@@ -1618,7 +1618,7 @@ func TestBlockedRequestPhase1_HeaderRegex_CaseInsensitive(t *testing.T) {
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil)
@@ -1671,7 +1671,7 @@ func TestBlockedRequestPhase1_HeaderRegex_MultipleMatchingHeaders(t *testing.T) 
 		ruleCache:             NewRuleCache(),
 		ipBlacklist:           iptrie.NewTrie(),
 		dnsBlacklist:          map[string]struct{}{},
-		requestValueExtractor: NewRequestValueExtractor(logger, false),
+		requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil)

@@ -150,7 +150,7 @@ func TestProcessRuleMatch(t *testing.T) {
 				AnomalyThreshold:      tt.anomalyThreshold,
 				ruleHits:              sync.Map{},
 				muMetrics:             sync.RWMutex{},
-				requestValueExtractor: NewRequestValueExtractor(logger, false),
+				requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
 			}
 
 			w := httptest.NewRecorder()
