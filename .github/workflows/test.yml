@@ -26,7 +26,7 @@ jobs:
         os:
           - ubuntu-latest
         go:
-          - '1.25'
+          - '1.23'
 
     runs-on: ${{ matrix.os }}
     permissions:
