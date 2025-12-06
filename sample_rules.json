@@ -1,9 +1,24 @@
 [
   {
+    "id": "BLOCK-NIKTO",
+    "phase": 2,
+    "pattern": "nikto",
+    "targets": [
+      "USER_AGENT"
+    ],
+    "severity": "critical",
+    "score": 5,
+    "mode": "block",
+    "description": "Block Nikto scanner",
+    "priority": 10
+  },
+  {
     "id": "TEST-RULE-1",
     "phase": 2,
     "pattern": "low_score_test",
-    "targets": ["URL_PARAM:test"],
+    "targets": [
+      "URL_PARAM:test"
+    ],
     "severity": "low",
     "score": 1,
     "mode": "log",
@@ -14,7 +29,9 @@
     "id": "TEST-RULE-PARAM1",
     "phase": 2,
     "pattern": "score2",
-    "targets": ["URL_PARAM:param1"],
+    "targets": [
+      "URL_PARAM:param1"
+    ],
     "severity": "medium",
     "score": 2,
     "mode": "log",
@@ -25,7 +42,9 @@
     "id": "TEST-RULE-PARAM2",
     "phase": 2,
     "pattern": "score2",
-    "targets": ["URL_PARAM:param2"],
+    "targets": [
+      "URL_PARAM:param2"
+    ],
     "severity": "medium",
     "score": 2,
     "mode": "log",
@@ -36,7 +55,9 @@
     "id": "TEST-RULE-PARAM1-HIGH",
     "phase": 2,
     "pattern": "score3",
-    "targets": ["URL_PARAM:param1"],
+    "targets": [
+      "URL_PARAM:param1"
+    ],
     "severity": "high",
     "score": 3,
     "mode": "log",
@@ -47,7 +68,9 @@
     "id": "TEST-RULE-PARAM2-HIGH",
     "phase": 2,
     "pattern": "score3",
-    "targets": ["URL_PARAM:param2"],
+    "targets": [
+      "URL_PARAM:param2"
+    ],
     "severity": "high",
     "score": 3,
     "mode": "log",
@@ -58,7 +81,9 @@
     "id": "TEST-RULE-PARAM3-HIGH",
     "phase": 2,
     "pattern": "score3",
-    "targets": ["URL_PARAM:param3"],
+    "targets": [
+      "URL_PARAM:param3"
+    ],
     "severity": "high",
     "score": 3,
     "mode": "log",
@@ -69,7 +94,9 @@
     "id": "TEST-RULE-BLOCK",
     "phase": 2,
     "pattern": "true",
-    "targets": ["URL_PARAM:block"],
+    "targets": [
+      "URL_PARAM:block"
+    ],
     "severity": "critical",
     "score": 0,
     "mode": "block",
@@ -80,7 +107,9 @@
     "id": "TEST-RULE-INCR-1",
     "phase": 2,
     "pattern": "score1",
-    "targets": ["URL_PARAM:increment"],
+    "targets": [
+      "URL_PARAM:increment"
+    ],
     "severity": "low",
     "score": 1,
     "mode": "log",
@@ -91,7 +120,9 @@
     "id": "TEST-RULE-INCR-2",
     "phase": 2,
     "pattern": "score2",
-    "targets": ["URL_PARAM:increment"],
+    "targets": [
+      "URL_PARAM:increment"
+    ],
     "severity": "medium",
     "score": 2,
     "mode": "log",
@@ -102,7 +133,9 @@
     "id": "TEST-RULE-INCR-3",
     "phase": 2,
     "pattern": "score3",
-    "targets": ["URL_PARAM:increment"],
+    "targets": [
+      "URL_PARAM:increment"
+    ],
     "severity": "high",
     "score": 3,
     "mode": "log",

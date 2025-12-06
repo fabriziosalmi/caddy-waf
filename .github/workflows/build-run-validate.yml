@@ -53,7 +53,7 @@ jobs:
       - name: Download GeoLite2 Country Database
         run: |
           cd caddy-waf
-          wget https://git.io/GeoLite2-Country.mmdb
+          wget https://github.com/P3TERX/GeoLite.mmdb/releases/latest/download/GeoLite2-Country.mmdb
 
       - name: Validate GeoLite2 Download
         run: |
@@ -131,7 +131,7 @@ jobs:
         run: |
           cd caddy-waf
           chmod +x caddy
-          ./caddy run > caddy_output.log 2>&1 &
+          ./caddy run --config test.caddyfile > caddy_output.log 2>&1 &
           sleep 5
           
           if ! pgrep -f "caddy run"; then
