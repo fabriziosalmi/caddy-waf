@@ -62,6 +62,12 @@ curl -fsSL -H "Pragma: no-cache" https://raw.githubusercontent.com/fabriziosalmi
 
 ## 🚀 Installation
 
+### Prerequisites
+
+- [Go](https://golang.org/dl/) **1.25** or higher
+- [Caddy](https://caddyserver.com/docs/install) **v2.10.x** or higher (for building with this plugin)
+- [xcaddy](https://github.com/caddyserver/xcaddy) (for building Caddy with plugins)
+
 ```bash
 # Step 1: Clone the caddy-waf repository from GitHub
 git clone https://github.com/fabriziosalmi/caddy-waf.git
