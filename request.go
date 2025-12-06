@@ -166,7 +166,7 @@ func (rve *RequestValueExtractor) extractSingleValue(target string, r *http.Requ
 	}
 
 	// Redact sensitive fields before returning the value (as before)
-	value := rve.redactValueIfSensitive(target, unredactedValue)
+	value := rve.RedactValueIfSensitive(target, unredactedValue)
 
 	// Log the extracted value (redacted if necessary)
 	rve.logger.Debug("Extracted value",
@@ -351,7 +351,7 @@ func (rve *RequestValueExtractor) extractValueForJSONPath(r *http.Request, jsonP
 }
 
 // Helper function to redact value if target is sensitive
-func (rve *RequestValueExtractor) redactValueIfSensitive(target string, value string) string {
+func (rve *RequestValueExtractor) RedactValueIfSensitive(target string, value string) string {
 	if rve.redactSensitiveData {
 		for _, sensitive := range sensitiveTargets {
 			if strings.Contains(strings.ToLower(target), sensitive) {

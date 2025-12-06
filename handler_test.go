@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"mime/multipart"
+	"os"
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
@@ -26,8 +27,9 @@ func TestBlockedRequestPhase1_DNSBlacklist(t *testing.T) {
 		dnsBlacklist: map[string]struct{}{
 			"malicious.domain": {},
 		},
-		ipBlacklist:     iptrie.NewTrie(),
-		CustomResponses: customResponse,
+		ipBlacklist:           iptrie.NewTrie(),
+		CustomResponses:       customResponse,
+		requestValueExtractor: NewRequestValueExtractor(logger, false),
 	}
 
 	w := httptest.NewRecorder()
@@ -60,6 +62,9 @@ func TestBlockedRequestPhase1_DNSBlacklist(t *testing.T) {
 }
 
 func TestBlockedRequestPhase1_GeoIPBlocking(t *testing.T) {
+	if _, err := os.Stat(geoIPdata); os.IsNotExist(err) {
+		t.Skip("GeoIP database not found, skipping test")
+	}
 	logger, err := zap.NewDevelopment()
 	assert.NoError(t, err)
 
@@ -77,7 +82,8 @@ func TestBlockedRequestPhase1_GeoIPBlocking(t *testing.T) {
 			GeoIPDBPath: geoIPdata, // Path to a test GeoIP database
 			geoIP:       geoIPBlock,
 		},
-		CustomResponses: customResponse,
+		CustomResponses:       customResponse,
+		requestValueExtractor: NewRequestValueExtractor(logger, false),
 	}
 
 	wlMiddleware := &Middleware{
@@ -90,7 +96,8 @@ func TestBlockedRequestPhase1_GeoIPBlocking(t *testing.T) {
 			GeoIPDBPath: geoIPdata, // Path to a test GeoIP database
 			geoIP:       geoIPBlock,
 		},
-		CustomResponses: customResponse,
+		CustomResponses:       customResponse,
+		requestValueExtractor: NewRequestValueExtractor(logger, false),
 	}
 
 	blackWhiteMw := &Middleware{
@@ -109,7 +116,8 @@ func TestBlockedRequestPhase1_GeoIPBlocking(t *testing.T) {
 			GeoIPDBPath: geoIPdata, // Path to a test GeoIP database
 			geoIP:       geoIPBlock,
 		},
-		CustomResponses: customResponse,
+		CustomResponses:       customResponse,
+		requestValueExtractor: NewRequestValueExtractor(logger, false),
 	}
 
 	req := httptest.NewRequest("GET", testURL, nil)
@@ -205,9 +213,10 @@ func TestBlockedRequestPhase1_IPBlocking(t *testing.T) {
 
 	t.Run("Allow unblocked CIDR", func(t *testing.T) {
 		middleware := &Middleware{
-			logger:          logger,
-			ipBlacklist:     blackList,
-			CustomResponses: customResponse,
+			logger:                logger,
+			ipBlacklist:           blackList,
+			CustomResponses:       customResponse,
+			requestValueExtractor: NewRequestValueExtractor(logger, false),
 		}
 
 		req := httptest.NewRequest("GET", testURL, nil)
@@ -222,9 +231,10 @@ func TestBlockedRequestPhase1_IPBlocking(t *testing.T) {
 
 	t.Run("Blocks blacklisted CIDR", func(t *testing.T) {
 		middleware := &Middleware{
-			logger:          logger,
-			ipBlacklist:     blackList,
-			CustomResponses: customResponse,
+			logger:                logger,
+			ipBlacklist:           blackList,
+			CustomResponses:       customResponse,
+			requestValueExtractor: NewRequestValueExtractor(logger, false),
 		}
 
 		req := httptest.NewRequest("GET", testURL, nil)

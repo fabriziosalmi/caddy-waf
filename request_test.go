@@ -145,7 +145,7 @@ func TestRedactValueIfSensitive(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rve := NewRequestValueExtractor(logger, tt.redactSensitive)
-			result := rve.redactValueIfSensitive(tt.target, tt.value)
+			result := rve.RedactValueIfSensitive(tt.target, tt.value)
 
 			if tt.expectedRedacted && result != "REDACTED" {
 				t.Errorf("Expected REDACTED but got %q", result)
@@ -364,10 +364,11 @@ func newMockLogger() *MockLogger {
 func TestProcessRuleMatch_HighScore(t *testing.T) {
 	logger := newMockLogger()
 	middleware := &Middleware{
-		logger:           logger.Logger,
-		AnomalyThreshold: 100, // High threshold
-		ruleHits:         sync.Map{},
-		muMetrics:        sync.RWMutex{},
+		logger:                logger.Logger,
+		AnomalyThreshold:      100, // High threshold
+		ruleHits:              sync.Map{},
+		muMetrics:             sync.RWMutex{},
+		requestValueExtractor: NewRequestValueExtractor(logger.Logger, false), // Initialize
 	}
 
 	rule := &Rule{
@@ -394,7 +395,7 @@ func TestProcessRuleMatch_HighScore(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// Test blocking rule with high score
-	shouldContinue := middleware.processRuleMatch(w, req, rule, "value", state)
+	shouldContinue := middleware.processRuleMatch(w, req, rule, "header", "value", state)
 	assert.False(t, shouldContinue)
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.True(t, state.Blocked)

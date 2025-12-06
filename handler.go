@@ -182,7 +182,7 @@ func (m *Middleware) handleResponseBodyPhase(recorder *responseRecorder, r *http
 
 	for _, rule := range rules {
 		if rule.regex.MatchString(body) {
-			if m.processRuleMatch(recorder, r, &rule, body, state) {
+			if m.processRuleMatch(recorder, r, &rule, "RESPONSE_BODY", body, state) { // Pass RESPONSE_BODY as target
 				return
 			}
 		}
@@ -453,29 +453,31 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 				continue
 			}
 
+			redactedValue := m.requestValueExtractor.RedactValueIfSensitive(target, value)
+
 			m.logger.Debug("Extracted value",
 				zap.String("rule_id", rule.ID),
 				zap.String("target", target),
-				zap.String("value", value),
+				zap.String("value", redactedValue),
 			)
 
 			if rule.regex.MatchString(value) {
 				m.logger.Debug("Rule matched",
 					zap.String("rule_id", rule.ID),
 					zap.String("target", target),
-					zap.String("value", value),
+					zap.String("value", redactedValue),
 				)
 
 				// FIXED: Correctly interpret processRuleMatch return value
 				var shouldContinue bool
 				if phase == 3 || phase == 4 {
 					if recorder, ok := w.(*responseRecorder); ok {
-						shouldContinue = m.processRuleMatch(recorder, r, &rule, value, state)
+						shouldContinue = m.processRuleMatch(recorder, r, &rule, target, value, state)
 					} else {
-						shouldContinue = m.processRuleMatch(w, r, &rule, value, state)
+						shouldContinue = m.processRuleMatch(w, r, &rule, target, value, state)
 					}
 				} else {
-					shouldContinue = m.processRuleMatch(w, r, &rule, value, state)
+					shouldContinue = m.processRuleMatch(w, r, &rule, target, value, state)
 				}
 
 				// If processRuleMatch returned false or state is now blocked, stop processing
@@ -496,7 +498,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 				m.logger.Debug("Rule did not match",
 					zap.String("rule_id", rule.ID),
 					zap.String("target", target),
-					zap.String("value", value),
+					zap.String("value", redactedValue),
 				)
 			}
 		}

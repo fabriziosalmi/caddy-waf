@@ -1,6 +1,7 @@
 // rules.go
 package caddywaf
 
+
 import (
 	"encoding/json"
 	"fmt"
@@ -8,19 +9,19 @@ import (
 	"os"
 	"regexp"
 	"sort"
-	"strings"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-func (m *Middleware) processRuleMatch(w http.ResponseWriter, r *http.Request, rule *Rule, value string, state *WAFState) bool {
+func (m *Middleware) processRuleMatch(w http.ResponseWriter, r *http.Request, rule *Rule, target, value string, state *WAFState) bool {
 	logID := r.Context().Value(ContextKeyLogId("logID")).(string)
+
+	redactedValue := m.requestValueExtractor.RedactValueIfSensitive(target, value)
 
 	m.logRequest(zapcore.DebugLevel, "Rule Matched", r, // More concise log message
 		zap.String("rule_id", rule.ID),
-		zap.String("target", strings.Join(rule.Targets, ",")),
-		zap.String("value", value),
+		zap.String("target", target), // Log the specific target that matched
+		zap.String("value", redactedValue),
 		zap.String("description", rule.Description),
 		zap.Int("score", rule.Score),
 		zap.Int("anomaly_threshold_config", m.AnomalyThreshold), // ADDED: Log configured anomaly threshold

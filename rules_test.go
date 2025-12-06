@@ -146,10 +146,11 @@ func TestProcessRuleMatch(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Middleware{
-				logger:           logger,
-				AnomalyThreshold: tt.anomalyThreshold,
-				ruleHits:         sync.Map{},
-				muMetrics:        sync.RWMutex{},
+				logger:                logger,
+				AnomalyThreshold:      tt.anomalyThreshold,
+				ruleHits:              sync.Map{},
+				muMetrics:             sync.RWMutex{},
+				requestValueExtractor: NewRequestValueExtractor(logger, false),
 			}
 
 			w := httptest.NewRecorder()
@@ -162,7 +163,7 @@ func TestProcessRuleMatch(t *testing.T) {
 				ResponseWritten: tt.responseWritten,
 			}
 
-			result := m.processRuleMatch(w, r, &tt.rule, "test-value", state)
+			result := m.processRuleMatch(w, r, &tt.rule, "ARGS", "test-value", state)
 			if result == tt.wantBlock {
 				t.Errorf("processRuleMatch() returned %v, want %v", result, !tt.wantBlock)
 			}
