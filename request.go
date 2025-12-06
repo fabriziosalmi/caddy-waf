@@ -209,7 +209,7 @@ func (rve *RequestValueExtractor) extractBody(r *http.Request, target string) (s
 		rve.logger.Error("Failed to read request body", zap.Error(err))
 		return "", fmt.Errorf("failed to read request body for target %s: %w", target, err)
 	}
-	r.Body = http.NoBody // Reset body for next read - using http.NoBody
+	r.Body = io.NopCloser(strings.NewReader(string(bodyBytes))) // Restore body for next read
 	return string(bodyBytes), nil
 }
 
@@ -339,7 +339,7 @@ func (rve *RequestValueExtractor) extractValueForJSONPath(r *http.Request, jsonP
 		rve.logger.Error("Failed to read request body", zap.Error(err))
 		return "", fmt.Errorf("failed to read request body for JSON_PATH target %s: %w", target, err)
 	}
-	r.Body = http.NoBody // Reset body for next read
+	r.Body = io.NopCloser(strings.NewReader(string(bodyBytes))) // Restore body for next read
 
 	// Use helper method to dynamically extract value based on JSON path (e.g., 'data.items.0.name').
 	unredactedValue, err := rve.extractJSONPath(string(bodyBytes), jsonPath)
