@@ -215,7 +215,17 @@ func (rve *RequestValueExtractor) extractBody(r *http.Request, target string) (s
 		rve.logger.Error("Failed to read request body", zap.Error(err))
 		return "", fmt.Errorf("failed to read request body for target %s: %w", target, err)
 	}
-	r.Body = io.NopCloser(strings.NewReader(string(bodyBytes))) // Restore body for next read
+	// Restore body for next read, verifying if we need to combine with remaining body
+	// We use io.MultiReader to concatenate the bytes we read with the *remaining* bytes in the original body.
+	// This ensures that even if we hit the limit, the downstream consumer can read the full body.
+	// We also ensure the original Closer is preserved.
+	r.Body = &struct {
+		io.Reader
+		io.Closer
+	}{
+		Reader: io.MultiReader(strings.NewReader(string(bodyBytes)), r.Body),
+		Closer: r.Body,
+	}
 
 	// SOTA Pattern: Zero-Copy (avoid allocation for string conversion)
 	if len(bodyBytes) == 0 {
