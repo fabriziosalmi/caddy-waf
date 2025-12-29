@@ -23,7 +23,7 @@ A robust, highly customizable, and feature-rich **Web Application Firewall (WAF)
 _Simple at a glance UI :)_
 ![demo](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/caddy-waf-ui.png?raw=true)  
 
-## Security & Performance (SOTA)
+## Security & Performance
 *   **Zero-Copy Networking**: Uses `unsafe.String` to eliminate memory allocations during request body inspection.
 *   **Wait-Free Concurrency**: Atomic counters ensure accurate metrics and rule hit counting without lock contention.
 *   **Circuit Breaker**: `geoip_fail_open` prevents database failures from causing service outages.
