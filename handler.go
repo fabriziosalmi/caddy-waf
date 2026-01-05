@@ -328,7 +328,8 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		// Whitelisting
 		if m.CountryWhitelist.Enabled {
 			m.logger.Debug("Starting country whitelisting phase")
-			allowed, err := m.isCountryInList(r.RemoteAddr, m.CountryWhitelist.CountryList, m.CountryWhitelist.geoIP)
+			clientIP := getClientIP(r)
+			allowed, err := m.isCountryInList(clientIP, m.CountryWhitelist.CountryList, m.CountryWhitelist.geoIP)
 			if err != nil {
 				m.logRequest(zapcore.ErrorLevel, "Failed to check country whitelist",
 					r,
@@ -360,7 +361,8 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		// ASN Blocking
 		if m.BlockASNs.Enabled {
 			m.logger.Debug("Starting ASN blocking phase")
-			blocked, err := m.geoIPHandler.IsASNInList(r.RemoteAddr, m.BlockASNs.BlockedASNs, m.BlockASNs.geoIP)
+			clientIP := getClientIP(r)
+			blocked, err := m.geoIPHandler.IsASNInList(clientIP, m.BlockASNs.BlockedASNs, m.BlockASNs.geoIP)
 			if err != nil {
 				m.logRequest(zapcore.ErrorLevel, "Failed to check ASN blocking",
 					r,
@@ -377,7 +379,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 					return
 				}
 			} else if blocked {
-				asnInfo := m.geoIPHandler.GetASN(r.RemoteAddr, m.BlockASNs.geoIP)
+				asnInfo := m.geoIPHandler.GetASN(clientIP, m.BlockASNs.geoIP)
 				m.blockRequest(w, r, state, http.StatusForbidden, "asn_block", "asn_block_rule",
 					zap.String("message", "Request blocked by ASN"),
 					zap.String("asn", asnInfo),
@@ -394,7 +396,8 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		// Blacklisting
 		if m.CountryBlacklist.Enabled {
 			m.logger.Debug("Starting country blacklisting phase")
-			blocked, err := m.isCountryInList(r.RemoteAddr, m.CountryBlacklist.CountryList, m.CountryBlacklist.geoIP)
+			clientIP := getClientIP(r)
+			blocked, err := m.isCountryInList(clientIP, m.CountryBlacklist.CountryList, m.CountryBlacklist.geoIP)
 			if err != nil {
 				m.logRequest(zapcore.ErrorLevel, "Failed to check country blacklisting",
 					r,
