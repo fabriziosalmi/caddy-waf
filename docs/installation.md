@@ -1,6 +1,34 @@
 # Installation
 
-## Quick Start
+## Method 1: Using `caddy add-package` (Recommended)
+
+If you already have Caddy installed, you can add the WAF plugin directly:
+
+```bash
+caddy add-package github.com/fabriziosalmi/caddy-waf
+```
+
+This command will download and install a new Caddy binary with the WAF module included. It uses Caddy's remote build service to compile a custom binary with the module.
+
+**Advantages:**
+- No need to install Go or build tools
+- Keeps your existing Caddy modules intact
+- Automatic backup of your current binary
+- Quick and simple installation
+
+**Options:**
+- `--keep-backup` - Keep the backup of your previous Caddy binary
+
+**Note:** This is an experimental Caddy feature introduced in Caddy v2.7.
+
+After installation, verify the module is loaded:
+```bash
+caddy list-modules | grep waf
+```
+
+You should see `http.handlers.waf` in the output.
+
+## Method 2: Quick Script Installation
 
 ```bash
 curl -fsSL -H "Pragma: no-cache" https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
@@ -20,7 +48,9 @@ INFO    Rules loaded    {"file": "rules.json", "total_rules": 70, "invalid_rules
 INFO    WAF middleware provisioned successfully
 ```
 
-## Step by step installation
+## Method 3: Build from Source (Advanced)
+
+For development or if you need full control over the build process:
 
 ```bash
 # Step 1: Clone the caddy-waf repository from GitHub

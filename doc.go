@@ -16,6 +16,12 @@
 //
 // Installation:
 //
+// Option 1 - Using caddy add-package (recommended if Caddy is already installed):
+//
+//	caddy add-package github.com/fabriziosalmi/caddy-waf
+//
+// Option 2 - Building from source with xcaddy:
+//
 //	xcaddy build --with github.com/fabriziosalmi/caddy-waf
 //
 // Basic usage in Caddyfile:

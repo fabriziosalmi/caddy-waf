@@ -8,8 +8,9 @@ This documentation provides everything you need to deploy and manage the Caddy W
 
 ### 🚀 Getting Started
 
-1.  **[Introduction](introduction.md)** - *Overview of the Caddy WAF, its purpose, and key benefits.
+1.  **[Introduction](introduction.md)** - *Overview of the Caddy WAF, its purpose, and key benefits.*
 2.  **[Installation](installation.md)** - *Instructions for installing the Caddy WAF middleware.* 
+3.  **[Using caddy add-package](add-package-guide.md)** - *Quick guide for installing with the `caddy add-package` command.* 
 
 ### ⚙️ Core Configuration
 
