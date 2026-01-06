@@ -43,6 +43,7 @@ This document outlines the requirements and steps for successfully registering t
 - [x] **Test Suite**: Comprehensive test coverage across multiple files
 - [x] **CI/CD Pipeline**: GitHub Actions workflows for testing and building
 - [x] **Module Import**: Can be imported and used with `xcaddy build`
+- [x] **caddy add-package**: Compatible with `caddy add-package` command
 
 ## 🔍 Potential Issues and Solutions
 
@@ -101,11 +102,17 @@ go doc -short
 # Test module import
 go list -m github.com/fabriziosalmi/caddy-waf
 
-# Verify with xcaddy (if available)
+# Test with caddy add-package (recommended)
+caddy add-package github.com/fabriziosalmi/caddy-waf
+
+# Verify with xcaddy (alternative method)
 xcaddy build --with github.com/fabriziosalmi/caddy-waf
 
 # Check latest version/tag
 git describe --tags --abbrev=0
+
+# Verify module is loaded
+caddy list-modules | grep waf
 ```
 
 ## 📞 Support Information

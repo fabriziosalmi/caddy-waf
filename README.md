@@ -62,7 +62,25 @@ curl -fsSL -H "Pragma: no-cache" https://raw.githubusercontent.com/fabriziosalmi
 
 ## 🚀 Installation
 
-### Prerequisites
+### Option 1: Using `caddy add-package` (Recommended)
+
+If you already have Caddy installed, you can add this plugin directly using the `caddy add-package` command:
+
+```bash
+caddy add-package github.com/fabriziosalmi/caddy-waf
+```
+
+This command will:
+- Download a new Caddy binary with the WAF module included
+- Keep your existing modules intact
+- Safely replace your current Caddy binary
+- Create a backup of your previous binary (use `--keep-backup` to retain it)
+
+**Note:** This is an experimental Caddy feature. The command uses Caddy's remote build service to compile and download a custom binary with the module included.
+
+### Option 2: Build from Source
+
+#### Prerequisites
 
 - [Go](https://golang.org/dl/) **1.25** or higher
 - [Caddy](https://caddyserver.com/docs/install) **v2.10.x** or higher (for building with this plugin)
