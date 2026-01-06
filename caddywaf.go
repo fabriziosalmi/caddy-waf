@@ -132,7 +132,7 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 	// Create a multi-core logger for both console and file
 	core := zapcore.NewTee(
 		zapcore.NewCore(consoleEncoder, consoleSync, logLevel),
-		zapcore.NewCore(fileEncoder, zapcore.AddSync(fileSync), zap.DebugLevel),
+		zapcore.NewCore(fileEncoder, zapcore.AddSync(fileSync), logLevel),
 	)
 
 	m.logger = zap.New(core)
