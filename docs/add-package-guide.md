@@ -95,10 +95,10 @@ The backup will be saved as `caddy.backup` in the same directory.
 To install a specific version of the module:
 
 ```bash
-caddy add-package github.com/fabriziosalmi/caddy-waf@v0.1.3
+caddy add-package github.com/fabriziosalmi/caddy-waf@vX.Y.Z
 ```
 
-Note: Replace `v0.1.3` with the desired version tag.
+Replace `vX.Y.Z` with the desired version tag (e.g., `v0.1.3`). You can find available versions on the [GitHub releases page](https://github.com/fabriziosalmi/caddy-waf/releases).
 
 ## Troubleshooting
 
@@ -110,14 +110,7 @@ If the `caddy add-package` command is not available, you may be using an older v
 caddy version
 ```
 
-You need Caddy v2.7 or higher. Update Caddy first:
-
-```bash
-# Using the official install script
-curl https://caddyserver.com/api/download\?os=linux\&arch=amd64 -o caddy
-chmod +x caddy
-sudo mv caddy /usr/local/bin/
-```
+You need Caddy v2.7 or higher. To update Caddy, visit [caddyserver.com/download](https://caddyserver.com/download) and follow the instructions for your operating system and architecture.
 
 ### Permission Denied
 
