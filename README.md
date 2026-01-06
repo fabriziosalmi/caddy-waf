@@ -176,19 +176,20 @@ For complete documentation, including configuration options, rule format details
 ### 📑 Table of Contents
 
 1.  [**Installation**](docs/installation.md) - *Instructions for installing the Caddy WAF middleware.*
-2.  [**Configuration Options**](docs/configuration.md) - *Detailed explanation of all available configuration settings.*
-3.  [**Rules Format (`rules.json`)**](docs/rules.md) - *A comprehensive guide to defining custom rules using the JSON format.*
-4.  [**Blacklist Formats**](docs/blacklists.md) - *Documentation of the formats used for defining IP and DNS blacklists.*
-5.   [**Rate Limiting**](docs/ratelimit.md) - *How to configure rate limiting, including parameters and usage.*
-6.  [**Country Blocking and Whitelisting**](docs/geoblocking.md) - *Details on how to configure country-based blocking and whitelisting.*
-7.  [**Protected Attack Types**](docs/attacks.md) - *An overview of the wide range of web-based threats that the Caddy WAF is designed to protect against.*
-8.  [**Dynamic Updates**](docs/dynamicupdates.md) - *How to dynamically update the WAF rules and other settings without downtime.*
-9.  [**Metrics**](docs/metrics.md) - *Details about the WAF's metrics endpoint and the different metrics collected.*
-10. [**Prometheus Metrics**](docs/prometheus.md) - *Instructions on how to expose WAF metrics using the Prometheus format.*
-11. [**ELK Observability**](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/caddy-waf-elk.md) - *Instructions on how to configure caddy-waf ELK stack observability.*
-12. [**Rule/Blacklist Population Scripts**](docs/scripts.md) - *Documentation on the provided scripts to automatically fetch, update and generate rules and blacklists.*
-13. [**Testing**](docs/testing.md) - *Guidance on how to test the WAF's effectiveness using the provided testing tools.*
-14.  [**Docker Support**](docs/docker.md) - *Instructions on how to build and run the WAF using Docker.*
+2.  [**Using `caddy add-package`**](docs/add-package-guide.md) - *Quick guide for installing with the `caddy add-package` command.*
+3.  [**Configuration Options**](docs/configuration.md) - *Detailed explanation of all available configuration settings.*
+4.  [**Rules Format (`rules.json`)**](docs/rules.md) - *A comprehensive guide to defining custom rules using the JSON format.*
+5.  [**Blacklist Formats**](docs/blacklists.md) - *Documentation of the formats used for defining IP and DNS blacklists.*
+6.   [**Rate Limiting**](docs/ratelimit.md) - *How to configure rate limiting, including parameters and usage.*
+7.  [**Country Blocking and Whitelisting**](docs/geoblocking.md) - *Details on how to configure country-based blocking and whitelisting.*
+8.  [**Protected Attack Types**](docs/attacks.md) - *An overview of the wide range of web-based threats that the Caddy WAF is designed to protect against.*
+9.  [**Dynamic Updates**](docs/dynamicupdates.md) - *How to dynamically update the WAF rules and other settings without downtime.*
+10.  [**Metrics**](docs/metrics.md) - *Details about the WAF's metrics endpoint and the different metrics collected.*
+11. [**Prometheus Metrics**](docs/prometheus.md) - *Instructions on how to expose WAF metrics using the Prometheus format.*
+12. [**ELK Observability**](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/caddy-waf-elk.md) - *Instructions on how to configure caddy-waf ELK stack observability.*
+13. [**Rule/Blacklist Population Scripts**](docs/scripts.md) - *Documentation on the provided scripts to automatically fetch, update and generate rules and blacklists.*
+14. [**Testing**](docs/testing.md) - *Guidance on how to test the WAF's effectiveness using the provided testing tools.*
+15.  [**Docker Support**](docs/docker.md) - *Instructions on how to build and run the WAF using Docker.*
 
 ---
 
