@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"github.com/phemmer/go-iptrie"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
@@ -46,6 +47,9 @@ func TestPOSTBodyPreservation(t *testing.T) {
 				},
 			},
 			AnomalyThreshold: 10,
+			ruleCache:        NewRuleCache(),
+			ipBlacklist:      iptrie.NewTrie(),
+			dnsBlacklist:     map[string]struct{}{},
 		}
 
 		// Create a test request
@@ -105,6 +109,9 @@ func TestPOSTBodyPreservation(t *testing.T) {
 				},
 			},
 			AnomalyThreshold: 10,
+			ruleCache:        NewRuleCache(),
+			ipBlacklist:      iptrie.NewTrie(),
+			dnsBlacklist:     map[string]struct{}{},
 		}
 
 		// Create a test request
@@ -156,6 +163,9 @@ func TestPOSTBodyPreservation(t *testing.T) {
 				},
 			},
 			AnomalyThreshold: 10,
+			ruleCache:        NewRuleCache(),
+			ipBlacklist:      iptrie.NewTrie(),
+			dnsBlacklist:     map[string]struct{}{},
 		}
 
 		// Create a test request
@@ -221,6 +231,9 @@ func TestPOSTBodyPreservation(t *testing.T) {
 				},
 			},
 			AnomalyThreshold: 20,
+			ruleCache:        NewRuleCache(),
+			ipBlacklist:      iptrie.NewTrie(),
+			dnsBlacklist:     map[string]struct{}{},
 		}
 
 		// Create a test request
@@ -262,6 +275,9 @@ logger:                logger,
 requestValueExtractor: NewRequestValueExtractor(logger, false, 10*1024*1024),
 Rules:                 map[int][]Rule{}, // No rules
 AnomalyThreshold:      10,
+ruleCache:             NewRuleCache(),
+ipBlacklist:           iptrie.NewTrie(),
+dnsBlacklist:          map[string]struct{}{},
 }
 
 testData := []byte("simple test body")
@@ -285,4 +301,53 @@ return err
 err := middleware.ServeHTTP(recorder, req, upstreamHandler)
 assert.NoError(t, err)
 assert.Equal(t, testData, upstreamBody, "Upstream should receive body even with no rules")
+}
+
+// TestDebugBodyFlow adds debug logging to understand body flow
+func TestDebugBodyFlow(t *testing.T) {
+logger := zap.NewExample()
+
+middleware := &Middleware{
+logger:                logger,
+requestValueExtractor: NewRequestValueExtractor(logger, false, 10*1024*1024),
+Rules: map[int][]Rule{
+2: {
+{
+ID:      "test-rule",
+Targets: []string{"BODY"},
+Pattern: `impossible-pattern`,
+Score:   5,
+Action:  "log",
+},
+},
+},
+AnomalyThreshold: 10,
+ruleCache:        NewRuleCache(),
+ipBlacklist:      iptrie.NewTrie(),
+dnsBlacklist:     map[string]struct{}{},
+}
+
+testData := []byte("test body data")
+req := httptest.NewRequest("POST", "/", bytes.NewReader(testData))
+req.ContentLength = int64(len(testData))
+
+t.Logf("Before WAF: Body=%p", req.Body)
+
+recorder := httptest.NewRecorder()
+
+upstreamCalled := false
+upstreamHandler := caddyhttp.HandlerFunc(func(w http.ResponseWriter, r *http.Request) error {
+upstreamCalled = true
+t.Logf("Upstream: Body=%p", r.Body)
+t.Logf("Upstream: ContentLength=%d", r.ContentLength)
+
+body, err := io.ReadAll(r.Body)
+t.Logf("Upstream: Read %d bytes: %s", len(body), string(body))
+w.WriteHeader(http.StatusOK)
+return err
+})
+
+err := middleware.ServeHTTP(recorder, req, upstreamHandler)
+assert.NoError(t, err)
+assert.True(t, upstreamCalled)
 }
