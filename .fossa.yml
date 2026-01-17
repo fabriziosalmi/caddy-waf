@@ -1,0 +1,40 @@
+version: 3
+
+project:
+  id: github.com/fabriziosalmi/caddy-waf
+  name: caddy-waf
+  team: Caddy WAF Team
+  policy: default
+
+analyze:
+  modules:
+    - path: .
+      type: go
+
+# Exclude transitive dependencies from upstream (Caddy) that we don't control
+# These are indirect dependencies pulled in by github.com/caddyserver/caddy/v2
+vendoredDependencies:
+  forceRescans: false
+  scanArchives: false
+
+paths:
+  exclude:
+    # Test files
+    - '**/*_test.go'
+    # Vendor directory if present
+    - 'vendor/**'
+
+# Document known transitive dependencies from Caddy
+# These cannot be updated independently - they follow Caddy's dependency tree
+#
+# Dependency chain:
+# - mysql: caddy → smallstep/certificates → smallstep/nosql → go-sql-driver/mysql
+# - nebula: caddy → smallstep/certificates/provisioner → slackhq/nebula
+# - crypto: Used throughout Go ecosystem (always latest)
+# - opentelemetry: caddy → otel instrumentation
+#
+# All versions are current as of 2026-01-17:
+# - golang.org/x/crypto v0.47.0 (latest)
+# - github.com/go-sql-driver/mysql v1.9.3 (latest)
+# - github.com/slackhq/nebula v1.9.7 (pinned for smallstep compatibility)
+# - go.opentelemetry.io/auto/sdk v1.2.1 (latest)
