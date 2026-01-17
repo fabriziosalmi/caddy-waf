@@ -1,34 +1,8 @@
 # Installation
 
-## Method 1: Using `caddy add-package` (Recommended)
+## Method 1: Quick Script Installation (Recommended)
 
-If you already have Caddy installed, you can add the WAF plugin directly:
-
-```bash
-caddy add-package github.com/fabriziosalmi/caddy-waf
-```
-
-This command will download and install a new Caddy binary with the WAF module included. It uses Caddy's remote build service to compile a custom binary with the module.
-
-**Advantages:**
-- No need to install Go or build tools
-- Keeps your existing Caddy modules intact
-- Automatic backup of your current binary
-- Quick and simple installation
-
-**Options:**
-- `--keep-backup` - Keep the backup of your previous Caddy binary
-
-**Note:** This is an experimental Caddy feature introduced in Caddy v2.7.
-
-After installation, verify the module is loaded:
-```bash
-caddy list-modules | grep waf
-```
-
-You should see `http.handlers.waf` in the output.
-
-## Method 2: Quick Script Installation
+The fastest and most reliable way to install caddy-waf:
 
 ```bash
 curl -fsSL -H "Pragma: no-cache" https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
@@ -46,6 +20,21 @@ INFO    IP blacklist loaded successfully        {"file": "ip_blacklist.txt", "va
 INFO    DNS blacklist loaded successfully       {"file": "dns_blacklist.txt", "valid_entries": 2, "total_lines": 2}
 INFO    Rules loaded    {"file": "rules.json", "total_rules": 70, "invalid_rules": 0}
 INFO    WAF middleware provisioned successfully
+```
+
+## Method 2: Build with xcaddy
+
+For users who prefer to build Caddy with xcaddy:
+
+```bash
+# Install xcaddy if you don't have it
+go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+
+# Build Caddy with the WAF module
+xcaddy build --with github.com/fabriziosalmi/caddy-waf
+
+# Verify the module is loaded
+./caddy list-modules | grep waf
 ```
 
 ## Method 3: Build from Source (Advanced)
@@ -84,6 +73,18 @@ caddy fmt --overwrite
 # Step 8: Run the compiled Caddy server
 ./caddy run
 ```
+
+## Method 4: Using `caddy add-package` (Experimental)
+
+> **⚠️ Important Note:** The `caddy add-package` command requires the module to be registered in Caddy's official module registry. This module is **not yet registered** in the registry, so this method will return an error: `github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path`. Please use Method 1 (Quick Script), Method 2 (xcaddy), or Method 3 (Build from Source) instead.
+
+If the module gets registered in the future, you would be able to use:
+
+```bash
+caddy add-package github.com/fabriziosalmi/caddy-waf
+```
+
+For more details, see the [add-package guide](add-package-guide.md).
 
 Go to the [configuration](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/configuration.md) documentation section.
 

@@ -1,6 +1,16 @@
 # Using `caddy add-package` to Install Caddy WAF
 
-This guide demonstrates how to install the Caddy WAF module using Caddy's built-in `caddy add-package` command.
+> **⚠️ Important Notice:** The `caddy add-package` command requires the module to be registered in Caddy's official module registry at [caddyserver.com](https://caddyserver.com). **This module is currently NOT registered**, so attempting to use `caddy add-package` will result in an error:
+> ```
+> Error: download failed: HTTP 400: github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path
+> ```
+> 
+> **Please use one of these alternative installation methods instead:**
+> - [Quick Script Installation](installation.md#method-1-quick-script-installation-recommended) (Recommended)
+> - [Build with xcaddy](installation.md#method-2-build-with-xcaddy)
+> - [Build from Source](installation.md#method-3-build-from-source-advanced)
+
+This guide is kept for reference in case the module gets registered in the future.
 
 ## Prerequisites
 
@@ -118,6 +128,24 @@ If you get a permission denied error, run the command with sudo:
 
 ```bash
 sudo caddy add-package github.com/fabriziosalmi/caddy-waf
+```
+
+### Module Not Registered
+
+If you see this error:
+```
+Error: download failed: HTTP 400: github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path
+```
+
+This means the module is not registered in Caddy's official module registry. **This is the current status of caddy-waf**. Please use one of the alternative installation methods:
+
+```bash
+# Option 1: Quick Script (Recommended)
+curl -fsSL -H "Pragma: no-cache" https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
+
+# Option 2: Build with xcaddy
+go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+xcaddy build --with github.com/fabriziosalmi/caddy-waf
 ```
 
 ### Build Service Unavailable

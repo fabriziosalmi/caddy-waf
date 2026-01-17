@@ -2,6 +2,18 @@
 
 This document outlines the requirements and steps for successfully registering the caddy-waf module in the official Caddy modules directory.
 
+## ⚠️ Current Status
+
+**The module is NOT currently registered** in Caddy's official module registry. Attempts to use `caddy add-package github.com/fabriziosalmi/caddy-waf` will fail with:
+```
+Error: download failed: HTTP 400: github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path
+```
+
+**Alternative installation methods are available and recommended:**
+- [Quick Script Installation](docs/installation.md#method-1-quick-script-installation-recommended)
+- [Build with xcaddy](docs/installation.md#method-2-build-with-xcaddy)
+- [Build from Source](docs/installation.md#method-3-build-from-source-advanced)
+
 ## ✅ Completed Requirements
 
 ### 1. Module Structure Compliance
@@ -43,9 +55,24 @@ This document outlines the requirements and steps for successfully registering t
 - [x] **Test Suite**: Comprehensive test coverage across multiple files
 - [x] **CI/CD Pipeline**: GitHub Actions workflows for testing and building
 - [x] **Module Import**: Can be imported and used with `xcaddy build`
-- [x] **caddy add-package**: Compatible with `caddy add-package` command
+- [ ] **caddy add-package**: NOT compatible - module not registered in Caddy's registry
 
-## 🔍 Potential Issues and Solutions
+## 🔍 Registration Status and Issues
+
+### Current Status: NOT REGISTERED
+
+The module has been attempted to be registered but the registration failed. The error returned indicates the module path is not recognized by Caddy's build service.
+
+### Error Details
+
+When users attempt to install via `caddy add-package`:
+```
+Error: download failed: HTTP 400: github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path
+```
+
+Reference error IDs from failed registration attempts:
+- `d9ae3bd6-bc8f-4f8a-a0de-dcff0399e7a9`
+- `2b782e50-057d-4dac-bbd5-4cd1c1188669`
 
 ### Issue Analysis: Registration Error ID `2b782e50-057d-4dac-bbd5-4cd1c1188669`
 
