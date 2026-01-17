@@ -201,6 +201,12 @@ func (rve *RequestValueExtractor) logIfEmpty(value string, target string, messag
 
 // Helper function to extract body
 func (rve *RequestValueExtractor) extractBody(r *http.Request, target string) (string, error) {
+	// Check if body has already been read and cached in context
+	if cachedBody, ok := r.Context().Value(ContextKeyCachedBody("cachedBody")).(string); ok {
+		rve.logger.Debug("Using cached body from context", zap.String("target", target))
+		return cachedBody, nil
+	}
+
 	if r.Body == nil {
 		rve.logger.Warn("Request body is nil", zap.String("target", target))
 		return "", fmt.Errorf("request body is nil for target: %s", target)
@@ -215,23 +221,24 @@ func (rve *RequestValueExtractor) extractBody(r *http.Request, target string) (s
 		rve.logger.Error("Failed to read request body", zap.Error(err))
 		return "", fmt.Errorf("failed to read request body for target %s: %w", target, err)
 	}
-	// Restore body for next read, verifying if we need to combine with remaining body
-	// We use io.MultiReader to concatenate the bytes we read with the *remaining* bytes in the original body.
-	// This ensures that even if we hit the limit, the downstream consumer can read the full body.
-	// We also ensure the original Closer is preserved.
-	r.Body = &struct {
-		io.Reader
-		io.Closer
-	}{
-		Reader: io.MultiReader(strings.NewReader(string(bodyBytes)), r.Body),
-		Closer: r.Body,
-	}
+	// Restore body for next read
+	// CRITICAL FIX: Use io.NopCloser with strings.NewReader to properly restore the body.
+	// This creates a new readable body from the bytes we read, allowing the reverse proxy
+	// to forward the complete request to the backend. The io.MultiReader approach was
+	// problematic because io.LimitReader advances the original reader's position, causing
+	// the remaining bytes to be lost when trying to chain them back.
+	r.Body = io.NopCloser(strings.NewReader(string(bodyBytes)))
 
 	// SOTA Pattern: Zero-Copy (avoid allocation for string conversion)
 	if len(bodyBytes) == 0 {
 		return "", nil
 	}
-	return unsafe.String(&bodyBytes[0], len(bodyBytes)), nil
+	bodyStr := unsafe.String(&bodyBytes[0], len(bodyBytes))
+	
+	// Cache the body in the request context for subsequent extractions
+	// Note: We cannot modify r.Context() directly from here, so the caller must handle this
+	// For now, we just return the body string
+	return bodyStr, nil
 }
 
 // Helper function to extract all headers

@@ -13,8 +13,9 @@ import (
 )
 
 type (
-	ContextKeyLogId string
-	ContextKeyRule  string
+	ContextKeyLogId     string
+	ContextKeyRule      string
+	ContextKeyCachedBody string
 )
 
 // ServeHTTP implements caddyhttp.Handler.
@@ -55,12 +56,15 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	state := m.initializeWAFState()
 
 	// Phase 1: Pre-request checks and blocking
-	if m.isPhaseBlocked(w, r, 1, state) {
+	var blocked bool
+	blocked, r = m.isPhaseBlocked(w, r, 1, state)
+	if blocked {
 		return nil // Request blocked, short-circuit
 	}
 
 	// Phase 2: Request analysis and blocking
-	if m.isPhaseBlocked(w, r, 2, state) {
+	blocked, r = m.isPhaseBlocked(w, r, 2, state)
+	if blocked {
 		return nil // Request blocked, short-circuit
 	}
 
@@ -69,7 +73,8 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	err := next.ServeHTTP(recorder, r)
 
 	// Phase 3: Response Header analysis
-	if m.isPhaseBlocked(recorder, r, 3, state) {
+	blocked, r = m.isPhaseBlocked(recorder, r, 3, state)
+	if blocked {
 		return nil // Request blocked in Phase 3, short-circuit
 	}
 
@@ -100,8 +105,9 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 }
 
 // isPhaseBlocked encapsulates the phase handling and blocking check logic.
-func (m *Middleware) isPhaseBlocked(w http.ResponseWriter, r *http.Request, phase int, state *WAFState) bool {
-	m.handlePhase(w, r, phase, state)
+// Returns (blocked bool, updatedRequest *http.Request)
+func (m *Middleware) isPhaseBlocked(w http.ResponseWriter, r *http.Request, phase int, state *WAFState) (bool, *http.Request) {
+	updatedRequest := m.handlePhase(w, r, phase, state)
 
 	if state.Blocked {
 		m.incrementBlockedRequestsMetric()
@@ -120,10 +126,10 @@ func (m *Middleware) isPhaseBlocked(w http.ResponseWriter, r *http.Request, phas
 			state.ResponseWritten = true
 		}
 
-		return true
+		return true, updatedRequest
 	}
 
-	return false
+	return false, updatedRequest
 }
 
 // logRequestStart logs the start of WAF evaluation.
@@ -251,7 +257,7 @@ func (m *Middleware) copyResponse(w http.ResponseWriter, recorder *responseRecor
 	}
 }
 
-func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase int, state *WAFState) {
+func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase int, state *WAFState) *http.Request {
 	m.logger.Debug("Starting phase evaluation",
 		zap.Int("phase", phase),
 		zap.String("source_ip", r.RemoteAddr),
@@ -275,7 +281,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 					if m.CustomResponses != nil {
 						m.writeCustomResponse(w, state.StatusCode)
 					}
-					return
+					return r
 				}
 			} else {
 				m.logger.Debug("X-Forwarded-For header present but empty or invalid")
@@ -290,7 +296,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 				if m.CustomResponses != nil {
 					m.writeCustomResponse(w, state.StatusCode)
 				}
-				return
+				return r
 			}
 		}
 
@@ -304,7 +310,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 			if m.CustomResponses != nil {
 				m.writeCustomResponse(w, state.StatusCode)
 			}
-			return
+			return r
 		}
 
 		// Rate limiting
@@ -320,7 +326,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 				if m.CustomResponses != nil {
 					m.writeCustomResponse(w, state.StatusCode)
 				}
-				return
+				return r
 			}
 			m.logger.Debug("Rate limiting phase completed - not blocked")
 		}
@@ -343,7 +349,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 					)
 					m.logger.Debug("Country whitelisting phase completed - blocked due to error")
 					m.incrementGeoIPRequestsMetric(false) // Increment with false for error
-					return
+					return r
 				}
 			} else if !allowed {
 				m.blockRequest(w, r, state, http.StatusForbidden, "country_block", "country_block_rule",
@@ -352,7 +358,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 				if m.CustomResponses != nil {
 					m.writeCustomResponse(w, state.StatusCode)
 				}
-				return
+				return r
 			}
 			m.logger.Debug("Country whitelisting phase completed - not blocked")
 			m.incrementGeoIPRequestsMetric(false) // Increment with false for no block
@@ -376,7 +382,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 					)
 					m.logger.Debug("ASN blocking phase completed - blocked due to error")
 					m.incrementGeoIPRequestsMetric(false) // Increment with false for error
-					return
+					return r
 				}
 			} else if blocked {
 				asnInfo := m.geoIPHandler.GetASN(clientIP, m.BlockASNs.geoIP)
@@ -388,7 +394,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 				if m.CustomResponses != nil {
 					m.writeCustomResponse(w, state.StatusCode)
 				}
-				return
+				return r
 			}
 			m.logger.Debug("ASN blocking phase completed - not blocked")
 		}
@@ -411,7 +417,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 					)
 					m.logger.Debug("Country blacklisting phase completed - blocked due to error")
 					m.incrementGeoIPRequestsMetric(false) // Increment with false for error
-					return
+					return r
 				}
 			} else if blocked {
 				m.blockRequest(w, r, state, http.StatusForbidden, "country_block", "country_block_rule",
@@ -420,7 +426,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 				if m.CustomResponses != nil {
 					m.writeCustomResponse(w, state.StatusCode)
 				}
-				return
+				return r
 			}
 			m.logger.Debug("Country blacklisting phase completed - not blocked")
 			m.incrementGeoIPRequestsMetric(false) // Increment with false for no block
@@ -457,6 +463,14 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 				}
 			} else {
 				value, err = m.extractValue(target, r, nil)
+			}
+
+			// Cache the body in context if this was a BODY extraction
+			// This prevents re-reading the body for subsequent rules
+			targetUpper := strings.ToUpper(strings.TrimSpace(target))
+			if err == nil && targetUpper == "BODY" && r.Context().Value(ContextKeyCachedBody("cachedBody")) == nil {
+				ctx := context.WithValue(r.Context(), ContextKeyCachedBody("cachedBody"), value)
+				r = r.WithContext(ctx)
 			}
 
 			if err != nil {
@@ -507,7 +521,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 					if m.CustomResponses != nil {
 						m.writeCustomResponse(w, state.StatusCode)
 					}
-					return
+					return r
 				}
 			} else {
 				m.logger.Debug("Rule did not match",
@@ -542,6 +556,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 	)
 
 	m.allowRequest(state)
+	return r
 }
 
 // incrementRateLimiterBlockedRequestsMetric increments the blocked requests metric for the rate limiter.
