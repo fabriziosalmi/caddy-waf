@@ -37,6 +37,17 @@ type RateLimiter struct {
 
 // NewRateLimiter creates a new RateLimiter instance.
 func NewRateLimiter(config RateLimit) (*RateLimiter, error) {
+	// Validate configuration
+	if config.Requests <= 0 {
+		return nil, fmt.Errorf("rate limit requests must be positive, got %d", config.Requests)
+	}
+	if config.Window <= 0 {
+		return nil, fmt.Errorf("rate limit window must be positive, got %v", config.Window)
+	}
+	if config.CleanupInterval <= 0 {
+		return nil, fmt.Errorf("rate limit cleanup interval must be positive, got %v", config.CleanupInterval)
+	}
+
 	// Compile path regexes if paths are provided
 	if len(config.Paths) > 0 {
 		config.PathRegexes = make([]*regexp.Regexp, len(config.Paths))

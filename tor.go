@@ -48,7 +48,12 @@ func (t *TorConfig) updateTorExitNodes() error {
 		url = t.CustomTORExitNodeURL
 	}
 
-	resp, err := http.Get(url)
+	// Create HTTP client with timeout to avoid hanging requests
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	resp, err := client.Get(url)
 	if err != nil {
 		return fmt.Errorf("http get failed for %s: %w", url, err) // Improved error message with URL
 	}

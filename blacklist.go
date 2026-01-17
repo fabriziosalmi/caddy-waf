@@ -68,10 +68,17 @@ func (m *Middleware) isIPBlacklisted(addr string) bool {
 	ip := extractIP(addr)
 
 	if m.ipBlacklist == nil {
-		m.logger.Error("blacklist", zap.String("IP blacklist", "is nil"))
+		m.logger.Debug("IP blacklist not initialized, skipping check")
+		return false
 	}
 
-	if m.ipBlacklist.Contains(netip.MustParseAddr(ip)) {
+	parsedIP, err := netip.ParseAddr(ip)
+	if err != nil {
+		m.logger.Debug("Failed to parse IP address for blacklist check", zap.String("ip", ip), zap.Error(err))
+		return false
+	}
+
+	if m.ipBlacklist.Contains(parsedIP) {
 		m.muIPBlacklistMetrics.Lock()                            // Acquire lock before accessing shared counter
 		m.IPBlacklistBlockCount++                                // Increment the counter
 		m.muIPBlacklistMetrics.Unlock()                          // Release lock after accessing counter

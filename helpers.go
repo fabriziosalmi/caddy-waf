@@ -39,20 +39,35 @@ func appendCIDR(ip string) string {
 }
 
 // extractIP extracts the IP address from a remote address string.
+// Returns the original input if parsing fails, which allows upstream
+// code to handle invalid IPs gracefully.
 func extractIP(remoteAddr string) string {
+	if remoteAddr == "" {
+		return ""
+	}
 	host, _, err := net.SplitHostPort(remoteAddr)
 	if err != nil {
-		return remoteAddr // Assume the input is already an IP address
+		// Could be an IP without port, validate it
+		if ip := net.ParseIP(remoteAddr); ip != nil {
+			return remoteAddr
+		}
+		// Return as-is for upstream handling
+		return remoteAddr
 	}
 	return host
 }
 
 // getClientIP returns the real client IP, checking X-Forwarded-For header first.
+// Falls back to RemoteAddr if X-Forwarded-For is empty or contains invalid data.
 func getClientIP(r *http.Request) string {
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		ips := strings.Split(xff, ",")
 		if len(ips) > 0 {
-			return strings.TrimSpace(ips[0])
+			clientIP := strings.TrimSpace(ips[0])
+			// Validate the IP before returning
+			if clientIP != "" && net.ParseIP(extractIP(clientIP)) != nil {
+				return clientIP
+			}
 		}
 	}
 	return r.RemoteAddr

@@ -608,5 +608,31 @@ func (m *Middleware) Validate() error {
 	if m.logLevel == 0 {
 		m.logLevel = zapcore.InfoLevel // Default log level
 	}
+
+	// Validate anomaly threshold
+	if m.AnomalyThreshold < 0 {
+		return fmt.Errorf("anomaly_threshold cannot be negative: %d", m.AnomalyThreshold)
+	}
+
+	// Validate rate limit configuration if enabled
+	if m.RateLimit.Requests > 0 {
+		if m.RateLimit.Window <= 0 {
+			return fmt.Errorf("rate_limit window must be positive when rate limiting is enabled")
+		}
+		if m.RateLimit.CleanupInterval <= 0 {
+			return fmt.Errorf("rate_limit cleanup_interval must be positive when rate limiting is enabled")
+		}
+	}
+
+	// Validate max request body size
+	if m.MaxRequestBodySize < 0 {
+		return fmt.Errorf("max_request_body_size cannot be negative: %d", m.MaxRequestBodySize)
+	}
+
+	// Validate log buffer
+	if m.LogBuffer < 0 {
+		return fmt.Errorf("log_buffer cannot be negative: %d", m.LogBuffer)
+	}
+
 	return nil
 }

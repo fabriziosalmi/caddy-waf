@@ -15,7 +15,7 @@ import (
 )
 
 func (m *Middleware) processRuleMatch(w http.ResponseWriter, r *http.Request, rule *Rule, target, value string, state *WAFState) bool {
-	logID := r.Context().Value(ContextKeyLogId("logID")).(string)
+	logID := getLogID(r.Context())
 
 	redactedValue := m.requestValueExtractor.RedactValueIfSensitive(target, value)
 
