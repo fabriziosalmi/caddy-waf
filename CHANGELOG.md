@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.0] - 2026-01-17
+
+### Fixed
+- Fixed potential panic in `isIPBlacklisted()` when parsing malformed IP addresses - now uses `netip.ParseAddr()` instead of `netip.MustParseAddr()`.
+- Fixed type assertion panic in `processRuleMatch()` - now uses safe `getLogID()` helper function.
+- Fixed potential panic in `extractIP()` and `getClientIP()` when handling empty or malformed input.
+
+### Added
+- Added 30-second HTTP client timeout in `tor.go` to prevent hanging requests during Tor exit node list fetches.
+- Added comprehensive input validation in `Validate()` method for negative threshold/limit values.
+- Added parameter validation in `NewRateLimiter()` to ensure positive values.
+
+### Changed
+- Updated installation documentation to clarify that `caddy add-package` is not available (module not registered in Caddy's package registry).
+- Reordered installation methods in documentation to recommend Quick Script and xcaddy as primary options.
+- Updated `CADDY_MODULE_REGISTRATION.md` with current registration status.
+
+### Documentation
+- Added warnings about `caddy add-package` limitations in README.md, installation.md, and add-package-guide.md.
+
+## [v0.1.6] - 2025-12-10
+
+### Fixed
+- Minor bug fixes and stability improvements.
+
 ## [v0.1.5] - 2025-12-08
 ### Fixed
 - Fixed critical bug where POST request bodies were lost or truncated by using `io.MultiReader` to restore the full body stream (fixes #76).
