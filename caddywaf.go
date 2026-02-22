@@ -49,7 +49,7 @@ var (
 )
 
 // Add or update the version constant as needed
-const wafVersion = "v0.2.0" // update this value to the new release version when tagging
+const wafVersion = "v0.3.0" // update this value to the new release version when tagging
 
 // ==================== Initialization and Setup ====================
 
@@ -498,7 +498,15 @@ func (m *Middleware) loadIPBlacklist(path string, blacklistMap iptrie.Trie) erro
 
 	// Convert the map to CIDRTrie
 	for ip := range blacklist {
-		prefix, err := netip.ParsePrefix(appendCIDR(ip))
+		var prefix netip.Prefix
+		var err error
+
+		if strings.Contains(ip, "/") {
+			prefix, err = netip.ParsePrefix(ip)
+		} else {
+			prefix, err = netip.ParsePrefix(appendCIDR(ip))
+		}
+
 		if err != nil {
 			m.logger.Warn("Skipping invalid IP in blacklist", zap.String("ip", ip), zap.Error(err))
 			continue

@@ -33,7 +33,7 @@ func appendCIDR(ip string) string {
 		ip += "/32"
 		// IPv6
 	} else {
-		ip += "/64"
+		ip += "/128"
 	}
 	return ip
 }

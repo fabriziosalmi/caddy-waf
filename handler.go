@@ -231,21 +231,15 @@ func (m *Middleware) logRequestCompletion(logID string, state *WAFState) {
 	)
 }
 
-// copyResponse copies the captured response from the recorder to the original writer
+// copyResponse copies the captured response body from the recorder to the original writer.
+// Headers and status code are already on w because the recorder delegates Header() and
+// WriteHeader() directly to the underlying ResponseWriter, so only the body needs copying.
 func (m *Middleware) copyResponse(w http.ResponseWriter, recorder *responseRecorder, r *http.Request) {
-	header := w.Header()
-	for key, values := range recorder.Header() {
-		for _, value := range values {
-			header.Add(key, value)
-		}
-	}
-	w.WriteHeader(recorder.StatusCode())
-
 	logID := getLogID(r.Context())
 	if logID == "unknown" {
-		m.logger.Error("Log ID not found in context during response copy") // added error log for clarity
+		m.logger.Error("Log ID not found in context during response copy")
 	}
-	_, err := w.Write(recorder.body.Bytes()) // Copy body from recorder to original writer
+	_, err := w.Write(recorder.body.Bytes())
 	if err != nil {
 		m.logger.Error("Failed to write recorded response body to client", zap.Error(err), zap.String("log_id", logID))
 	}
