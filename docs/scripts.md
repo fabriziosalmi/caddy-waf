@@ -1,139 +1,104 @@
-# 🐍 Rule/Blacklists Population Scripts
+# Helper Scripts
 
-To facilitate the management and population of rules and blacklists for the WAF, a set of Python scripts are provided. These scripts automate the process of fetching, converting, and downloading rules and blacklists from various external sources. These scripts help to simplify the process of keeping the WAF up to date with the latest threat intelligence.
+The repository ships a set of Python scripts that automate the creation and refresh of rule files and blacklists from external sources. None of the scripts are required at runtime — they exist to keep the bundled `rules.json`, `ip_blacklist.txt`, and `dns_blacklist.txt` up to date.
 
-Here's a detailed explanation of each script and its purpose:
+All scripts target Python 3 and use only the standard library plus `requests` (and, for some, `tqdm`).
 
-## `get_owasp_rules.py`
+## Inventory
 
-*   **Purpose:** This script is designed to fetch and process the OWASP Core Rule Set (CRS), which provides a foundation for general web application security. It fetches the rules, parses them, and converts them to the JSON format required by the WAF (`rules.json`).
-*   **Functionality:**
-    *   The script downloads the latest version of the OWASP CRS.
-    *   It extracts relevant rules and their metadata.
-    *   It converts the rules to the WAF's JSON format.
-    *   It saves the converted rules into the `rules.json` file.
-*   **Usage:**
+| Script | Inputs | Output | Purpose |
+|---|---|---|---|
+| [`get_owasp_rules.py`](../get_owasp_rules.py) | OWASP Core Rule Set repository (`coreruleset/coreruleset`) on GitHub | `rules.json` (overwritten / appended) | Downloads OWASP CRS `.conf` files via the GitHub API, parses `SecRule` directives, and converts them into the WAF's JSON rule schema. |
+| [`get_spiderlabs_rules.py`](../get_spiderlabs_rules.py) | Trustwave SpiderLabs ModSecurity rules | `rules.json` (overwritten / appended) | Same idea as the OWASP script, sourced from SpiderLabs. |
+| [`get_vulnerability_rules.py`](../get_vulnerability_rules.py) | A built-in dictionary of CVE-style payloads | `rules.json` | Generates rules from a predefined payload table without any network calls. |
+| [`get_blacklisted_ip.py`](../get_blacklisted_ip.py) | Emerging Threats, CI Army, IPsum, BlockList.de, Greensnow, Tor exit-address feed | `ip_blacklist.txt` | Downloads multiple IP feeds, merges them, deduplicates, and writes one IP/CIDR per line. |
+| [`get_blacklisted_dns.py`](../get_blacklisted_dns.py) | Phishing-Angriffe, ShadowWhisperer Malware, StevenBlack hosts, hostsVN, durablenapkin scamblocklist, hagezi DNS blocklists, blackbook, [`fabriziosalmi/blacklists`](https://github.com/fabriziosalmi/blacklists) | `dns_blacklist.txt` | Downloads multiple domain feeds, merges and deduplicates them. |
+| [`get_caddy_feeds.py`](../get_caddy_feeds.py) | Latest release of [`fabriziosalmi/caddy-feeds`](https://github.com/fabriziosalmi/caddy-feeds) | `ip_blacklist.txt`, `dns_blacklist.txt`, `rules.json` | Convenience: pulls all three feeds in one shot from a curated bundle. |
 
-    ```bash
-    python3 get_owasp_rules.py
-    ```
+## Common requirements
 
-*   **Considerations:**
-    *   Ensure you have the necessary Python libraries installed (you can install them via `pip install requests`, or using `requirements.txt` if the repository has one)
-    *   The OWASP CRS is a large ruleset, so the script may take some time to execute.
-    *   The script will not override any custom rules you have on your configuration.
-    *   The script is configured to obtain OWASP rules from a specific source, you may need to check the script if that source changes.
-    *   You may want to customize or filter the rules that are loaded from OWASP in order to reduce the number of rules being processed by your WAF.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install requests tqdm
+```
 
-## `get_blacklisted_ip.py`
+All scripts require outbound HTTPS access to their respective sources.
 
-*   **Purpose:** This script downloads IP addresses from multiple external sources of known malicious IPs. The script combines them and converts them into a plain text format suitable for the WAF's `ip_blacklist.txt` file.
-*   **Functionality:**
-    *   The script retrieves IP lists from various open-source threat intelligence feeds.
-    *   It processes and combines these lists into a single list, removing duplicates and invalid entries.
-    *   It saves the blacklisted IPs in the `ip_blacklist.txt` file, one IP address or CIDR block per line.
-*   **Usage:**
+## Usage
 
-    ```bash
-    python3 get_blacklisted_ip.py
-    ```
-*   **Considerations:**
-    *   The script requires an active internet connection to download lists from external sources.
-    *   The script combines multiple threat feeds, it is recommended to review the sources to make sure that you trust those lists.
-    *   The script might be slow depending on the number of IPs that need to be processed and downloaded.
-    *   You may want to review and filter the IP lists before loading them into your WAF, to avoid blocking legitimate traffic.
-    *   The script is configured to obtain IP address lists from specific sources, you may need to check the script if any of the sources change.
+### `get_owasp_rules.py`
 
-## `get_blacklisted_dns.py`
+Edit the constants at the top of the script (repo URL, rules directory, output path) if you want a non-default location. Run:
 
-*   **Purpose:** This script downloads blacklisted domain names from several open-source threat intelligence feeds, creating the `dns_blacklist.txt` file.
-*   **Functionality:**
-    *   The script fetches domain name lists from various threat intelligence feeds.
-    *   It merges and removes duplicates from the fetched lists.
-    *   It converts the domain names to lowercase and saves them into the `dns_blacklist.txt` file, one domain name per line.
-*   **Usage:**
+```bash
+python3 get_owasp_rules.py
+```
 
-    ```bash
-    python3 get_blacklisted_dns.py
-    ```
-*   **Considerations:**
-    *   The script requires an active internet connection to retrieve lists from external sources.
-    *  The script combines multiple threat feeds, it is recommended to review the sources to make sure that you trust those lists.
-    *   You may want to review and filter the domain lists before loading them into your WAF, to avoid blocking legitimate traffic.
-    *   The script is configured to obtain domain lists from specific sources, you may need to check the script if any of the sources change.
+Notes:
 
-## `get_spiderlabs_rules.py`
+- The script uses the unauthenticated GitHub API. For large repositories you may hit rate limits (60 requests/hour per IP); add a `GITHUB_TOKEN` to the `headers` dictionary if needed.
+- The conversion from ModSecurity `SecRule` to the WAF JSON schema is heuristic. Validate the output before deploying — some rules may need manual touch-ups.
 
-*   **Purpose:** This script retrieves rules from the SpiderLabs repository, which provides a collection of security rules developed by Trustwave SpiderLabs.
-*   **Functionality:**
-    *   The script downloads the latest version of the SpiderLabs rules.
-    *   It parses the rules and converts them into the WAF's JSON rule format.
-    *   It saves the converted rules into the `rules.json` file.
-*   **Usage:**
+### `get_spiderlabs_rules.py`
 
-    ```bash
-    python3 get_spiderlabs_rules.py
-    ```
+```bash
+python3 get_spiderlabs_rules.py
+```
 
-*   **Considerations:**
-     *   Ensure you have the necessary Python libraries installed (you can install them via `pip install requests`, or using `requirements.txt` if the repository has one).
-    *   The script requires an active internet connection to download rules.
-    *   The rules may contain configurations not compatible with your setup.
-    *   You may want to customize or filter the rules that are loaded from SpiderLabs to reduce the number of rules being processed.
-    *   The script is configured to obtain SpiderLabs rules from a specific source, you may need to check the script if that source changes.
+Same characteristics as the OWASP script.
 
-## `get_vulnerability_rules.py`
+### `get_vulnerability_rules.py`
 
-*   **Purpose:** This script downloads rules related to specific known vulnerabilities. These rules are usually designed to protect against the exploitation of well-known flaws in software and web applications.
-*   **Functionality:**
-    *   The script fetches rules from a source that is providing rules about known vulnerabilities (CVEs).
-    *   It parses the rules and converts them to JSON.
-    *   The rules are added to the `rules.json` file.
-*   **Usage:**
+```bash
+python3 get_vulnerability_rules.py
+```
 
-    ```bash
-    python3 get_vulnerability_rules.py
-    ```
+No network access required — the rules come from the in-script payload dictionary. Edit the dictionary to add or remove categories.
 
-*   **Considerations:**
-    *   Ensure you have the necessary Python libraries installed.
-    *   The script requires an active internet connection.
-    *   The effectiveness of the rules depends on the quality and timeliness of the vulnerability information.
-    *  The script is configured to obtain vulnerability rules from a specific source, you may need to check the script if that source changes.
-   *   You may want to customize or filter the rules that are loaded for known vulnerabilities to reduce the number of rules being processed or if you have patched that specific vulnerability.
+### `get_blacklisted_ip.py`
 
-## `get_caddy_feeds.py`
+```bash
+python3 get_blacklisted_ip.py
+```
 
-*   **Purpose:** This script downloads pre-generated blacklists and rules from a specific repository, offering a convenient way to keep rules and blacklists up to date with community-driven content, from this repository.
-*   **Functionality:**
-    *   The script fetches pre-generated JSON rules, blacklists and other feeds from a specific GitHub repository.
-    *   It saves the downloaded files to the appropriate locations so that they can be used by the WAF.
-*   **Usage:**
+The script writes IPv4 addresses and CIDR ranges, one per line. Tor exit nodes are pulled from `https://check.torproject.org/exit-addresses`. Review the output before deploying — these feeds occasionally include legitimate addresses.
 
-    ```bash
-    python3 get_caddy_feeds.py
-    ```
-*   **Considerations:**
-    *   The script requires an active internet connection to download files from the repository.
-    *  The repository is external, so you should trust the source before including the rules and blacklists.
-    *   You may want to review and filter the files before using them, to avoid including unwanted content.
-    *  The script is configured to obtain rules and blacklists from a specific repository, you may need to check the script if that source changes.
+### `get_blacklisted_dns.py`
 
-## General Considerations for all scripts:
+```bash
+python3 get_blacklisted_dns.py
+```
 
-*   **Dependencies:** Ensure that you have all the required Python libraries installed (e.g., `requests`, `json`, and others). You can often install the required dependencies using `pip install -r requirements.txt` or `pip install <dependency>`.
-*   **Internet Connection:** All scripts require an active internet connection to download resources from external locations.
-*   **File Paths:** The script may have hardcoded paths for the output files, check them to be sure they match your setup.
-*  **Trust Sources:** Always verify the trustworthiness of the sources used by the scripts before downloading data.
-*   **Customization:** You can modify these scripts to better fit your specific needs, such as:
-    *   Adding new sources of rules and blacklists.
-    *   Customizing the downloaded data before converting it to a specific format.
-    *   Filtering out specific entries that may not be relevant for your application.
-*  **Scheduling:** It is recommend to automate the execution of these scripts to regularly fetch updated threat intelligence feeds. This will require using a scheduler like `cron` or other similar system.
-* **Combining scripts:** These scripts can be combined into a single script or scheduled via `cron` to update rules and blacklists automatically.
-*  **Rate Limiting:** Be aware that if you execute these scripts too often from the same IP address, you might be rate limited by the source that serves the lists.
-*  **Testing:** Test the rules and blacklists after you obtain them to make sure they are working correctly and that there are no false positives.
-* **Maintenance**: These scripts require periodic maintenance, if any of the sources they consume are moved, removed or changed.
-*   **Review**: Review the data obtained by those scripts before loading it into production, to ensure it does not have unwanted effects.
+The script lower-cases all entries and writes one domain per line, deduplicated. The output is suitable for use as `dns_blacklist_file` directly.
 
-These scripts provide a powerful set of tools to streamline the management of WAF rules and blacklists. By using them regularly, you can maintain a strong security posture and protect your applications from various threats. Remember to adapt the scripts to meet your specific needs and environment.
+### `get_caddy_feeds.py`
+
+> The script's own header reads: *"TESTING! Do not use on live services, even if at home :)"*. Treat it as opt-in and review the downloaded files before deploying them.
+
+```bash
+python3 get_caddy_feeds.py
+```
+
+It downloads all three resources from the latest release of the upstream repo into the current working directory.
+
+## Scheduling
+
+To keep blacklists fresh, schedule the scripts with `cron` or systemd timers. Reload the WAF after each run by writing the updated file in place — `fsnotify` will pick up the change automatically.
+
+```cron
+# Refresh blacklists every six hours
+0 */6 * * * cd /etc/caddy && /usr/bin/python3 get_blacklisted_ip.py  >> /var/log/caddy/ip-feed.log  2>&1
+0 */6 * * * cd /etc/caddy && /usr/bin/python3 get_blacklisted_dns.py >> /var/log/caddy/dns-feed.log 2>&1
+
+# Refresh rules nightly
+30 3 * * *  cd /etc/caddy && /usr/bin/python3 get_owasp_rules.py     >> /var/log/caddy/owasp.log    2>&1
+```
+
+When the script writes a new `ip_blacklist.txt` or `dns_blacklist.txt` over the file pointed to by the corresponding `*_file` directive, the file watcher fires and the WAF rebuilds the prefix trie / DNS map atomically (see [dynamicupdates.md](dynamicupdates.md)).
+
+## Operational notes
+
+- Always validate the generated `rules.json` with `jq . rules.json > /dev/null` before letting the WAF reload it; an invalid JSON file fails the reload and the previous rules remain in effect.
+- Keep generated files in a separate directory (e.g. `/etc/caddy/feeds/`) and reference them from the Caddyfile. Mixing generated and hand-authored rules in the same file invites accidental overwrites.
+- For air-gapped environments, run the scripts on a connected host and copy the outputs over.

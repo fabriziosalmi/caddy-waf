@@ -1,22 +1,40 @@
-# caddy-waf observability with ELK stack
+# ELK Observability
 
-You can push debug.json log to an ELK stack to have better observability and gather caddy-waf logs from multiple caddy servers.
+The WAF writes structured JSON logs to the path configured by `log_path` (default: `debug.json` when set via Caddyfile, `log.json` when set as the `Provision` fallback). When `log_json` is enabled, every record is a one-line JSON object suitable for ingestion by Elasticsearch / Kibana via Filebeat.
 
-![#caddy-waf-elk](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/caddy-waf-elk.png?raw=true)
+![caddy-waf in Kibana](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/caddy-waf-elk.png?raw=true)
 
-## Quick start
+## Stack
 
-```
+This guide assumes a self-hosted ELK stack reachable from the WAF host. The reference stack used during development is [`deviantony/docker-elk`](https://github.com/deviantony/docker-elk):
+
+```bash
 git clone https://github.com/deviantony/docker-elk.git
-cd docker-elk/
-docker-compose up setup
-docker-compose up -d
+cd docker-elk
+docker compose up setup
+docker compose up -d
 ```
 
-Install filebeat (in my case on OSX I did `brew install filebeat` but on Linux can be `apt install filebeat` (Debian/Ubuntu) or `apk add filebeat` (Alpine) and so.. then backup original filebeat.yml conf somewhere and crete a new 
- `filebeat.yml` configuration file with the following content. Replace `your-elk-stack-ip` with your own Elasticsearch ip address.
+After startup, Kibana is reachable at `http://<elk-host>:5601` (default credentials `elastic` / `changeme` — change them before exposing the stack).
 
+## Filebeat
+
+Install Filebeat on the host running Caddy:
+
+```bash
+# macOS
+brew install filebeat
+
+# Debian / Ubuntu
+sudo apt install filebeat
+
+# Alpine
+sudo apk add filebeat
 ```
+
+Replace the default `filebeat.yml` with the configuration below, adjusting the path to the WAF log file and the Elasticsearch host / credentials:
+
+```yaml
 filebeat.inputs:
   - type: log
     enabled: true
@@ -27,11 +45,31 @@ filebeat.inputs:
     json.message_key: message
 
 output.elasticsearch:
-  hosts: ["your-elk-stack-ip:9200"]
-  username: "elastic"           # Replace with your Elasticsearch username
-  password: "changeme"          # Replace with your Elasticsearch password
-
+  hosts: ["<elk-host>:9200"]
+  username: "elastic"
+  password: "<changeme>"
 ```
 
-Access to your ELK stack admin dashboard at http://your-elk-stack-ip:5601 with credentials elastic/changeme, you will find caddy-waf log at the Observability Logs Explorer.
+Reload Filebeat (`brew services restart filebeat`, `systemctl restart filebeat`, etc.).
 
+## Verifying
+
+In Kibana, open **Observability → Logs Explorer**. The `caddy-waf` records will appear with the structured fields emitted by `prepareLogFields` in [`logging.go`](../logging.go) — `log_id`, `source_ip`, `request_method`, `request_path`, `status_code`, `rule_id`, `total_score`, and so on.
+
+A typical query for blocked requests:
+
+```text
+event.original : * AND status_code: 403 AND rule_id: *
+```
+
+A typical pivot for the noisiest rules:
+
+```text
+rule_id : *  | top 10 rule_id
+```
+
+## Notes
+
+- Set `log_severity` to `info` (or higher) in production to keep Filebeat from shipping debug-level chatter.
+- Sensitive query parameters and log fields are redacted before they reach the file when `redact_sensitive_data` is enabled.
+- Because Filebeat tails the file, log rotation must be cooperative. Configure your log rotation tool (e.g. `logrotate`) to use `copytruncate` or send the rotated file's path back to Filebeat.

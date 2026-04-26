@@ -1,75 +1,88 @@
-# Example Caddyfile showing caddy-waf module usage
-# This is a basic configuration example for the Caddy WAF middleware
+# Example Caddyfile for the caddy-waf module (http.handlers.waf).
+# Every directive below is recognised by the Caddyfile parser in config.go.
 
 {
     auto_https off
     admin localhost:2019
 }
 
-# Example 1: Basic WAF setup
+# ---------------------------------------------------------------------------
+# Example 1: minimal setup
+# ---------------------------------------------------------------------------
 example.com {
-    # Enable WAF protection with basic configuration
-    waf {
-        # Rule file for WAF rules
-        rule_file rules.json
-        
-        # IP blacklist file
-        ip_blacklist_file ip_blacklist.txt
-        
-        # DNS blacklist file  
-        dns_blacklist_file dns_blacklist.txt
-        
-        # Metrics endpoint
-        metrics_endpoint /waf_metrics
-        
-        # Anomaly threshold
-        anomaly_threshold 10
-        
-        # Log settings
-        log_level info
-        log_file waf.log
+    route {
+        waf {
+            rule_file          rules.json
+            ip_blacklist_file  ip_blacklist.txt
+            dns_blacklist_file dns_blacklist.txt
+            metrics_endpoint   /waf_metrics
+
+            anomaly_threshold  10
+
+            log_severity       info
+            log_path           /var/log/caddy/waf.log
+        }
+
+        respond "Hello, World — protected by Caddy WAF" 200
     }
-    
-    # Your web application
-    respond "Hello, World! Protected by Caddy WAF"
 }
 
-# Example 2: Advanced WAF configuration with rate limiting
+# ---------------------------------------------------------------------------
+# Example 2: API gateway with rate limiting, GeoIP, ASN block, and
+# custom responses
+# ---------------------------------------------------------------------------
 api.example.com {
-    waf {
-        rule_file rules.json
-        ip_blacklist_file ip_blacklist.txt
-        dns_blacklist_file dns_blacklist.txt
-        metrics_endpoint /waf_metrics
-        
-        # Rate limiting configuration
-        rate_limit {
-            requests 100
-            window 10s
-            paths "/api/*" "/admin/*"
+    route {
+        waf {
+            metrics_endpoint   /waf_metrics
+            anomaly_threshold  15
+
+            # One or more rule files (the directive may repeat).
+            rule_file          rules/sql-injection.json
+            rule_file          rules/xss.json
+            rule_file          rules/lfi.json
+
+            # Per-IP rate limiting on /api/* and /admin/*.
+            rate_limit {
+                requests         100
+                window           10s
+                cleanup_interval 5m
+                paths            ^/api/.*  ^/admin/.*
+                match_all_paths  false
+            }
+
+            # Country and ASN gating (require GeoLite2 MMDB files).
+            block_countries     GeoLite2-Country.mmdb RU CN KP
+            block_asns          GeoLite2-ASN.mmdb     14618 16509
+
+            # Tor exit-node blocking; refreshed every 24h, retries every hour
+            # on transient failures.
+            tor {
+                enabled               true
+                tor_ip_blacklist_file tor_blacklist.txt
+                update_interval       24h
+                retry_on_failure      true
+                retry_interval        1h
+            }
+
+            # IP and DNS blacklists.
+            ip_blacklist_file  ip_blacklist.txt
+            dns_blacklist_file dns_blacklist.txt
+
+            # Custom responses for blocked requests.
+            #   form 1: status content-type "inline body…"
+            #   form 2: status content-type /path/to/body.file
+            custom_response 403 application/json error.json
+            custom_response 429 text/plain      "Slow down."
+
+            # Logging.
+            log_severity          info
+            log_json
+            log_path              /var/log/caddy/waf.log
+            log_buffer            2000
+            redact_sensitive_data
         }
-        
-        # Country blocking
-        country_block {
-            enabled true
-            countries CN RU
-            geoip_db_path GeoLite2-Country.mmdb
-        }
-        
-        # Custom response for blocked requests
-        custom_response {
-            status_code 403
-            body "Access Denied by WAF"
-        }
-        
-        # Anomaly threshold
-        anomaly_threshold 15
-        
-        # Logging
-        log_level debug
-        log_file api_waf.log
-        log_json true
+
+        reverse_proxy localhost:8080
     }
-    
-    reverse_proxy localhost:8080
 }

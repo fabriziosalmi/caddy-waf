@@ -1,62 +1,91 @@
-# 🚫 Blacklists
+# Blacklists
 
-This document outlines the formats used for various blacklists. These lists are utilized to identify and block potentially malicious or unwanted entities. Each list type has its own specific syntax and interpretation rules to ensure proper functionality.
+The middleware loads two blacklists at startup and on demand: an IP blacklist and a DNS blacklist. Both are plain-text files. Their loaders live in [`blacklist.go`](../blacklist.go) (`LoadIPBlacklistFromFile`, `LoadDNSBlacklistFromFile`).
 
-## General Considerations
+## Common file syntax
 
-*   **Case Sensitivity:** While DNS blacklist entries are explicitly lowercased, IP addresses are generally treated as case-insensitive. Any hostname or resource record included in an IP blacklist should be standardized in lowercase.
-*   **Line Handling:** Each entry must be on its own line.
-*   **Whitespace:** Leading and trailing whitespace should generally be ignored (trimmed) before processing each line, unless specifically defined otherwise.
-*   **Comments:** Lines beginning with `#` are considered comments and should be ignored by the processing logic.
-*   **Empty Lines:** Empty lines are permitted and should be skipped.
-*   **UTF-8 Encoding:** All blacklist files should be encoded using UTF-8 to ensure proper handling of international characters (in the rare case they appear in domain names) and avoid compatibility issues.
-*   **Error Handling:** Malformed entries should be logged or handled gracefully, with an option to skip them rather than halt the entire process.
-*   **Updates:** These lists may be automatically updated on a schedule.
-*   **Performance:** The chosen formats are designed to be easily parsed and matched against for efficient runtime operations.
+- One entry per line.
+- Leading and trailing whitespace is trimmed.
+- Empty lines are skipped.
+- Lines starting with `#` are treated as comments and skipped.
+- Files are read with UTF-8 expectations (no BOM handling).
 
-## IP Blacklist (`ip_blacklist.txt`)
+## IP blacklist (`ip_blacklist_file`)
 
-*   **Purpose:** To block network traffic originating from or destined for specified IP addresses or address ranges.
-*   **Format:**
-    *   **Single IPv4 Addresses:** Standard dotted-decimal notation (e.g., `192.168.1.1`).
-    *   **Single IPv6 Addresses:** Standard colon-separated hexadecimal notation (e.g., `2001:0db8:85a3:0000:0000:8a2e:0370:7334`, but also allows the shortened forms e.g., `2001:db8::7334`)
-    *   **IPv4 CIDR Ranges:** Uses CIDR notation (e.g., `192.168.0.0/24`). Represents a contiguous block of IP addresses.
-    *   **IPv6 CIDR Ranges:** Uses CIDR notation (e.g., `2001:db8::/32`). Represents a contiguous block of IPv6 addresses.
-    *   **Comments:** Lines beginning with `#` are ignored.
-*   **Example:**
+- **Configuration directive**: `ip_blacklist_file <path>`
+- **Storage**: a [`go-iptrie`](https://github.com/phemmer/go-iptrie) prefix trie. Single addresses are stored as `/32` (IPv4) or `/128` (IPv6) prefixes; CIDR ranges are stored as-is.
+- **Lookup path**: at request time the source IP is parsed with `netip.ParseAddr` and a `Contains` check against the trie is performed. If the file is missing, the lookup is a no-op (no requests are blocked by the IP layer).
+- **Source IP selection**: when the `X-Forwarded-For` header is present, the **first** comma-separated value is used; otherwise `r.RemoteAddr` (host portion) is used.
+- **Validation**: each entry is parsed first as a CIDR range (`net.ParseCIDR`) and, on failure, as a single IP (`net.ParseIP`). Invalid lines are logged at WARN level and counted as `invalid_entries`; valid lines are counted as `valid_entries`.
 
-    ```text
-    192.168.1.1
-    10.0.0.0/8
-    2001:db8::/32
-    2001:0db8:85a3:0000:0000:8a2e:0370:7334
-    # This is a comment about a range
-    172.16.0.0/12 # Private IP range
-    172.16.1.250
-    2a02:2700::/32
-    ```
-*   **Matching Logic:** An IP address being checked will be matched against each entry. A match is successful if the address is:
-    *   Identical to a single IP address listed.
-    *   Within the range defined by a CIDR notation entry.
-*   **Implementation Notes:** A parser should validate entries against standard formats and potentially log invalid entries. Efficient data structures such as prefix trees (Tries) can enhance lookup performance, particularly with large lists.
+### Accepted entry forms
 
-## DNS Blacklist (`dns_blacklist.txt`)
+| Form | Example |
+|---|---|
+| IPv4 single address | `192.0.2.10` |
+| IPv4 CIDR | `192.0.2.0/24` |
+| IPv6 single address (full or shortened) | `2001:db8::1`, `2001:0db8:85a3:0000:0000:8a2e:0370:7334` |
+| IPv6 CIDR | `2001:db8::/32` |
+| Comment | `# scanner subnet` |
 
-*   **Purpose:** To block access to or from websites and services associated with specified domain names.
-*   **Format:**
-    *   One fully qualified domain name (FQDN) per line.
-    *   Comments are supported using `#`.
-    *   All entries will be converted to lowercase before matching.
-    *   Subdomains are not automatically included, unless explicit entries exist for them, and wildcard domains are not supported within these lists.
-    *   Internationalized Domain Names (IDNs) must be stored as Punycode, following standard conventions (e.g., `xn--domain--432a.com`).
-*  **Example:**
-  ```text
-   malicious.com
-   evil.example.org
-   # Example of a comment
-   phishing-site.net
-   another.malware.com
-   xn--domain--432a.com
-  ```
-*   **Matching Logic:** A hostname will be matched (in a case-insensitive manner once lowercased) against each entry in the list. A match occurs if the hostname being checked is *exactly* equal to an entry, e.g. `evil.example.org` would not match `sub.evil.example.org`. The matching should happen against the FQDN (Fully Qualified Domain Name).
+### Sample file
 
+```text
+# Block specific scanners
+192.0.2.10
+198.51.100.42
+
+# Block ranges
+203.0.113.0/24
+2001:db8::/32
+
+# Block private ranges (only meaningful behind a trusted proxy)
+10.0.0.0/8
+172.16.0.0/12
+192.168.0.0/16
+```
+
+### Hot reload
+
+When the IP blacklist file is rewritten, the file watcher (`fsnotify`) triggers `ReloadConfig`, which builds a new trie and atomically swaps it in. In-flight requests continue to see the previous trie; subsequent requests see the new one.
+
+The Tor exit-node fetcher writes its own file (`tor_ip_blacklist_file`); to have those addresses become effective in the IP blacklist they must be appended to the file referenced by `ip_blacklist_file` (or that file must be the Tor file).
+
+## DNS blacklist (`dns_blacklist_file`)
+
+- **Configuration directive**: `dns_blacklist_file <path>`
+- **Storage**: a `map[string]struct{}` for O(1) lookup.
+- **Normalisation**: every entry is `strings.ToLower(strings.TrimSpace(line))` at load time. The runtime check normalises `r.Host` the same way.
+- **Match semantics**: **exact** match. Subdomains are not implicitly blocked. To block `evil.example.com` and all of its subdomains, list each one individually.
+- **Internationalised domains**: store as Punycode (e.g. `xn--80ak6aa92e.com`).
+- **Lookup path**: the `Host` header on the request is normalised and looked up; on hit, the request is blocked with `403` and `dns_blacklist_hits` is incremented.
+
+### Sample file
+
+```text
+# Phishing
+phish.example
+malware.example.org
+
+# Punycode form for IDN
+xn--80ak6aa92e.com
+
+# Comments are skipped
+```
+
+### Hot reload
+
+Identical to the IP blacklist: a file write triggers `ReloadConfig`, which rebuilds the map and swaps it in atomically.
+
+## Counters
+
+| Metric | Source |
+|---|---|
+| `ip_blacklist_hits` | Incremented every time the IP trie returns a match (see `isIPBlacklisted` in [`blacklist.go`](../blacklist.go)). |
+| `dns_blacklist_hits` | Incremented every time the DNS map returns a match (see `isDNSBlacklisted`). |
+
+Both are reported by the `/waf_metrics` endpoint — see [metrics.md](metrics.md).
+
+## Rule of precedence
+
+In Phase 1 the order is fixed: the IP blacklist is checked first, then the DNS blacklist, then the rate limiter, then GeoIP / ASN. A blacklist match short-circuits the rest of the request — the regex rule engine is not invoked.

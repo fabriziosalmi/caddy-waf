@@ -1,90 +1,86 @@
 # Installation
 
-## Method 1: Quick Script Installation (Recommended)
+## Requirements
 
-The fastest and most reliable way to install caddy-waf:
+| Component | Minimum version | Source of truth |
+|---|---|---|
+| Go | **1.25** | [`go.mod`](../go.mod) — `go 1.25` |
+| Caddy | **v2.10.x** | [`go.mod`](../go.mod) — `github.com/caddyserver/caddy/v2 v2.10.2` |
+| `xcaddy` | latest | [github.com/caddyserver/xcaddy](https://github.com/caddyserver/xcaddy) |
+| MaxMind GeoLite2 Country MMDB | optional, only when using country block / whitelist | [maxmind.com](https://www.maxmind.com/) |
+| MaxMind GeoLite2 ASN MMDB | optional, only when using `block_asns` | [maxmind.com](https://www.maxmind.com/) |
 
-```bash
-curl -fsSL -H "Pragma: no-cache" https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
-```
-
-**Example Output:**
-
-```
-INFO    Provisioning WAF middleware     {"log_level": "info", "log_path": "debug.json", "log_json": true, "anomaly_threshold": 10}
-INFO    http.handlers.waf       Updated Tor exit nodes in IP blacklist  {"count": 1077}
-INFO    WAF middleware version  {"version": "v0.0.0-20250115164938-7f35253f2ffc"}
-INFO    Rate limit configuration        {"requests": 100, "window": 10, "cleanup_interval": 300, "paths": ["/api/v1/.*", "/admin/.*"], "match_all_paths": false}
-WARN    GeoIP database not found. Country blocking/whitelisting will be disabled        {"path": "GeoLite2-Country.mmdb"}
-INFO    IP blacklist loaded successfully        {"file": "ip_blacklist.txt", "valid_entries": 3, "total_lines": 3}
-INFO    DNS blacklist loaded successfully       {"file": "dns_blacklist.txt", "valid_entries": 2, "total_lines": 2}
-INFO    Rules loaded    {"file": "rules.json", "total_rules": 70, "invalid_rules": 0}
-INFO    WAF middleware provisioned successfully
-```
-
-## Method 2: Build with xcaddy
-
-For users who prefer to build Caddy with xcaddy:
+## Method 1 — Build with `xcaddy` (recommended)
 
 ```bash
-# Install xcaddy if you don't have it
 go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
-
-# Build Caddy with the WAF module
 xcaddy build --with github.com/fabriziosalmi/caddy-waf
-
-# Verify the module is loaded
-./caddy list-modules | grep waf
+./caddy list-modules | grep waf      # expect: http.handlers.waf
 ```
 
-## Method 3: Build from Source (Advanced)
+This produces a `./caddy` binary in the current directory with the WAF compiled in.
 
-For development or if you need full control over the build process:
+## Method 2 — Quick script
+
+The repository ships [`install.sh`](../install.sh), which performs an end-to-end setup: it ensures Go and `xcaddy` are present, clones (or pulls) the repository, downloads the GeoLite2 Country database, builds Caddy with the WAF, formats the bundled Caddyfile, and starts the server.
 
 ```bash
-# Step 1: Clone the caddy-waf repository from GitHub
-git clone https://github.com/fabriziosalmi/caddy-waf.git
+curl -fsSL -H "Pragma: no-cache" \
+  https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
+```
 
-# Step 2: Navigate into the caddy-waf directory
+The script targets Go `1.23.4` for new installs and refuses to proceed if a present Go installation is older than `1.22.3`. Review the [source](../install.sh) before piping it into a shell.
+
+A representative provisioning log:
+
+```
+INFO  Provisioning WAF middleware     {"log_level":"info","log_path":"debug.json","log_json":true,"anomaly_threshold":20}
+INFO  http.handlers.waf  Tor exit nodes updated  {"count":1093}
+INFO  WAF middleware version          {"version":"v0.3.0"}
+INFO  Rate limit configuration        {"requests":100,"window":10,"cleanup_interval":300,"paths":["/api/v1/.*"],"match_all_paths":false}
+WARN  GeoIP database not found. Country blacklisting/whitelisting will be disabled  {"path":"GeoLite2-Country.mmdb"}
+INFO  IP blacklist loaded             {"path":"ip_blacklist.txt","valid_entries":223770,"invalid_entries":0,"total_lines":223770}
+INFO  DNS blacklist loaded            {"path":"dns_blacklist.txt","valid_entries":854479,"total_lines":854479}
+INFO  WAF rules loaded successfully   {"total_rules":33,"rule_counts":"Phase 1: 17 rules, Phase 2: 16 rules, Phase 3: 0 rules, Phase 4: 0 rules, "}
+INFO  WAF middleware provisioned successfully
+```
+
+## Method 3 — Build from source
+
+```bash
+git clone https://github.com/fabriziosalmi/caddy-waf.git
 cd caddy-waf
 
-# Step 3: Clean up and update the go.mod file
 go mod tidy
+wget https://git.io/GeoLite2-Country.mmdb        # only if you intend to use GeoIP
 
-# Step 4: Fetch and install the required Go modules
-go get github.com/caddyserver/caddy/v2
-go get github.com/caddyserver/caddy/v2/caddyconfig/caddyfile
-go get github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile
-go get github.com/caddyserver/caddy/v2/modules/caddyhttp
-go get github.com/oschwald/maxminddb-golang
-go get github.com/fsnotify/fsnotify
-go get -v github.com/fabriziosalmi/caddy-waf
-go mod tidy
-
-# Step 5: Download the GeoLite2 Country database (required for country blocking/whitelisting)
-wget https://git.io/GeoLite2-Country.mmdb
-
-# Step 6: Build Caddy with the caddy-waf module
 xcaddy build --with github.com/fabriziosalmi/caddy-waf=./
-
-# Step 7: Fix Caddyfile format
-caddy fmt --overwrite
-
-# Step 8: Run the compiled Caddy server
+./caddy fmt --overwrite
 ./caddy run
 ```
 
-## Method 4: Using `caddy add-package` (Experimental)
+The `=./` form of `--with` instructs `xcaddy` to use the local checkout rather than pulling from the module proxy; this is the right choice when developing or applying local patches.
 
-> **⚠️ Important Note:** The `caddy add-package` command requires the module to be registered in Caddy's official module registry. This module is **not yet registered** in the registry, so this method will return an error: `github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path`. Please use Method 1 (Quick Script), Method 2 (xcaddy), or Method 3 (Build from Source) instead.
+## Method 4 — `caddy add-package`
 
-If the module gets registered in the future, you would be able to use:
+This module is **not registered** in Caddy's official package registry. Attempting `caddy add-package github.com/fabriziosalmi/caddy-waf` returns:
 
-```bash
-caddy add-package github.com/fabriziosalmi/caddy-waf
+```
+Error: download failed: HTTP 400: github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path
 ```
 
-For more details, see the [add-package guide](add-package-guide.md).
+Use Method 1, 2, or 3 above. Background and the registration checklist are in [add-package-guide.md](add-package-guide.md) and [`CADDY_MODULE_REGISTRATION.md`](../CADDY_MODULE_REGISTRATION.md).
 
-Go to the [configuration](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/configuration.md) documentation section.
+## Verifying the build
 
+```bash
+./caddy list-modules | grep waf
+# http.handlers.waf
+
+./caddy version
+# v2.10.x ...
+```
+
+## Where to go next
+
+Continue with [configuration.md](configuration.md) for every directive, or jump to [the bundled `Caddyfile`](../Caddyfile) for a working example.

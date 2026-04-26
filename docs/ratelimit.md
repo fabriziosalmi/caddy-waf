@@ -1,65 +1,108 @@
-# ⏱️ Rate Limiting
+# Rate Limiting
 
-Rate limiting is a crucial mechanism for protecting web applications from abuse, denial-of-service attacks, and brute-force login attempts. It works by restricting the number of requests a client can make within a given time period. This configuration allows for granular control over traffic flow based on client IP addresses and specific paths.
+Per-IP, sliding-window rate limiting. Implemented in [`ratelimiter.go`](../ratelimiter.go) and configured through the `rate_limit` block inside the `waf` directive.
 
-The rate limiting functionality is configured within a `rate_limit` block, allowing fine-grained control of its behavior, as shown in the following Caddyfile example:
+## Caddyfile
 
 ```caddyfile
-rate_limit {
-    requests 100
-    window 10s
-    cleanup_interval 5m
-    paths /api/v1/.* /admin/.*   # List of regex patterns
-    match_all_paths false    # When `true` it will apply only to the specified paths, `false` will rate limit all paths
+waf {
+    rate_limit {
+        requests         100
+        window           10s
+        cleanup_interval 5m
+        paths            /api/v1/.*  /admin/.*
+        match_all_paths  false
+    }
 }
 ```
 
-Here's a comprehensive breakdown of the configuration options:
+| Sub-directive | Type | Default | Description |
+|---|---|---|---|
+| `requests` | positive integer | `100` | Maximum requests permitted per `window`, per bucket key. |
+| `window` | Go duration (`10s`, `1m`, `1h`) | `10s` | Width of the sliding window. |
+| `cleanup_interval` | Go duration | `300s` (5 min) | How often the cleanup goroutine sweeps expired entries from the in-memory map. |
+| `paths` | one or more regex patterns | empty | When non-empty (and `match_all_paths=false`), only requests whose path matches one of these regex patterns are subject to the limit. |
+| `match_all_paths` | `true` / `false` | `false` | When `true`, the limiter applies to **every** request regardless of `paths`. |
 
-### Configuration Options:
+The block is required to set `requests > 0` and `window > 0`; otherwise the parser rejects the configuration.
 
-*   **`requests` (Integer):**
-    *   Specifies the maximum number of requests allowed from a single client IP address within the defined `window`.
-    *   A lower value makes the rate limiting stricter, reducing the number of requests allowed within the time window, while a higher value allows more requests.
-    *   Choosing an appropriate value requires balancing protection from abusive behavior against legitimate traffic patterns.
-    *   This value must be a positive integer.
-    *   Example: `requests 50`, `requests 100`, `requests 500`
+## Bucket key
 
-*   **`window` (Time Duration):**
-    *   Defines the time window in which the `requests` limit is enforced.
-    *   It uses standard time units (e.g., seconds, minutes, hours).
-    *   When the number of `requests` from a given client IP exceeds the configured value within the `window`, further requests are blocked.
-    *   Common examples include `1s`, `10s`, `1m`, `5m`, or `1h`.
-    *   Shorter windows are suitable for stricter protection of critical resources, whereas longer windows allow for legitimate usage, but might be less effective at blocking attacks.
-    *   Example: `window 10s`, `window 1m`, `window 30m`
+The bucket key — the value used to count requests against the limit — depends on configuration:
 
-*   **`cleanup_interval` (Time Duration):**
-    *   Specifies the interval at which the rate limiter clears expired entries from its internal memory.
-    *   Expired entries refer to client IP addresses whose request count within their time `window` has fallen below the specified `requests` limit.
-    *   A shorter `cleanup_interval` reduces memory usage by removing expired entries more frequently, but may increase CPU load. A longer `cleanup_interval` may increase memory footprint but will lower CPU usage.
-    *   The rate limiter should automatically cleanup expired entries as they become expired, this `cleanup_interval` configuration provides a periodic, global sweep to make sure entries are removed.
-    *   Example: `cleanup_interval 1m`, `cleanup_interval 5m`, `cleanup_interval 15m`
+| `match_all_paths` | `paths` | Bucket key | Effect |
+|---|---|---|---|
+| `true` | (any) | `ip` | Every request is counted; one global counter per IP. |
+| `false` | empty | _none_ | The limiter is a no-op. Requests bypass it without being counted. |
+| `false` | non-empty | `ip + path` (when path matches a regex) | Each (IP, path) pair has its own counter; non-matching paths bypass the limiter. |
 
-*   **`paths` (Array of Strings):**
-    *   An array of strings representing regular expressions (or exact paths) that determine which URLs should be targeted by this rate limiter.
-    *   Each string is treated as a regular expression pattern, allowing for flexible matching of URLs.
-    *   When this array is not empty, rate limiting will be applied based on the `match_all_paths` configuration.
-    *   For exact paths, specify the exact URL path, such as `"/login"` or `"/api/users"`.
-    *   For more flexible matching, use regex patterns, like `"/api/v1/.*"` (all paths under `/api/v1/`), or `"/product/\d+"` (all paths like `/product/123`).
-     *  Example: `paths /api/v1/.* /admin/.*`, `paths /users /login`, `paths /static/.*`
+> Note: the bucket key uses the **exact** request path string concatenated with the IP, not the regex pattern. `/api/v1/users` and `/api/v1/orders` are tracked as separate buckets even when both match the same `paths` regex.
 
-*   **`match_all_paths` (Boolean):**
-     *   Determines how rate limiting is applied to the specified paths.
-     *   When `false` (or omitted), the rate limiting rules apply *only* to the paths matching the patterns specified in `paths`, all other paths bypass this rate limit configuration.
-     *    When `true`, the rate limiting rules apply to *all* paths, *except* for the paths matching the patterns specified in the `paths` field.
-     *   This option is useful when you need to rate limit most of your traffic and make exceptions for specific paths or endpoints.
-    *   Example: `match_all_paths false`, `match_all_paths true`
+## Source IP
 
-### Rate Limiting Behavior:
+The rate limiter uses the host portion of `r.RemoteAddr` (parsed by `net.SplitHostPort`). It does **not** consult `X-Forwarded-For`. If your deployment is behind a trusted reverse proxy that forwards the original client IP only via that header, place the WAF behind a Caddy upstream that rewrites `r.RemoteAddr`, or accept that all traffic shares the proxy's IP for rate-limit purposes.
 
-*   **IP-Based:** Rate limiting is enforced based on the client IP address. The rate limiter will track the number of requests per IP, not by user or any other attribute.
-*   **Blocking:** When the request count from a given IP address exceeds the `requests` limit within the specified `window`, subsequent requests from that IP are blocked and will return a configurable error code (by default this is a `429 - Too Many Requests`).
-*   **Path Matching:** The `paths` setting and the `match_all_paths` setting together determines which requests will be rate limited by the current `rate_limit` configuration block. If `match_all_paths` is false, only paths that match the patterns provided in the `paths` block will be rate limited, if it is set to true, then every request will be rate limited unless it matches a path provided in the `paths` block.
-*   **Non-Blocking:** If the request count from an IP does not exceed the limit, the request is allowed to proceed normally.
-*  **Multiple rules** It is possible to configure multiple `rate_limit` blocks, each with a different configurations. The order in which the rate limiters appear is not important.
+## Behaviour
 
+- Each request is checked under a write lock (`rl.Lock()`); the path-regex matching happens before the lock to keep the critical section short.
+- When the bucket counter exceeds `requests` within the active window, the request is blocked with HTTP `429 Too Many Requests` and the per-rate-limiter `blockedRequests` counter is incremented.
+- When the active window has expired, the bucket is reset (`count=1`, new `window=now`).
+- `cleanup_interval` ticks a background goroutine that walks the map and deletes buckets whose window is older than `window`.
+
+## Counters and metrics
+
+| Metric (in `/waf_metrics`) | Source |
+|---|---|
+| `rate_limiter_requests` | Total requests that passed through the limiter (counted under lock; includes both blocked and allowed). |
+| `rate_limiter_blocked_requests` | Requests blocked because the bucket counter exceeded `requests`. |
+
+When the limiter is configured with `match_all_paths=false` and a non-empty `paths`, **only path-matching requests** are counted in `rate_limiter_requests`; non-matching paths are counted in the metric increment that runs immediately before the early return (see `isRateLimited` in [`ratelimiter.go`](../ratelimiter.go)).
+
+## Reload semantics
+
+The rate limiter is built during `Provision`. Subsequent file-watcher reloads of `rules.json` and the blacklists do **not** rebuild it; changing `requests`, `window`, `cleanup_interval`, `paths`, or `match_all_paths` requires a full `caddy reload`.
+
+On shutdown, `signalStopCleanup` closes the cleanup channel, terminating the cleanup goroutine cleanly.
+
+## Examples
+
+### Limit a specific endpoint
+
+```caddyfile
+rate_limit {
+    requests         5
+    window           1m
+    cleanup_interval 5m
+    paths            ^/login$
+}
+```
+
+### Global limit on every request
+
+```caddyfile
+rate_limit {
+    requests         1000
+    window           1m
+    cleanup_interval 5m
+    match_all_paths  true
+}
+```
+
+### Limit two API surfaces independently
+
+```caddyfile
+rate_limit {
+    requests         100
+    window           10s
+    cleanup_interval 5m
+    paths            ^/api/v1/.*  ^/admin/.*
+}
+```
+
+Note: only one `rate_limit` block is permitted per `waf` directive (a second block returns `rate_limit directive already specified`). For multiple independent limits, use multiple `waf` blocks on different routes.
+
+## Pitfalls
+
+- **No `paths`, no `match_all_paths`**: the limiter accepts every request without counting. This is rarely the intent.
+- **Path regex misses the leading `/`**: regex patterns are matched against `r.URL.Path`, which always starts with `/`. Anchor with `^/`.
+- **Tight `window` on noisy clients**: legitimate burstiness (page loads pulling many assets) can trip a low limit on the asset path. Either widen the window or scope `paths` to the resources that need protection.

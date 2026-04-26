@@ -1,202 +1,94 @@
-# Using `caddy add-package` to Install Caddy WAF
+# `caddy add-package` — Status and Reference
 
-> **⚠️ Important Notice:** The `caddy add-package` command requires the module to be registered in Caddy's official module registry at [caddyserver.com](https://caddyserver.com). **This module is currently NOT registered**, so attempting to use `caddy add-package` will result in an error:
+> **Important.** This module is **not** registered in Caddy's official package registry at `caddyserver.com`. Attempting to install it with `caddy add-package` returns:
+>
 > ```
 > Error: download failed: HTTP 400: github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path
 > ```
-> 
-> **Please use one of these alternative installation methods instead:**
-> - [Quick Script Installation](installation.md#method-1-quick-script-installation-recommended) (Recommended)
-> - [Build with xcaddy](installation.md#method-2-build-with-xcaddy)
-> - [Build from Source](installation.md#method-3-build-from-source-advanced)
+>
+> Use one of the supported installation methods documented in [installation.md](installation.md) instead:
+>
+> - [Build with `xcaddy`](installation.md#method-1--build-with-xcaddy-recommended) (recommended)
+> - [Quick script](installation.md#method-2--quick-script)
+> - [Build from source](installation.md#method-3--build-from-source)
 
-This guide is kept for reference in case the module gets registered in the future.
+This page is retained as a reference in case the module is registered in the future. Until then, every command shown below will fail.
 
-## Prerequisites
+## Prerequisites (if registration ever completes)
 
-- Caddy v2.7 or higher already installed on your system
-- Internet connection (to download the custom binary)
-- Appropriate permissions to replace the Caddy binary
+- Caddy v2.7 or newer (the `add-package` command was introduced in 2.7).
+- Network access from the Caddy host to `caddyserver.com`.
+- Permission to replace the running Caddy binary.
 
-## Quick Installation
-
-To add the Caddy WAF module to your existing Caddy installation:
+## Hypothetical install
 
 ```bash
 caddy add-package github.com/fabriziosalmi/caddy-waf
 ```
 
-That's it! The command will:
-1. Detect your current Caddy installation and modules
-2. Send a build request to Caddy's remote build service
-3. Download a new binary with the WAF module included
-4. Backup your current Caddy binary
-5. Replace the binary with the new one
+If the registration succeeds, the command would:
 
-## Verification
+1. Detect the currently running Caddy and its module set.
+2. Send a build request to the Caddy build service.
+3. Download a new binary that includes the existing modules **plus** `caddy-waf`.
+4. Back up the current Caddy binary (deleted unless `--keep-backup` is passed).
+5. Replace the Caddy binary in place.
 
-After installation, verify the module is loaded:
+Verify:
 
 ```bash
 caddy list-modules | grep waf
+# Expected: http.handlers.waf
 ```
 
-Expected output:
-```
-http.handlers.waf
-```
-
-You can also check the full list of modules:
-```bash
-caddy list-modules --packages
-```
-
-## Usage Example
-
-Once installed, you can use the WAF module in your Caddyfile:
-
-```caddyfile
-{
-    auto_https off
-    admin localhost:2019
-}
-
-:8080 {
-    log {
-        output stdout
-        format console
-        level INFO
-    }
-
-    route {
-        waf {
-            metrics_endpoint /waf_metrics
-            rule_file rules.json
-            ip_blacklist_file ip_blacklist.txt
-            dns_blacklist_file dns_blacklist.txt
-            anomaly_threshold 10
-            
-            rate_limit {
-                requests 100
-                window 60s
-                cleanup_interval 300s
-            }
-        }
-
-        respond "Hello, World!" 200
-    }
-}
-```
-
-## Advanced Options
-
-### Keep Backup
-
-By default, the command deletes the backup after successful replacement. To keep the backup:
-
-```bash
-caddy add-package --keep-backup github.com/fabriziosalmi/caddy-waf
-```
-
-The backup will be saved as `caddy.backup` in the same directory.
-
-### Version Pinning
-
-To install a specific version of the module:
+## Hypothetical version pinning
 
 ```bash
 caddy add-package github.com/fabriziosalmi/caddy-waf@vX.Y.Z
 ```
 
-Replace `vX.Y.Z` with the desired version tag (e.g., `v0.1.3`). You can find available versions on the [GitHub releases page](https://github.com/fabriziosalmi/caddy-waf/releases).
+`vX.Y.Z` is any tag from the [GitHub Releases](https://github.com/fabriziosalmi/caddy-waf/releases) page.
+
+## Hypothetical removal
+
+```bash
+caddy remove-package github.com/fabriziosalmi/caddy-waf
+```
+
+## Why `add-package` does not work today
+
+The Caddy build service maintains an allow-list of registered package paths. Until the maintainer of `caddy-waf` registers `github.com/fabriziosalmi/caddy-waf` through `https://caddyserver.com/account/register-package`, the build service refuses requests for it. The registration history and prior error references are tracked in [`CADDY_MODULE_REGISTRATION.md`](../CADDY_MODULE_REGISTRATION.md).
+
+## Use this instead
+
+The recommended flow on a host that already has `xcaddy` (and hence Go) installed:
+
+```bash
+go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+xcaddy build --with github.com/fabriziosalmi/caddy-waf
+./caddy version
+./caddy list-modules | grep waf
+```
+
+If Go is not available, run the bundled `install.sh` (see [installation.md](installation.md#method-2--quick-script)) which installs Go and `xcaddy` on first use.
 
 ## Troubleshooting
 
-### Command Not Found
+### `command not found: caddy add-package`
 
-If the `caddy add-package` command is not available, you may be using an older version of Caddy:
+You are running Caddy older than 2.7. Update Caddy and retry — but note the registration warning above still applies.
 
-```bash
-caddy version
-```
+### `permission denied`
 
-You need Caddy v2.7 or higher. To update Caddy, visit [caddyserver.com/download](https://caddyserver.com/download) and follow the instructions for your operating system and architecture.
+The new binary cannot replace the existing one. Re-run with `sudo`, or run `add-package` from a directory where the user has write access and copy the resulting binary into place manually.
 
-### Permission Denied
+### `Error: download failed: HTTP 400: ... is not a registered Caddy module package path`
 
-If you get a permission denied error, run the command with sudo:
-
-```bash
-sudo caddy add-package github.com/fabriziosalmi/caddy-waf
-```
-
-### Module Not Registered
-
-If you see this error:
-```
-Error: download failed: HTTP 400: github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path
-```
-
-This means the module is not registered in Caddy's official module registry. **This is the current status of caddy-waf**. Please use one of the alternative installation methods:
-
-```bash
-# Option 1: Quick Script (Recommended)
-curl -fsSL -H "Pragma: no-cache" https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
-
-# Option 2: Build with xcaddy
-go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
-xcaddy build --with github.com/fabriziosalmi/caddy-waf
-```
-
-### Build Service Unavailable
-
-If Caddy's remote build service is unavailable, you can build from source instead:
-
-```bash
-# Install xcaddy
-go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
-
-# Build with the module
-xcaddy build --with github.com/fabriziosalmi/caddy-waf
-```
-
-### Module Already Exists
-
-If you get an error that the package already exists, the module is already installed. To update:
-
-```bash
-# Remove the package first
-caddy remove-package github.com/fabriziosalmi/caddy-waf
-
-# Then add it again
-caddy add-package github.com/fabriziosalmi/caddy-waf
-```
-
-## Removing the Module
-
-To remove the Caddy WAF module:
-
-```bash
-caddy remove-package github.com/fabriziosalmi/caddy-waf
-```
-
-## Comparison with Other Installation Methods
-
-| Method | Pros | Cons |
-|--------|------|------|
-| `caddy add-package` | Simple, no build tools needed, keeps existing modules | Requires internet, depends on remote build service |
-| `xcaddy build` | Full control, works offline (after dependencies cached), good for development | Requires Go and build tools, more complex |
-| Quick script | Automated setup with sample configs | Downloads and builds from source, requires build tools |
-
-## Next Steps
-
-- Read the [Configuration Guide](configuration.md) to customize your WAF rules
-- Learn about [Rate Limiting](ratelimit.md) configuration
-- Explore [GeoIP Blocking](geoblocking.md) features
-- Check out the [Metrics](metrics.md) endpoint for monitoring
+Expected. Use one of the build paths from [installation.md](installation.md).
 
 ## References
 
-- [Caddy Command Line Documentation](https://caddyserver.com/docs/command-line)
-- [Caddy Module System](https://caddyserver.com/docs/extending-caddy)
-- [xcaddy Build Tool](https://github.com/caddyserver/xcaddy)
+- Caddy command line documentation: <https://caddyserver.com/docs/command-line>
+- Extending Caddy: <https://caddyserver.com/docs/extending-caddy>
+- `xcaddy`: <https://github.com/caddyserver/xcaddy>
+- Module registration tracker: [`CADDY_MODULE_REGISTRATION.md`](../CADDY_MODULE_REGISTRATION.md)

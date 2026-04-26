@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.1] - 2026-04-26
+
+### Documentation
+- Rewrote `README.md`, `MODULE.md`, `caddyfile.example`, and the entire `docs/` tree to be 1:1 accurate with the current source code.
+- `docs/configuration.md` now lists every Caddyfile directive recognised by `config.go`, every JSON-only field on the `Middleware` struct, the precise Phase 1 evaluation order, and the parser- vs. `Provision`-time defaults.
+- `docs/rules.md` documents the JSON tag mismatch on `Rule.Action` (struct tag is `mode`, while the bundled rule files commonly use `action`), so authors know which key is actually parsed.
+- `docs/ratelimit.md` corrects the `match_all_paths` semantics to match `ratelimiter.go` (`true` ⇒ rate-limit every request; `false` + non-empty `paths` ⇒ rate-limit only matching paths).
+- `docs/dynamicupdates.md` adds an explicit reload matrix showing which settings are reloaded by `fsnotify` and which require `caddy reload`.
+- `docs/metrics.md` documents the actual response schema returned by `handleMetricsRequest` and clarifies that all counters are process-local and reset on restart.
+- `docs/prometheus.md` switches the example exporter from `Counter.inc(absolute)` to `Gauge.set(absolute)` to match the WAF's monotonic process-local counter semantics.
+- `caddyfile.example` no longer references non-existent directives (`country_block`, `custom_response { … }` block form).
+- Removed emoji from all user-facing documentation.
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.3.1`.
+
+## [v0.3.0] - 2026-02-22
+
+### Fixed
+- Resolved duplicate response headers when a custom block response was emitted.
+- IP blacklist loader now accepts CIDR notation in addition to single IPs (`net.ParseCIDR` is tried before `net.ParseIP`).
+
 ## [v0.2.0] - 2026-01-17
 
 ### Fixed

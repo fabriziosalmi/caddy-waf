@@ -1,102 +1,134 @@
-# 🧪 Testing
+# Testing
 
-The `test.py` script provides a comprehensive security testing suite designed to verify the effectiveness of the configured WAF rules. This script goes beyond basic checks and simulates a wide range of attack scenarios across various attack vectors. It provides detailed logging and a summary of the test results, allowing you to fine-tune your WAF rules and settings.
+The repository ships several testing layers:
 
-## Purpose
+| Layer | Tool | Scope |
+|---|---|---|
+| Go unit tests | `go test ./...` (or `make test`) | Per-package logic in [`*_test.go`](../). |
+| Go integration tests | `go test ./... -tags=it` (or `make it`) | Tests guarded by the `it` build tag. |
+| Lint | `golangci-lint run` (or `make lint`) | Style and static analysis configured in [`.golangci.yml`](../.golangci.yml). |
+| Live attack suite | [`test.py`](../test.py) (or `make test-integration`) | Sends a curated payload set to a live WAF and checks the returned status codes. |
+| Traffic generator | [`caddytest.py`](../caddytest.py) | High-volume, configurable traffic generation; see [caddytest.md](caddytest.md). |
+| Benchmark | [`benchmark.py`](../benchmark.py) | Throughput/latency measurement against a running WAF. |
 
-The primary purpose of the `test.py` script is to:
+This page focuses on the live attack suite; the others are documented inline in their files.
 
-*   **Automated Security Checks:** Provide an automated way to test the WAF against a broad range of attack scenarios, ensuring consistent and repeatable testing.
-*   **Rule Validation:** Verify the WAF rules are correctly configured and functioning as expected by simulating a wide range of attacks.
-*   **Detailed Logging:** Generate detailed logs of each test case, including the request details, response codes, and whether each test passed or failed.
-*   **Performance Tracking:** Track the number of passed and failed tests over time. This can be used to verify that changes in the WAF or its rules do not break expected behavior, which is a key indicator to ensure that the WAF is running well.
-*   **Identify Weaknesses:** Help identify specific areas where the WAF might be weak or have misconfigured rules so that they can be fixed accordingly.
+---
 
-## Functionality
+## `test.py` — live attack suite
 
-The `test.py` script works by:
+`test.py` exercises the WAF against a long list of attack payloads using `curl`. Each test case is a tuple of `(description, url, expected_code, headers, body)`; the script issues the request and compares the HTTP status returned by the WAF against the expected one.
 
-1.  **Defining Test Cases:** Each test case consists of:
-    *   A descriptive name (`description`).
-    *   A target URL (`url`).
-    *   An expected HTTP response code (`expected_code`).
-    *   Optional headers (`headers`).
-    *   Optional request body (`body`).
-    *   Optional category name, to help in organizing the output
-2.  **Sending Requests:** The script uses `curl` to send HTTP requests with the specified parameters.
-3.  **Response Verification:** After sending a request, it checks the HTTP response code and determines if it matches the expected value.
-4.  **Detailed Logging:** All test results are written to a log file (`waf_test_results.log`), including the test description, URL, headers, body, the expected code, and the actual response received. The log file is also categorized according to the test type.
-5.  **Test Summary:** At the end of the test run, a summary is printed to the console, which includes:
-    *   The total number of tests.
-    *   The number of tests that passed.
-    *   The number of tests that failed.
-    *   A message indicating if the test suite passed, or failed, depending on the number of failures.
-6.  **Color-Coded Output:** The output is color-coded to provide quick visual feedback.
-    *   Green indicates a successful test.
-    *   Red indicates a failed test or errors during the test.
-    *   Blue indicates a general information or header of the test execution.
-    *   Yellow indicates generic messages
+### Configuration constants
 
-## How to Run the Script
+Defined at the top of [`test.py`](../test.py):
 
-1.  **Ensure Python 3 is installed:** The script requires Python 3 to execute.
-2.  **Run the script:**
-    ```bash
-    python3 test.py
-    ```
-3.  **Analyze the Output:**
-    *   Review the console output for the overall test results.
-    *   Examine the `waf_test_results.log` file for detailed information about each test case.
+| Constant | Default | Meaning |
+|---|---|---|
+| `TARGET_URL` | `http://localhost:8080` | Base URL of the running WAF. |
+| `TIMEOUT` | `8` | `curl` connect/total timeout in seconds. |
+| `OUTPUT_FILE` | `waf_test_results.log` | Per-case log file (appended to). |
+| `DEFAULT_USER_AGENT` | `WAF-Test-Script/1.0` | UA sent when a test case does not specify one. |
 
-## Script Usage
+To run against a different target, edit `TARGET_URL` directly (the script does not currently expose it as a CLI flag).
+
+### Running
 
 ```bash
-python3 test.py --user-agent "My Custom User Agent"
+python3 test.py
 ```
 
-*   **`--user-agent` or `-ua`:** An optional argument to set a custom User-Agent string for all the tests.
+CLI flags:
 
-## Test Case Examples
+| Flag | Description |
+|---|---|
+| `--user-agent`, `-ua` | Override `DEFAULT_USER_AGENT` for this run. |
 
-The `test_cases` list contains a wide variety of tests, each designed to simulate a particular vulnerability or attack vector.
+### Output
 
-*   **SQL Injection:** Multiple levels of SQL injection attempts including basic syntax, comment bypasses, union injections, and more. It also tests SQL injection via HTTP headers and cookies.
-*   **Cross-Site Scripting (XSS):** A large number of XSS attempts using script tags, image tags, event handlers, Javascript URLs, URL encoded and other obfuscated payloads. The tests include XSS payloads in GET parameters, cookies, headers and body.
-*   **Remote Code Execution (RCE):** Tests for command injection using various techniques including `cmd` parameter, shell commands, backticks, and other common payloads used in RCE attacks. RCE is also tested via HTTP headers and Cookies.
-*  **Path Traversal:** Tests multiple variations of path traversal by using double dots, triple dots, URL encoded path traversals, Unicode encoding, and other obfuscation techniques. Path traversal is also tested using headers and cookies.
-*  **Header Injection:** Various header injection techniques are tested such as X-Forwarded-For injection, Host header manipulation, Content-Type injection, and more.
-*  **Protocol Attacks:** Checks for exposure of configuration files, version control directories, and sensitive system files, using different path variations.
-*  **Scanner Detection:** Simulates requests from various vulnerability scanners, to verify that those are properly blocked.
-* **Insecure Deserialization:** Tests Java, Python, and PHP deserialization vulnerabilities by sending serialized data. It includes tests via URL parameters, headers and cookies.
-*   **Server-Side Request Forgery (SSRF):** Simulates SSRF attacks by using a variety of protocols, IP addresses and techniques. SSRF is tested also via headers and cookies.
-*   **XML External Entity (XXE):** Tests XXE vulnerabilities using both inline and external entities, with and without parameter entities. XXE is tested via URL parameters, headers and body.
-*   **HTTP Request Smuggling:** Tests several HTTP request smuggling scenarios by using different header combinations, and checking how those are handled by the WAF. It includes tests via headers, body, and the main URL.
-*   **HTTP Response Splitting:** Tests how the WAF prevents HTTP response splitting attacks via GET parameters, headers and cookies, using different techniques such as newlines and CRLF.
-*  **Insecure Direct Object Reference (IDOR):** Tests several variations of IDOR attacks by using different paths, numeric and alphanumeric identifiers.
-*   **Clickjacking:** Tests if the WAF properly blocks clickjacking attacks, by injecting an `iframe` and checking if the WAF prevents rendering of the tested page in a frame. It includes tests with `object`, `embed`, `form`, `base`, `iframe` tags.
-* **Cross-Site Request Forgery (CSRF):** Checks if the WAF has proper protection against CSRF attacks, including via GET, POST, different content types, and various other parameters.
-*   **Server-Side Template Injection (SSTI):** Tests how the WAF prevents SSTI attacks by sending expressions that should be evaluated by the template engine. SSTI is tested via URL parameters and headers.
-*   **Mass Assignment:** Tests for mass assignment attacks via a variety of techniques, like sending JSON payload that attempts to modify protected attributes.
-*   **NoSQL Injection:** Tests for common NoSQL injection payloads, specifically for MongoDB.
-*   **XPath Injection:** Test the effectiveness of the XPath injection protection with different payloads, including wildcards and XPath functions.
-* **LDAP Injection:** Tests a variety of LDAP payloads including bypasses, wildcards and common LDAP filters.
-*   **XML Injection:** Tests for XML Injection vulnerabilities by sending malformed XML content and check if those are being properly filtered. This test is different from the XXE test as it tests other XML injection techniques.
-*  **File Upload:** Tests file upload vulnerabilities by sending a variety of malicious file types, including PHP, shell scripts, images with PHP code, and more.
-* **JWT Attacks:** Tests various JWT attack scenarios by modifying the JWT algorithm, header, payload, signature, and testing some well known exploits.
-*  **GraphQL Injection:** Test the protection against GraphQL injection, by sending introspection queries, complex mutations, and other graphql attacks.
-*   **Valid Requests:** Includes tests that should pass, to verify that the WAF does not introduce false positives and it is working correctly with valid requests.
+The script:
 
-## Best Practices
+- Prints a colour-coded line per test (green `[+]` for pass, red `[!]` for fail or `curl` error).
+- Appends every test result (pass and fail) to `waf_test_results.log`, including the URL, headers, body, expected code, and observed code.
+- Prints a summary at the end with the total number of cases, the number passed, the number failed, and a final verdict.
 
-*   **Regular Testing:** Run the `test.py` script regularly, especially after modifying rules or blacklists.
-*   **Custom Test Cases:**  Add new test cases to the `test_cases` list to test specific vulnerabilities or requirements that might be specific to your system.
-*   **Review Logs:** Review the `waf_test_results.log` file to identify failed tests and understand what might be the issue.
-*   **Customize Rules:** Adjust your WAF rules based on the test results to achieve the desired level of protection.
-* **Dynamic Analysis:** In addition to running the automated test suite, perform manual security testing by interacting with your application and analyzing the behavior of the WAF in real time.
-* **Integration with CI/CD:** Integrate the testing suite with your CI/CD pipelines to automate security testing as part of your software delivery process.
-* **Real-World Scenarios:** Consider testing your rules against real-world attack scenarios using penetration testing tools.
-* **Performance Testing:** The `test.py` script is not designed for performance testing, it is recommended to combine this test with load testing, using tools such as `ab` and others to ensure your WAF is performing correctly under high load.
+### Test categories
 
-## Conclusion
+`test.py` covers (non-exhaustive):
 
-The `test.py` script is a comprehensive tool for security testing, allowing you to validate your WAF's effectiveness and identify potential vulnerabilities. By carefully analyzing the logs and output from this script, you can fine-tune your WAF configurations and rules, ensuring a high level of security for your web applications. Understanding how to interpret the results from this test suite is critical to guarantee that the WAF is working correctly and preventing potential attacks.
+- SQL injection (boolean, UNION, time-based, header- and cookie-borne)
+- XSS (script tags, attribute injections, encoded payloads)
+- Path traversal and LFI (encoded variants, header- and cookie-borne)
+- RCE / command injection
+- Header injection, host-header tampering
+- Insecure deserialization (Java, PHP, Python)
+- SSRF (cloud-metadata, internal IPs)
+- XXE (inline and parameter entities)
+- HTTP request smuggling and response splitting
+- IDOR, mass assignment, NoSQL injection, XPath, LDAP, XML
+- File upload payloads, JWT manipulation, GraphQL abuse
+- Clickjacking and CSRF probes
+- A set of valid baseline requests that should pass
+
+### Workflow
+
+```bash
+# 1. Start the WAF
+./caddy run --config Caddyfile &
+
+# 2. Run the suite
+python3 test.py
+
+# 3. Inspect failures
+grep '\[FAIL\]\|\[ERROR\]' waf_test_results.log
+
+# 4. Iterate on rules, repeat
+```
+
+### Inside Docker
+
+The Makefile target `test-integration` runs `test.py` inside a `python:3.9-slim` container against the host's WAF:
+
+```bash
+make test-integration
+```
+
+This requires Docker and a WAF reachable at `http://localhost:8080` from inside the container — typically meaning the WAF runs on the host.
+
+---
+
+## Tuning workflow
+
+A pragmatic tuning loop:
+
+1. Start with the bundled `rules.json` (or a curated subset under [`rules/`](../rules/)).
+2. Run `test.py` to confirm the baseline behaviour.
+3. Use [`caddytest.py`](../caddytest.py) with `--behavior burst_calm` and `--composite` to mix legitimate and malicious traffic and watch the false-positive rate.
+4. Watch the WAF metrics endpoint (`/waf_metrics`) for the rule IDs with the highest hit counts. False positives usually concentrate on a small number of rules.
+5. Adjust the offending rules: tighten the regex, scope the `targets`, lower the `score`, or move them to `mode: log` for observation.
+6. Reload — the file watcher applies the new rule set without restarting Caddy (see [dynamicupdates.md](dynamicupdates.md)).
+
+---
+
+## Go test suite
+
+```bash
+make test            # go test -v ./...
+make it              # go test -v ./... -tags=it (integration)
+make lint            # golangci-lint run
+make lintfix         # golangci-lint run --fix
+```
+
+Test files cover: blacklist loading, configuration parsing, GeoIP, rate limiter, request value extraction, response handling, rule loading, Tor fetcher, the middleware lifecycle, and integration scenarios.
+
+---
+
+## CI
+
+The repository ships three GitHub Actions workflows in [`.github/workflows/`](../.github/workflows/):
+
+- `test.yml` — runs `go test ./...` and the lint suite on push and pull request.
+- `build-run-validate.yml` — builds Caddy with the WAF, starts it, and runs validation requests.
+- `release.yml` — builds binaries and creates a GitHub release on a tag.
+
+A green badge from these workflows on a commit is a reasonable signal that the change at minimum compiles, passes unit tests, and survives a smoke test of the bundled Caddyfile.

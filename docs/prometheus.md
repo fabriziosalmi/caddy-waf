@@ -1,152 +1,170 @@
-# **Caddy WAF, Prometheus and Grafana**
+# Prometheus and Grafana
 
-Monitor your **caddy-waf** performance and security in real-time with **Prometheus** and **Grafana**. Track key metrics like allowed/blocked requests, rule hits (e.g., "block-scanners", "sql-injection", "xss-attacks", browser integrity checks), and more, to understand your WAF's effectiveness against threats.
+The WAF exposes a JSON metrics document at the `metrics_endpoint` path (see [metrics.md](metrics.md)). It does **not** speak the Prometheus exposition format directly. To scrape the metrics with Prometheus, run a small exporter that polls the JSON endpoint and re-publishes the values as Prometheus gauges.
 
-This guide helps you create a **Prometheus exporter** to bridge Caddy WAF's JSON metrics (from `/waf_metrics`) to Prometheus's format. You'll then visualize these metrics in Grafana dashboards for actionable insights.
+This page describes one such exporter. The same approach generalises to any pull-based metrics system.
 
-### **Step 1: Set Up Your Environment**
+## A note on counter semantics
 
-1.  **Install Python**: Get Python 3.x from [python.org](https://www.python.org/).
+The values in `/waf_metrics` are **monotonic process-local counters**. They reset to zero when Caddy restarts. The exporter below mirrors this by exposing them as Prometheus **Gauges** that are set on each scrape (rather than `Counter.inc(delta)`, which would compound the absolute values into a runaway total). When using `rate()` in PromQL the underlying values must be a counter; either:
 
-2.  **Install Libraries**:
-    ```bash
-    pip install prometheus-client requests
-    ```
+- expose them as Gauges and use `irate()` of the gauge (acceptable but lossy), or
+- track deltas in the exporter and call `Counter.inc(delta)` with the delta (handles restarts gracefully because the delta becomes negative and is dropped).
 
-### **Step 2: Create the Exporter Script (exporter.py)**
+The example below uses Gauges for clarity.
+
+## Exporter
+
+Save as `exporter.py`:
 
 ```python
-from prometheus_client import start_http_server, Counter, Gauge
-import requests
+#!/usr/bin/env python3
+"""Prometheus exporter for caddy-waf JSON metrics."""
+
+import argparse
 import time
-import json
 
-# Define Prometheus metrics
-TOTAL_REQUESTS = Counter('caddywaf_total_requests', 'Total requests processed')
-BLOCKED_REQUESTS = Counter('caddywaf_blocked_requests', 'Total requests blocked')
-ALLOWED_REQUESTS = Counter('caddywaf_allowed_requests', 'Total requests allowed')
-RULE_HITS = Counter('caddywaf_rule_hits', 'Hits per WAF rule', ['rule_id'])
-RULE_HITS_BY_PHASE = Counter('caddywaf_rule_hits_by_phase', 'Rule hits by phase', ['phase'])
-DNS_BLACKLIST_HITS = Counter('caddywaf_dns_blacklist_hits', 'DNS blacklist hits')
-GEOIP_BLOCKED = Counter('caddywaf_geoip_blocked', 'Blocked by GeoIP')
-IP_BLACKLIST_HITS = Counter('caddywaf_ip_blacklist_hits', 'IP blacklist hits')
-RATE_LIMITER_BLOCKED_REQUESTS = Counter('caddywaf_rate_limiter_blocked_requests', 'Rate limiter blocked')
-RATE_LIMITER_REQUESTS = Counter('caddywaf_rate_limiter_requests', 'Rate limiter requests')
-WAF_VERSION = Gauge('caddywaf_version', 'WAF version', ['version'])
+import requests
+from prometheus_client import Gauge, start_http_server
 
-def fetch_metrics():
-    try:
-        response = requests.get("http://localhost:8080/waf_metrics")
-        response.raise_for_status()
-        data = response.json()
+TOTAL_REQUESTS                = Gauge("caddywaf_total_requests",                "Total requests processed (process-local)")
+BLOCKED_REQUESTS              = Gauge("caddywaf_blocked_requests",              "Total requests blocked (process-local)")
+ALLOWED_REQUESTS              = Gauge("caddywaf_allowed_requests",              "Total requests allowed (process-local)")
+DNS_BLACKLIST_HITS            = Gauge("caddywaf_dns_blacklist_hits",            "DNS blacklist hits (process-local)")
+IP_BLACKLIST_HITS             = Gauge("caddywaf_ip_blacklist_hits",             "IP blacklist hits (process-local)")
+GEOIP_BLOCKED                 = Gauge("caddywaf_geoip_blocked",                 "GeoIP / ASN blocks (process-local)")
+RATE_LIMITER_REQUESTS         = Gauge("caddywaf_rate_limiter_requests",         "Rate-limited requests counted (process-local)")
+RATE_LIMITER_BLOCKED          = Gauge("caddywaf_rate_limiter_blocked_requests", "Rate-limited requests blocked (process-local)")
+RULE_HITS                     = Gauge("caddywaf_rule_hits",                     "Per-rule hit count",  ["rule_id"])
+RULE_HITS_BY_PHASE            = Gauge("caddywaf_rule_hits_by_phase",            "Per-phase hit count", ["phase"])
+INFO                          = Gauge("caddywaf_build_info",                    "Build information",   ["version"])
 
-        TOTAL_REQUESTS.inc(data["total_requests"])
-        BLOCKED_REQUESTS.inc(data["blocked_requests"])
-        ALLOWED_REQUESTS.inc(data["allowed_requests"])
-        DNS_BLACKLIST_HITS.inc(data["dns_blacklist_hits"])
-        GEOIP_BLOCKED.inc(data["geoip_blocked"])
-        IP_BLACKLIST_HITS.inc(data["ip_blacklist_hits"])
-        RATE_LIMITER_BLOCKED_REQUESTS.inc(data["rate_limiter_blocked_requests"])
-        RATE_LIMITER_REQUESTS.inc(data["rate_limiter_requests"])
-        WAF_VERSION.labels(version=data["version"]).set(1)
 
-        for rule_id, hits in data["rule_hits"].items():
-            RULE_HITS.labels(rule_id=rule_id).inc(hits)
+def scrape(url: str, timeout: float) -> None:
+    response = requests.get(url, timeout=timeout)
+    response.raise_for_status()
+    data = response.json()
 
-        if "rule_hits_by_phase" in data:
-            for phase, hits in data["rule_hits_by_phase"].items():
-                RULE_HITS_BY_PHASE.labels(phase=phase).inc(hits)
+    TOTAL_REQUESTS.set(data["total_requests"])
+    BLOCKED_REQUESTS.set(data["blocked_requests"])
+    ALLOWED_REQUESTS.set(data["allowed_requests"])
+    DNS_BLACKLIST_HITS.set(data["dns_blacklist_hits"])
+    IP_BLACKLIST_HITS.set(data["ip_blacklist_hits"])
+    GEOIP_BLOCKED.set(data["geoip_blocked"])
+    RATE_LIMITER_REQUESTS.set(data["rate_limiter_requests"])
+    RATE_LIMITER_BLOCKED.set(data["rate_limiter_blocked_requests"])
 
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching metrics: {e}")
-    except json.JSONDecodeError as e:
-        print(f"JSON Decode Error: {e}")
+    INFO.labels(version=data.get("version", "unknown")).set(1)
 
-if __name__ == '__main__':
-    start_http_server(8000)
-    print("Exporter started on http://localhost:8000/metrics")
+    for rule_id, hits in data.get("rule_hits", {}).items():
+        RULE_HITS.labels(rule_id=rule_id).set(hits)
+
+    for phase, hits in data.get("rule_hits_by_phase", {}).items():
+        RULE_HITS_BY_PHASE.labels(phase=str(phase)).set(hits)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--target",   default="http://127.0.0.1:8080/waf_metrics",
+                        help="WAF metrics endpoint URL")
+    parser.add_argument("--interval", type=float, default=10.0,
+                        help="Scrape interval in seconds")
+    parser.add_argument("--timeout",  type=float, default=5.0,
+                        help="HTTP timeout per scrape")
+    parser.add_argument("--port",     type=int, default=8000,
+                        help="Port for the exporter to listen on")
+    args = parser.parse_args()
+
+    start_http_server(args.port)
+    print(f"Exporter listening on :{args.port}/metrics, scraping {args.target} every {args.interval}s")
+
     while True:
-        fetch_metrics()
-        time.sleep(10)
+        try:
+            scrape(args.target, args.timeout)
+        except Exception as exc:  # pragma: no cover
+            print(f"scrape error: {exc}")
+        time.sleep(args.interval)
+
+
+if __name__ == "__main__":
+    main()
 ```
 
-### **Step 3: Run the Exporter**
+### Run it
 
-1.  Start: `python exporter.py`
-2.  Verify: `http://localhost:8000/metrics` in browser. Check for Prometheus format.
+```bash
+pip install requests prometheus-client
+python3 exporter.py --target http://localhost:8080/waf_metrics
+```
 
-    Example output snippet:
-    ```
-    # HELP caddywaf_rule_hits_by_phase Rule hits by phase
-    # TYPE caddywaf_rule_hits_by_phase counter
-    caddywaf_rule_hits_by_phase{phase="1"} 1461
-    caddywaf_rule_hits_by_phase{phase="2"} 705
-    ```
+Verify:
 
-### **Step 4: Configure Prometheus**
+```bash
+curl -s http://localhost:8000/metrics | grep caddywaf_
+```
 
-1.  Install: [prometheus.io/download/](https://prometheus.io/download/)
-2.  Edit `prometheus.yml`:
+## Prometheus configuration
 
-    ```yaml
-    scrape_configs:
-      - job_name: 'caddywaf_exporter'
-        static_configs:
-          - targets: ['localhost:8000']
-    ```
+Add a scrape job pointing at the exporter:
 
-3.  Start: `./prometheus --config.file=prometheus.yml`
-4.  Verify: Prometheus UI (`http://localhost:9090`) > Status > Targets > `caddywaf_exporter` should be UP.
+```yaml
+scrape_configs:
+  - job_name: caddywaf
+    metrics_path: /metrics
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['exporter-host:8000']
+```
 
-### **Step 5: Set Up Grafana**
+Reload Prometheus (`SIGHUP`, or `curl -X POST http://prometheus:9090/-/reload`) and check **Status > Targets** — the `caddywaf` job should report `UP`.
 
-1.  Install: [grafana.com/grafana/download](https://grafana.com/grafana/download)
-2.  Start: `http://localhost:3000` (login: `admin/admin`)
-3.  Add Data Source: Configuration > Data Sources > Add data source > Prometheus. URL: `http://localhost:9090`. Save & Test.
-4.  Create Dashboard: Create > Dashboard > Add panel. Example queries:
+## Grafana queries
 
-    *   **Total Requests:** `sum(rate(caddywaf_total_requests[1m]))`
-    *   **Blocked Requests:** `sum(rate(caddywaf_blocked_requests[1m]))`
-    *   **Top Rule Hits:** `topk(10, sum by (rule_id) (rate(caddywaf_rule_hits[1m])))`
-    *   **Rule Hits by Phase:** `sum by (phase) (rate(caddywaf_rule_hits_by_phase[1m]))`
-    *   **WAF Version:** `caddywaf_version`
+Add Prometheus as a data source in Grafana, then use queries such as:
 
-    Customize dashboards as needed.
+```promql
+# Block rate (per second) over the last minute
+deriv(caddywaf_blocked_requests[1m])
 
-### **Step 6: Run Everything Together**
+# Top 10 most-hit rules
+topk(10, caddywaf_rule_hits)
 
-1.  Start Caddy WAF (`/waf_metrics` accessible).
-2.  Start Exporter: `python exporter.py`
-3.  Start Prometheus (with config).
-4.  Start Grafana (connected to Prometheus).
-5.  Visualize metrics in Grafana.
+# Rule hits by phase
+sum by (phase) (caddywaf_rule_hits_by_phase)
 
----
+# Allow vs. block over time
+caddywaf_allowed_requests
+caddywaf_blocked_requests
 
-### **Optional: Exporter as Service (systemd)**
+# Build info (table panel)
+caddywaf_build_info
+```
 
-1.  Create: `sudo nano /etc/systemd/system/caddywaf-exporter.service`
+## Optional: run as a systemd service
 
-2.  Content:
-    ```ini
-    [Unit]
-    Description=Caddy WAF Prometheus Exporter
-    After=network.target
+```ini
+# /etc/systemd/system/caddywaf-exporter.service
+[Unit]
+Description=Caddy WAF Prometheus exporter
+After=network.target
 
-    [Service]
-    User=your_user
-    ExecStart=/usr/bin/python3 /path/to/exporter.py
-    Restart=always
+[Service]
+User=caddywaf
+ExecStart=/usr/bin/python3 /opt/caddywaf/exporter.py --target http://127.0.0.1:8080/waf_metrics
+Restart=always
+RestartSec=5
 
-    [Install]
-    WantedBy=multi-user.target
-    ```
+[Install]
+WantedBy=multi-user.target
+```
 
-3.  Run:
-    ```bash
-    sudo systemctl daemon-reload
-    sudo systemctl start caddywaf-exporter
-    sudo systemctl enable caddywaf-exporter
-    ```
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now caddywaf-exporter
+```
 
-4.  Verify: `sudo systemctl status caddywaf-exporter`
+## Caveats
+
+- The values are **process-local** — when Caddy restarts they reset to zero. Use `irate(...[5m])` or `delta(...[5m])` to handle resets gracefully.
+- The metrics endpoint is served by the WAF itself; if the request matches a blocking rule (e.g. an IP blacklist match), the metrics request itself is blocked. Whitelist the exporter's source IP (or use a separate site / route without the WAF directive for it).
+- Do not expose `metrics_endpoint` to the public internet without authentication — there is no auth in the WAF; rely on a Caddy `basic_auth` block, an IP filter, or mTLS at the front door.

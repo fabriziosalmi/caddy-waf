@@ -1,131 +1,124 @@
-# 🛡️ Caddy WAF Middleware
+# Caddy WAF
 
-A robust, highly customizable, and feature-rich **Web Application Firewall (WAF)** middleware for the Caddy web server. This middleware provides **advanced protection** against a comprehensive range of web-based threats, seamlessly integrating with Caddy and offering flexible configuration options to secure your applications effectively.
+A Web Application Firewall middleware for the [Caddy](https://caddyserver.com/) web server, written in Go.
 
-[![Tests](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/test.yml/badge.svg)](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/test.yml) [![CodeQL](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/github-code-scanning/codeql)  [![Build, Run and Validate](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/build-run-validate.yml/badge.svg)](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/build-run-validate.yml)
+[![Tests](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/test.yml/badge.svg)](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/test.yml)
+[![CodeQL](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/github-code-scanning/codeql)
+[![Build, Run and Validate](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/build-run-validate.yml/badge.svg)](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/build-run-validate.yml)
 
-## 🛡️ Core Protections
-
-*   **Regex-Based Filtering:** Deep URL, data & header inspection using powerful regex rules.
-*   **Blacklisting:** Blocks malicious IPs, domains, ASNs & optionally TOR exit nodes.
-*   **Geo-Blocking:** Restricts access by country using GeoIP.
-*   **Rate Limiting:** Prevents abuse via customizable IP request limits.
-*   **Anomaly Scoring:** Dynamically blocks requests based on cumulative rule matches.
-*   **Multi-Phase Inspection:** Analyzes traffic throughout the request lifecycle.
-*   **Sensitive Data Redaction:** Removes private info from logs.
-*   **Custom Response Handling:** Tailored responses for blocked requests.
-*   **Detailed Monitoring:** JSON endpoint for performance tracking & analysis.
-*   **Dynamic Config Reloads:** Seamless updates without restarts.
-*   **File Watchers:** Automatic reloads on rule/blacklist changes.
-*   **Observability:** Seamless integration with ELK stack and Prometheus.
-*   **Rules generator**: [available here](https://chatgpt.com/g/g-677d07dd07e48191b799b9e5d6da7828-caddy-waf-ruler)
-
-_Simple at a glance UI :)_
-![demo](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/caddy-waf-ui.png?raw=true)  
-
-## Security & Performance
-*   **Zero-Copy Networking**: Uses `unsafe.String` to eliminate memory allocations during request body inspection.
-*   **Wait-Free Concurrency**: Atomic counters ensure accurate metrics and rule hit counting without lock contention.
-*   **Circuit Breaker**: `geoip_fail_open` prevents database failures from causing service outages.
-*   **DoS Protection**: `io.LimitReader` enforces strict request body limits to prevent memory exhaustion.
-*   **ReDoS Safety**: Built on top of Go's `regexp` (RE2), guaranteeing linear time execution for all regex rules.
-
-## 🚀 Quick Start
-
-```bash
-curl -fsSL -H "Pragma: no-cache" https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
-```
-
-**Example Output:**
-
-```
-2025/01/29 13:50:49.791 INFO    Provisioning WAF middleware     {"log_level": "info", "log_path": "debug.json", "log_json": true, "anomaly_threshold": 10}
-2025/01/29 12:50:49.918 INFO    http.handlers.waf       Tor exit nodes updated  {"count": 1093}
-2025/01/29 13:50:49.918 INFO    WAF middleware version  {"version": "v0.0.0-20250128221917-c99e875aaf7c"}
-2025/01/29 13:50:49.918 INFO    Rate limit configuration        {"requests": 100, "window": 10, "cleanup_interval": 300, "paths": ["/api/v1/.*", "/admin/.*"], "match_all_paths": false}
-2025/01/29 13:50:49.918 WARN    GeoIP database not found. Country blocking/whitelisting will be disabled        {"path": "GeoLite2-Country.mmdb"}
-2025/01/29 13:50:50.359 INFO    IP blacklist loaded     {"path": "ip_blacklist.txt", "valid_entries": 223770, "invalid_entries": 0, "total_lines": 223770}
-2025/01/29 13:50:50.489 INFO    DNS blacklist loaded    {"path": "dns_blacklist.txt", "valid_entries": 854479, "total_lines": 854479}
-2025/01/29 13:50:50.490 INFO    WAF rules loaded successfully   {"total_rules": 33, "rule_counts": "Phase 1: 17 rules, Phase 2: 16 rules, Phase 3: 0 rules, Phase 4: 0 rules, "}
-2025/01/29 13:50:50.490 INFO    WAF middleware provisioned successfully
-```
-
-## 📑 Table of Contents
-
-1.  [🚀 Installation](#-installation)
-2.  [🛠️ Basic Configuration](#️-basic-configuration)
-3.  [📚 Full Documentation](#-full-documentation)
-4.  [📜 License](#-license)
-5.  [🙏 Contributing](#-contributing)
+- **Module ID**: `http.handlers.waf`
+- **Go module path**: `github.com/fabriziosalmi/caddy-waf`
+- **Current version**: `v0.3.0` (see [`caddywaf.go`](caddywaf.go) — `const wafVersion`)
+- **License**: AGPL-3.0
 
 ---
 
-## 🚀 Installation
+## Overview
 
-### Option 1: Quick Script (Recommended)
+`caddy-waf` is an HTTP handler middleware that inspects requests and responses across four well-defined phases, applies a regular-expression rule set with anomaly scoring, enforces IP/DNS/ASN/country blacklists and whitelists, performs token-bucket-style rate limiting, and exposes a JSON metrics endpoint.
 
-The fastest way to get started:
+The middleware is implemented as a single Caddy module registered under the ID `http.handlers.waf`. It can be configured through the Caddyfile or directly via JSON.
+
+## Capabilities
+
+| Capability | Implementation |
+|---|---|
+| Regex rule engine | Go [`regexp`](https://pkg.go.dev/regexp) package (RE2, linear-time guarantee). Compiled patterns are cached per rule ID. |
+| Multi-phase inspection | Phase 1 (request headers and pre-request checks), Phase 2 (request body), Phase 3 (response headers), Phase 4 (response body). |
+| Anomaly scoring | Each rule contributes its `score` to a per-request total; requests are blocked when the total reaches `anomaly_threshold`. |
+| Explicit actions | Rule `mode` of `block` or `log`. `block` short-circuits the request; `log` records the match and continues. |
+| IP blacklist | Plain IPs and CIDR ranges (IPv4 and IPv6) stored in a prefix trie ([`go-iptrie`](https://github.com/phemmer/go-iptrie)). |
+| DNS blacklist | Exact-match (case-insensitive) host lookup. |
+| GeoIP country block / whitelist | MaxMind GeoLite2 Country MMDB. |
+| ASN block | MaxMind GeoLite2 ASN MMDB. |
+| Tor exit-node block | Periodic fetch from `https://check.torproject.org/torbulkexitlist`. |
+| Rate limiting | Per-IP, sliding-window, optional per-path matching with regex patterns. |
+| Custom block responses | Per-status-code response with custom Content-Type, headers, and body (inline or from file). |
+| Sensitive data redaction | Optional redaction of sensitive query parameters and log fields. |
+| Hot reload | `fsnotify` watchers on rule files, IP blacklist, and DNS blacklist. |
+| Metrics endpoint | JSON document exposed at the configured `metrics_endpoint` path. |
+| Asynchronous logging | Buffered log channel with synchronous fallback when the buffer is full. |
+
+## Engineering notes
+
+- **Linear-time regex**: rules are compiled by Go's `regexp` (RE2). No catastrophic backtracking.
+- **Wait-free counters**: per-rule hit counts use `atomic.Int64` stored in a `sync.Map`.
+- **Bounded body reads**: request bodies are read through `io.LimitReader` (`max_request_body_size`, default 10 MiB) and restored with `io.MultiReader` so downstream handlers still see the full body.
+- **Zero-copy body string**: the body is exposed to rule matching via `unsafe.String` to avoid an allocation per request.
+- **Circuit breaker for GeoIP**: `geoip_fail_open` controls whether a GeoIP lookup failure blocks the request or allows it through.
+- **Panic recovery**: `ServeHTTP` installs a deferred recovery that returns `500 Internal Server Error` on panic.
+
+---
+
+## Quick start
+
+The fastest path to a working build:
 
 ```bash
-curl -fsSL -H "Pragma: no-cache" https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
+curl -fsSL -H "Pragma: no-cache" \
+  https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
 ```
 
-### Option 2: Build with xcaddy
+The script ensures Go and `xcaddy` are installed, clones the repository, downloads the GeoLite2 database, builds Caddy with the `caddy-waf` module, and starts the server.
+
+A representative provisioning log:
+
+```
+INFO  Provisioning WAF middleware     {"log_level":"info","log_path":"debug.json","log_json":true,"anomaly_threshold":20}
+INFO  http.handlers.waf  Tor exit nodes updated  {"count":1093}
+INFO  WAF middleware version  {"version":"v0.3.0"}
+INFO  Rate limit configuration  {"requests":100,"window":10,"cleanup_interval":300,"paths":["/api/v1/.*"],"match_all_paths":false}
+WARN  GeoIP database not found. Country blacklisting/whitelisting will be disabled  {"path":"GeoLite2-Country.mmdb"}
+INFO  IP blacklist loaded     {"path":"ip_blacklist.txt","valid_entries":223770,"invalid_entries":0,"total_lines":223770}
+INFO  DNS blacklist loaded    {"path":"dns_blacklist.txt","valid_entries":854479,"total_lines":854479}
+INFO  WAF rules loaded successfully   {"total_rules":33,"rule_counts":"Phase 1: 17 rules, Phase 2: 16 rules, Phase 3: 0 rules, Phase 4: 0 rules, "}
+INFO  WAF middleware provisioned successfully
+```
+
+---
+
+## Installation
+
+### Requirements
+
+- Go **1.25** or newer ([`go.mod`](go.mod) declares `go 1.25`)
+- Caddy **v2.10.x** or newer (current build uses `github.com/caddyserver/caddy/v2 v2.10.2`)
+- [`xcaddy`](https://github.com/caddyserver/xcaddy) for building Caddy with plugins
+
+### Option 1 — Build with xcaddy (recommended)
 
 ```bash
-# Install xcaddy if you don't have it
 go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
-
-# Build Caddy with the WAF module
 xcaddy build --with github.com/fabriziosalmi/caddy-waf
+./caddy list-modules | grep waf   # expect: http.handlers.waf
 ```
 
-### Option 3: Build from Source
-
-#### Prerequisites
-
-- [Go](https://golang.org/dl/) **1.25** or higher
-- [Caddy](https://caddyserver.com/docs/install) **v2.10.x** or higher (for building with this plugin)
-- [xcaddy](https://github.com/caddyserver/xcaddy) (for building Caddy with plugins)
+### Option 2 — Quick script
 
 ```bash
-# Step 1: Clone the caddy-waf repository from GitHub
+curl -fsSL -H "Pragma: no-cache" \
+  https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
+```
+
+### Option 3 — Build from source
+
+```bash
 git clone https://github.com/fabriziosalmi/caddy-waf.git
-
-# Step 2: Navigate into the caddy-waf directory
 cd caddy-waf
-
-# Step 3: Clean up and update the go.mod file
 go mod tidy
-
-# Step 4: Fetch and install the required Go modules
-go get github.com/caddyserver/caddy/v2
-go get github.com/caddyserver/caddy/v2/caddyconfig/caddyfile
-go get github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile
-go get github.com/caddyserver/caddy/v2/modules/caddyhttp
-go get github.com/oschwald/maxminddb-golang
-go get github.com/fsnotify/fsnotify
-go get -v github.com/fabriziosalmi/caddy-waf
-go mod tidy
-
-# Step 5: Download the GeoLite2 Country database (required for country blocking/whitelisting)
-wget https://git.io/GeoLite2-Country.mmdb
-
-# Step 6: Build Caddy with the caddy-waf module
+wget https://git.io/GeoLite2-Country.mmdb           # optional, only for GeoIP
 xcaddy build --with github.com/fabriziosalmi/caddy-waf=./
-
-# Step 7: Fix Caddyfile format
-caddy fmt --overwrite
-
-# Step 8: Run the compiled Caddy server
+./caddy fmt --overwrite
 ./caddy run
 ```
 
+### `caddy add-package`
+
+This module is **not registered** in Caddy's official package registry; `caddy add-package github.com/fabriziosalmi/caddy-waf` will fail with `HTTP 400: ... is not a registered Caddy module package path`. Use one of the build options above. See [`docs/add-package-guide.md`](docs/add-package-guide.md) for details.
+
 ---
 
-## 🛠️ Basic Configuration
-
-Here's a minimal Caddyfile example to get started:
+## Minimal Caddyfile
 
 ```caddyfile
 {
@@ -140,26 +133,19 @@ Here's a minimal Caddyfile example to get started:
         level INFO
     }
 
-    handle {
-        header -Server
-    }
-
     route {
-        # WAF Plugin runs on all requests first
         waf {
-            metrics_endpoint /waf_metrics
-            rule_file rules.json
-            ip_blacklist_file ip_blacklist.txt
+            metrics_endpoint   /waf_metrics
+            rule_file          rules.json
+            ip_blacklist_file  ip_blacklist.txt
             dns_blacklist_file dns_blacklist.txt
         }
 
-        # Match the waf metrics endpoint specifically and stop processing
         @wafmetrics path /waf_metrics
         handle @wafmetrics {
-            # Do not respond here so it goes to the WAF plugin
+            # Falls through to the WAF handler, which serves metrics as JSON.
         }
 
-        # All other requests, respond with "Hello World"
         handle {
             respond "Hello world!" 200
         }
@@ -167,62 +153,89 @@ Here's a minimal Caddyfile example to get started:
 }
 ```
 
-**For more detailed configuration options, rules format, and usage instructions, please refer to the [Full Documentation](#-full-documentation).**
+A fully annotated example is provided in [`Caddyfile`](Caddyfile) and [`caddyfile.example`](caddyfile.example).
 
 ---
 
-## 📚 Full Documentation
+## Documentation
 
-For complete documentation, including configuration options, rule format details, protected attack types, testing strategies, and more, please refer to the `/docs` directory in this repository.
-
-### 📑 Table of Contents
-
-1.  [**Installation**](docs/installation.md) - *Instructions for installing the Caddy WAF middleware.*
-2.  [**Using `caddy add-package`**](docs/add-package-guide.md) - *Quick guide for installing with the `caddy add-package` command.*
-3.  [**Configuration Options**](docs/configuration.md) - *Detailed explanation of all available configuration settings.*
-4.  [**Rules Format (`rules.json`)**](docs/rules.md) - *A comprehensive guide to defining custom rules using the JSON format.*
-5.  [**Blacklist Formats**](docs/blacklists.md) - *Documentation of the formats used for defining IP and DNS blacklists.*
-6.   [**Rate Limiting**](docs/ratelimit.md) - *How to configure rate limiting, including parameters and usage.*
-7.  [**Country Blocking and Whitelisting**](docs/geoblocking.md) - *Details on how to configure country-based blocking and whitelisting.*
-8.  [**Protected Attack Types**](docs/attacks.md) - *An overview of the wide range of web-based threats that the Caddy WAF is designed to protect against.*
-9.  [**Dynamic Updates**](docs/dynamicupdates.md) - *How to dynamically update the WAF rules and other settings without downtime.*
-10.  [**Metrics**](docs/metrics.md) - *Details about the WAF's metrics endpoint and the different metrics collected.*
-11. [**Prometheus Metrics**](docs/prometheus.md) - *Instructions on how to expose WAF metrics using the Prometheus format.*
-12. [**ELK Observability**](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/caddy-waf-elk.md) - *Instructions on how to configure caddy-waf ELK stack observability.*
-13. [**Rule/Blacklist Population Scripts**](docs/scripts.md) - *Documentation on the provided scripts to automatically fetch, update and generate rules and blacklists.*
-14. [**Testing**](docs/testing.md) - *Guidance on how to test the WAF's effectiveness using the provided testing tools.*
-15.  [**Docker Support**](docs/docker.md) - *Instructions on how to build and run the WAF using Docker.*
-
----
-
-## 📜 License
-
-This project is licensed under the **AGPLv3 License**.
+| Document | Topic |
+|---|---|
+| [`docs/installation.md`](docs/installation.md) | All installation methods. |
+| [`docs/configuration.md`](docs/configuration.md) | Caddyfile and JSON directives, request lifecycle, blocking precedence. |
+| [`docs/rules.md`](docs/rules.md) | `rules.json` schema, target identifiers, regex semantics. |
+| [`docs/blacklists.md`](docs/blacklists.md) | IP and DNS blacklist file formats. |
+| [`docs/ratelimit.md`](docs/ratelimit.md) | Rate-limit block, path matching, behavior. |
+| [`docs/geoblocking.md`](docs/geoblocking.md) | Country block / whitelist, ASN block, fallback behavior. |
+| [`docs/attacks.md`](docs/attacks.md) | Attack categories addressed by the bundled rule sets. |
+| [`docs/dynamicupdates.md`](docs/dynamicupdates.md) | File watchers, reload semantics, scope of each reload. |
+| [`docs/metrics.md`](docs/metrics.md) | `/waf_metrics` JSON schema. |
+| [`docs/prometheus.md`](docs/prometheus.md) | Bridging the JSON metrics to Prometheus and Grafana. |
+| [`docs/caddy-waf-elk.md`](docs/caddy-waf-elk.md) | Shipping logs to an ELK stack with Filebeat. |
+| [`docs/scripts.md`](docs/scripts.md) | Helper Python scripts for rule and blacklist generation. |
+| [`docs/testing.md`](docs/testing.md) | Running the bundled `test.py` suite. |
+| [`docs/docker.md`](docs/docker.md) | Building and running with Docker / Docker Compose. |
+| [`docs/add-package-guide.md`](docs/add-package-guide.md) | Status of `caddy add-package` registration. |
+| [`docs/caddytest.md`](docs/caddytest.md) | The `caddytest.py` traffic-generation tool. |
 
 ---
 
-## Others projects
+## Project layout
 
-If You like my projects, you may also like these ones:
+```
+.
+├── caddywaf.go            Module registration, lifecycle, file watchers, metrics endpoint
+├── handler.go             ServeHTTP, phase dispatch, blocking decisions
+├── config.go              Caddyfile directive parsing
+├── rules.go               Rule loading, validation, regex caching, hit accounting
+├── request.go             Target extraction (URI, headers, body, JSON paths, ...)
+├── response.go            Response recorder, block writer
+├── blacklist.go           IP and DNS blacklist loaders and lookups
+├── ratelimiter.go         Per-IP / per-path sliding-window rate limiter
+├── geoip.go               MaxMind country and ASN lookups, with optional cache
+├── tor.go                 Periodic Tor exit-node list fetcher
+├── logging.go             Async log worker, sensitive-data redaction
+├── helpers.go             IP parsing helpers
+├── types.go               Public types (Middleware, Rule, RateLimit, ...)
+├── doc.go                 Package documentation
+├── rules.json             Default rule set (used by Caddyfile)
+├── rules/                 Modular rule files by category
+├── ip_blacklist.txt       Default IP blacklist
+├── dns_blacklist.txt      Default DNS blacklist
+├── tor_blacklist.txt      Tor exit-node cache (auto-managed)
+├── docs/                  Documentation
+└── *_test.go              Unit and integration tests
+```
 
-- [patterns](https://github.com/fabriziosalmi/patterns) Automated OWASP CRS and Bad Bot Detection for Nginx, Apache, Traefik and HaProxy
-- [blacklists](https://github.com/fabriziosalmi/blacklists) Hourly updated domains blacklist 🚫 
-- [proxmox-vm-autoscale](https://github.com/fabriziosalmi/proxmox-vm-autoscale) Automatically scale virtual machines resources on Proxmox hosts 
-- [UglyFeed](https://github.com/fabriziosalmi/UglyFeed) Retrieve, aggregate, filter, evaluate, rewrite and serve RSS feeds using Large Language Models for fun, research and learning purposes 
-- [proxmox-lxc-autoscale](https://github.com/fabriziosalmi/proxmox-lxc-autoscale) Automatically scale LXC containers resources on Proxmox hosts 
-- [DevAssistant](https://github.com/fabriziosalmi/DevGPT) Code together, right now! AI powered code assistant to build project in minutes
-- [websites-monitor](https://github.com/fabriziosalmi/websites-monitor) Websites monitoring via GitHub Actions (expiration, security, performances, privacy, SEO)
-- [caddy-mib](https://github.com/fabriziosalmi/caddy-mib) Track and ban client IPs generating repetitive errors on Caddy 
-- [zonecontrol](https://github.com/fabriziosalmi/zonecontrol) Cloudflare Zones Settings Automation using GitHub Actions 
-- [lws](https://github.com/fabriziosalmi/lws) linux (containers) web services
-- [cf-box](https://github.com/fabriziosalmi/cf-box) cf-box is a set of Python tools to play with API and multiple Cloudflare accounts.
-- [limits](https://github.com/fabriziosalmi/limits) Automated rate limits implementation for web servers 
-- [dnscontrol-actions](https://github.com/fabriziosalmi/dnscontrol-actions) Automate DNS updates and rollbacks across multiple providers using DNSControl and GitHub Actions 
-- [proxmox-lxc-autoscale-ml](https://github.com/fabriziosalmi/proxmox-lxc-autoscale-ml) Automatically scale the LXC containers resources on Proxmox hosts with AI
-- [csv-anonymizer](https://github.com/fabriziosalmi/csv-anonymizer) CSV fuzzer/anonymizer
-- [iamnotacoder](https://github.com/fabriziosalmi/iamnotacoder) AI code generation and improvement
+---
 
+## Testing
 
-## 🙏 Contributing
+```bash
+make test            # go test -v ./...
+make it              # go test -v ./... -tags=it (integration)
+make lint            # golangci-lint run
+make test-integration # runs test.py inside a python:3.9-slim container
+```
 
-Contributions are highly welcome! Feel free to open an issue or submit a pull request.
+The repository also ships Python suites covering offensive payloads (`test.py`), traffic generation (`caddytest.py`), and benchmarking (`benchmark.py`). See [`docs/testing.md`](docs/testing.md) and [`docs/caddytest.md`](docs/caddytest.md).
+
+---
+
+## Contributing
+
+Pull requests are welcome. The project values:
+
+1. Tests that exercise the change.
+2. Rule contributions placed under [`rules/`](rules/) using the documented JSON schema.
+3. Documentation kept in sync with code (every directive change must be reflected in [`docs/configuration.md`](docs/configuration.md) and the relevant topic page).
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the workflow and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
+
+## Security
+
+For vulnerability disclosure see [`SECURITY.md`](SECURITY.md). Reports may be sent to `fabrizio.salmi@gmail.com` or as a private GitHub Security Advisory; please do not open a public issue.
+
+## License
+
+AGPL-3.0. See [`LICENSE`](LICENSE).

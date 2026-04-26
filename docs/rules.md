@@ -1,107 +1,209 @@
-# 📜 Rules
+# Rules
 
-The WAF's behavior is governed by a set of rules defined in a JSON file (`rules.json`). These rules specify how to identify and respond to potentially malicious requests. The rules are structured as an array of JSON objects, where each object represents an individual rule. This format allows for flexible and configurable security policies.
+The WAF evaluates a set of rules defined in one or more JSON files. Each file is a JSON array of rule objects. Files are loaded by the `rule_file` directive (which may be repeated to load several files).
 
-Here's a detailed breakdown of the rules format, including example rules and descriptions of each field:
+The schema below mirrors the `Rule` struct in [`types.go`](../types.go) and the validation in [`rules.go`](../rules.go) (`validateRule`).
+
+---
+
+## Schema
+
+```json
+{
+  "id":          "unique-rule-id",
+  "phase":       1,
+  "pattern":     "(?i)example",
+  "targets":     ["URI", "ARGS"],
+  "severity":    "HIGH",
+  "score":       8,
+  "mode":        "block",
+  "description": "Human-readable description",
+  "priority":    10
+}
+```
+
+| Field | JSON key | Type | Required | Notes |
+|---|---|---|---|---|
+| ID | `id` | string | yes | Must be unique across all loaded files. Duplicate IDs are dropped with a warning. |
+| Phase | `phase` | int | yes | One of `1`, `2`, `3`, `4`. See [Phases](#phases). |
+| Pattern | `pattern` | string | yes | A Go [`regexp`](https://pkg.go.dev/regexp) pattern (RE2 syntax). Compiled at load time and cached per rule ID. Invalid patterns drop the rule with a warning. |
+| Targets | `targets` | array of string | yes | One or more target identifiers. See [Targets](#targets). |
+| Severity | `severity` | string | no | Free-form label used only for logging (e.g. `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`). It does **not** affect blocking decisions. |
+| Score | `score` | int | yes (validated ≥ 0) | Added to the request's anomaly score on match. |
+| Mode | `mode` | string | no | `"block"` (block immediately on match) or `"log"` (log and continue). Empty / missing means: rely on the anomaly threshold only. The Go field is `Action` but the JSON tag is `mode` — see [Field name caveat](#field-name-caveat). |
+| Description | `description` | string | no | Human-readable description, written to log records. |
+| Priority | `priority` | int | no | Higher priority is evaluated first within a phase. Defaults to `0`. |
+
+### Validation rules (from `validateRule` in [`rules.go`](../rules.go))
+
+A rule is rejected (and dropped from the runtime ruleset, with a warning logged) if any of the following holds:
+
+- `id` is empty
+- `pattern` is empty
+- `targets` is empty
+- `phase` is outside `[1, 4]`
+- `score` is negative
+- `mode` is non-empty and not equal to `"block"` or `"log"`
+
+Loading a file is aborted only when the file cannot be read or its contents cannot be parsed as a JSON array of rules. Individual invalid rules do not abort the load; they are reported in the `Validation errors in rules` log entry.
+
+### Field name caveat
+
+The Go struct declares the action as `Action string \`json:"mode"\`` ([`types.go`](../types.go) line 79). This means the JSON property name read by the loader is **`mode`**, not `action`. Files that use `"action"` will be parsed (the field is simply absent from the rule), and the rule will not have an explicit block — it will rely entirely on the cumulative anomaly score reaching `anomaly_threshold`.
+
+The bundled [`rules.json`](../rules.json) currently uses `"action"`; the bundled [`sample_rules.json`](../sample_rules.json) uses `"mode"`. Files under [`rules/`](../rules/) use `"action"` and therefore behave as if no explicit block were set.
+
+When authoring new rules, prefer `"mode"`.
+
+---
+
+## Phases
+
+| Phase | Inspected at | Available targets |
+|---|---|---|
+| **1** | After pre-request checks (IP / DNS blacklist, rate limit, GeoIP, ASN), before the upstream handler. | Request method, URL, headers, cookies, query parameters, JSON body paths. |
+| **2** | After Phase 1, before the upstream handler. Same time window as Phase 1; useful for separating header-only checks from body-aware checks. | Request body (`BODY`, `JSON_PATH:`), plus all Phase 1 targets. |
+| **3** | After the upstream handler returns, before the response leaves the proxy. | `RESPONSE_HEADERS`, `RESPONSE_HEADERS:<name>`. |
+| **4** | After Phase 3. | `RESPONSE_BODY`. |
+
+Within a phase, rules are sorted by descending `priority`, then evaluated in order. The first rule that triggers a block stops the phase.
+
+---
+
+## Targets
+
+Defined in [`request.go`](../request.go). Names are matched case-insensitively unless noted otherwise.
+
+### Static targets
+
+| Target | Source |
+|---|---|
+| `METHOD` | `r.Method` |
+| `REMOTE_IP` | `r.RemoteAddr` (host:port form) |
+| `PROTOCOL` | `r.Proto` |
+| `HOST` | `r.Host` |
+| `URI` | `r.URL.RequestURI()` |
+| `URL` | `r.URL.String()` |
+| `PATH` | `r.URL.Path` |
+| `ARGS` | `r.URL.RawQuery` |
+| `USER_AGENT` | `r.UserAgent()` |
+| `CONTENT_TYPE` | `r.Header.Get("Content-Type")` |
+| `BODY` | Request body, read through `io.LimitReader(MaxRequestBodySize)` and re-attached so downstream handlers still see the full body. |
+| `HEADERS` | All request headers serialised as `Name: v1,v2; Name: v…`. |
+| `COOKIES` | All request cookies serialised as `name=value; name=value`. |
+| `FILE_NAME` | First file name from `r.MultipartForm`. |
+| `FILE_MIME_TYPE` | First file Content-Type from `r.MultipartForm`. |
+| `RESPONSE_HEADERS` | All response headers (Phase 3 only). |
+| `RESPONSE_BODY` | Response body captured by the response recorder (Phase 4 only). |
+
+### Dynamic targets
+
+These accept an argument after the colon. Parameter and header names are case-sensitive in the value passed to lookup, but the prefix is matched case-insensitively.
+
+| Target | Source |
+|---|---|
+| `HEADERS:<name>` | `r.Header.Get("<name>")` |
+| `COOKIES:<name>` | `r.Cookie("<name>")` |
+| `URL_PARAM:<name>` | `r.URL.Query().Get("<name>")` |
+| `JSON_PATH:<dotted.path>` | Reads the body, parses as JSON, and walks the dotted path (numeric segments are array indices). |
+| `RESPONSE_HEADERS:<name>` | `w.Header().Get("<name>")` (Phase 3 only). |
+
+### Multiple targets in one rule
+
+A single `targets` entry may itself be a comma-separated list. The extractor will try each value in turn, joining successful extractions with commas. Failures on individual sub-targets are tolerated — only the successful extractions are passed to the regex engine.
+
+```json
+"targets": ["URI,HEADERS:User-Agent,COOKIES:sessionid"]
+```
+
+---
+
+## How a match becomes a block
+
+For each rule that matches:
+
+1. The hit counter for the rule (a `*atomic.Int64` in `Middleware.ruleHits`) is incremented.
+2. The phase counter (`Middleware.ruleHitsByPhase[phase]`) is incremented.
+3. `state.TotalScore += rule.score`.
+4. The request is blocked with `403 Forbidden` if either:
+   - `state.TotalScore >= anomaly_threshold`, or
+   - `rule.mode == "block"`.
+5. When blocked, the configured custom response for `403` (if any) is written; otherwise the default plain-text body is sent.
+
+Rules with `mode == "log"` log the match at INFO level and let evaluation continue.
+
+---
+
+## Examples
 
 ```json
 [
-    {
-        "id": "wordpress-brute-force",
-        "phase": 2,
-        "pattern": "(?i)(?:wp-login\\.php|xmlrpc\\.php).*?(?:username=|pwd=)",
-        "targets": ["URI", "ARGS"],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 8,
-        "description": "Block brute force attempts targeting WordPress login and XML-RPC endpoints."
-    },
-    {
-        "id": "sql-injection-header",
-        "phase": 1,
-        "pattern": "(?i)(?:select|insert|update|delete|union|drop|--|;)",
-        "targets": ["HEADERS:X-Attack"],
-        "severity": "CRITICAL",
-        "action": "block",
-        "score": 10,
-        "description": "Detect and block SQL injection attempts in custom header."
-    },
-    {
-      "id": "log4j-jndi",
-      "phase": 2,
-      "pattern": "(?i)\\$\\{jndi:(ldap|rmi|dns):\\/\\/.*\\}",
-      "targets": ["BODY","ARGS","URI","HEADERS"],
-      "severity": "CRITICAL",
-      "action": "block",
-      "score": 10,
-      "description":"Detect Log4j vulnerability attempts"
-    },
-    {
-      "id": "low-score-log",
-      "phase": 2,
-      "pattern": "(?i)suspicious-keyword",
-      "targets": ["BODY"],
-      "severity": "LOW",
-      "action": "log",
-      "score": 1,
-      "description": "Example of a low score log rule"
-    },
-    {
-      "id": "specific-header-rule",
-      "phase": 1,
-       "pattern": "(?i)attack-payload",
-       "targets": ["HEADERS:User-Agent"],
-       "severity": "MEDIUM",
-       "action": "block",
-       "score": 7,
-       "description": "Example blocking based on a User-Agent header payload"
-     },
-     {
-       "id": "cookie-check",
-       "phase": 1,
-       "pattern": "(?i)bad_cookie",
-       "targets": ["COOKIES:sessionid"],
-       "severity": "HIGH",
-       "action":"block",
-       "score": 9,
-       "description":"Example of a rule that targets cookies"
-     },
-     {
-      "id": "response-header-check",
-      "phase": 3,
-       "pattern": "(?i)sensitive-info",
-       "targets": ["RESPONSE_HEADERS:X-Server-Version"],
-       "severity": "MEDIUM",
-       "action": "log",
-       "score": 2,
-       "description": "Example of a response header rule"
-     }
+  {
+    "id": "block-scanners",
+    "phase": 1,
+    "pattern": "(?i)(nikto|sqlmap|nmap|acunetix|nessus|wpscan|burpsuite|metasploit|nuclei)",
+    "targets": ["HEADERS:User-Agent"],
+    "severity": "CRITICAL",
+    "score": 10,
+    "mode": "block",
+    "priority": 100,
+    "description": "Block well-known vulnerability scanners by User-Agent."
+  },
+  {
+    "id": "log4j-jndi",
+    "phase": 2,
+    "pattern": "(?i)\\$\\{jndi:(ldap|rmi|dns):\\/\\/[^}]*\\}",
+    "targets": ["BODY", "ARGS", "URI", "HEADERS"],
+    "severity": "CRITICAL",
+    "score": 10,
+    "mode": "block",
+    "description": "Detect Log4Shell (CVE-2021-44228) JNDI injection attempts."
+  },
+  {
+    "id": "low-score-log",
+    "phase": 2,
+    "pattern": "(?i)suspicious-keyword",
+    "targets": ["BODY"],
+    "severity": "LOW",
+    "score": 1,
+    "mode": "log",
+    "description": "Record suspicious keyword without blocking."
+  },
+  {
+    "id": "json-admin-flag",
+    "phase": 2,
+    "pattern": "^true$",
+    "targets": ["JSON_PATH:user.is_admin"],
+    "severity": "HIGH",
+    "score": 8,
+    "mode": "block",
+    "description": "Block requests attempting to set is_admin via mass assignment."
+  },
+  {
+    "id": "leaky-server-header",
+    "phase": 3,
+    "pattern": "(?i)apache|nginx/\\d|iis",
+    "targets": ["RESPONSE_HEADERS:Server"],
+    "severity": "MEDIUM",
+    "score": 2,
+    "mode": "log",
+    "description": "Log responses leaking the server software identity."
+  }
 ]
 ```
 
-## Rule Fields: A Detailed Explanation
+---
 
-Each rule object contains the following fields:
+## Notes on regex performance
 
-| Field         | Description                                                                                                                                | Example                                         |
-|---------------|--------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
-| **`id`**        | **Unique Identifier:** This is a string that uniquely identifies the rule within the `rules.json` file. It is used for logging, metric reporting, and rule management. It should be descriptive and easy to understand. IDs must be unique across all rules.  |  `sql_injection_1`, `xss-filter-block`, `wordpress-login-attempt`                               |
-| **`phase`**      | **Processing Phase:**  An integer indicating the phase of request/response processing in which this rule should be applied.  The phases are:  <br>   * `1`: *Request Headers* (applied *before* request body processing)  <br>   * `2`: *Request Body* (applied *after* request headers have been parsed).  <br>   * `3`: *Response Headers* (applied *before* response body is sent). <br> * `4`: *Response Body* (applied *after* response headers have been written). The phase determines *when* the rule is evaluated. |   `1`, `2`, `3`, `4`                     |
-| **`pattern`**    | **Regular Expression:** A string containing a regular expression that defines the pattern to match against the defined `targets`. The pattern must be a valid regex understood by the configured engine. Case-insensitive matching can be achieved by starting the pattern with `(?i)`.  It is highly recommended to ensure the regex is performant.  | `(?i)(?:select|insert|update)`, `(?i)\d{3}-\d{2}-\d{4}`, `(?:[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+.[a-zA-Z0-9-.]+)`                  |
-| **`targets`**    | **Inspection Targets:** An array of strings that specifies the parts of the request or response to inspect for a match.  The possible targets are:   * `URI`: The full URI of the request.  * `ARGS`: The query string parameters (if any).  * `BODY`: The body of the request. * `HEADERS`: All request headers are checked.  * `COOKIES`: All request cookies. * `HEADERS:<header_name>`: Specifically checks the value of the given header name (e.g., `HEADERS:User-Agent`, `HEADERS:X-Forwarded-For`). Header names should be case-insensitive.  * `COOKIES:<cookie_name>`:  Specifically checks the value of the specified cookie (e.g., `COOKIES:sessionid`). Cookie names should be case-insensitive.  *  `RESPONSE_HEADERS`: All response headers are checked. * `RESPONSE_BODY`: The full response body.  * `RESPONSE_HEADERS:<header_name>`:  Specifically checks the value of the given response header. The header name is case-insensitive. The `targets` array determines *where* the rule looks for matches. | `["ARGS", "BODY"]`, `["HEADERS:X-Custom-Header"]`, `["URI"]`, `["COOKIES:sessionid"]`, `["RESPONSE_HEADERS:Content-Type"]`                               |
-| **`severity`**   | **Severity Level:**  A string representing the severity of the rule violation (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`). This is used for logging, metrics, and reporting, but does not directly impact the processing of the request, or if the rule is enabled or not. You can use these labels to prioritize analysis, filtering and alerting. | `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`                                  |
-| **`action`**     | **Action on Match:** A string specifying the action to take when a rule is matched. The currently supported actions are:    * `block`:  The request or response is blocked, and the processing of the request/response chain is terminated.   * `log`:  The rule match is logged, but the processing of the request/response continues normally. If this field is empty, or is set to any invalid value, it defaults to `block`. | `block`, `log`                                       |
-| **`score`**     | **Anomaly Score:** An integer representing a numerical score added to an internal anomaly score counter when a rule matches. The score is used in conjunction with other rules to indicate the severity of the event. It is typically used to decide when an overall threshold has been reached. A higher score generally means a more severe attack. This score can be used for threshold-based blocking or other aggregation mechanisms in a broader system. | `5`, `10`, `1`, `3`                                         |
-| **`description`**| **Rule Description:** A string providing a human-readable description of the rule. It should explain what the rule is designed to detect. This description is useful for rule management, audits, and troubleshooting.  | `Detect SQL injection attempts`, `Block access to admin pages`, `Detect XSS in request`                                |
+- Patterns are compiled by Go's [`regexp`](https://pkg.go.dev/regexp) (RE2). RE2 guarantees linear-time execution; ReDoS attacks against the matcher are not possible.
+- Compiled patterns are cached by rule ID in the per-middleware `RuleCache`. Reloading rules reuses cached compilations when the rule ID has not changed; new IDs trigger compilation.
+- Use `(?i)` at the start of the pattern for case-insensitive matching. RE2 also supports `(?s)` (`.` matches newlines) and other flags as documented in the Go regexp syntax reference.
+- Avoid expensive constructs (large `[abc]{1,1000}` ranges, deep alternations of long literals) — RE2 is linear in input size, but constants matter.
 
-### Key Considerations:
+## Authoring tips
 
-*   **Rule Order:** The order of rules in `rules.json` can sometimes be significant, particularly with respect to how the WAF operates with regards to short-circuiting the rule chain after a match. In some WAF implementations, when a rule with action `block` is matched then the request is blocked and no further rules are processed. In other implementations, even if a `block` action is triggered, the rules may continue to execute but the original response will not change.
-*   **Regular Expression Performance:** Complex regular expressions can have a significant impact on WAF performance. Ensure the patterns are efficient and avoid complex backtracking if performance becomes an issue.
-*   **False Positives:** Rules must be carefully crafted to minimize false positives. Thoroughly test and validate rules with a wide range of requests to ensure proper operation.
-* **Testing:** It is important to have a thorough testing strategy which includes both positive (attacks) and negative testing to be able to ensure that there are no false positives and that rules work correctly.
-*   **Rule Updates:** Regularly update rules based on new vulnerabilities and attack patterns.
-*   **Data Validation:** Ensure that the JSON is valid and that all fields are correctly formatted as expected.
-*  **Case sensitivity:** Regex patterns are case sensitive unless they are specifically marked as insensitive (e.g., `(?i)`). Header and cookie names in the `targets` field are not case sensitive.
-
-By using the `rules.json` format correctly and understanding the meaning of each rule field, you can create a robust and effective WAF configuration that provides strong protection against a wide range of web application attacks. This structured format enables granular control over the rules, allowing administrators to fine-tune the system for their specific environment and security needs.
+- Prefer modular files under [`rules/`](../rules/) over a single monolithic `rules.json`. Multiple `rule_file` directives load them all.
+- Always test new rules against the bundled offensive payloads in [`test.py`](../test.py) before deploying.
+- Set `priority` on rules that should evaluate before others within the same phase.
+- Use `mode: "log"` while tuning thresholds; switch to `mode: "block"` once false-positive rates are acceptable.
