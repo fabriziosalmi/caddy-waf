@@ -1,21 +1,34 @@
-.DS_Store
-benchmark.json
+# Binary / Executables
 caddy
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+
+# Go
+vendor/
+go.work
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+
+# IDEs and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Project specific data/logs
+benchmark.json
 debug.json
 GeoLite2-Country.mmdb
+*.log
 log.json
-tor_blacklist.txt
-tor_ip_blacklist.txt
-testdata
-validation.log
-vendor
-waf_test_results.log
-large_body.txt
-small_body.txt
-sqli_payload.txt
-xxe_payload.xml
-dns_blacklist.txt
-ip_blacklist.txt
-waf_test_results_alt.log
-waf_test_results_extended.log
-log.json
+testdata/
