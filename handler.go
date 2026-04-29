@@ -49,6 +49,10 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	ctx := context.WithValue(r.Context(), ContextKeyLogId("logID"), logID)
 	r = r.WithContext(ctx)
 
+	// Expose the log ID to Caddy's replacer so it can be referenced in access logs
+	// as {http.vars.waf_log_id}, allowing correlation between WAF and access logs.
+	caddyhttp.SetVar(r.Context(), "waf_log_id", logID)
+
 	m.incrementTotalRequestsMetric()
 
 	// Initialize WAF state for this request
