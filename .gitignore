@@ -32,3 +32,6 @@ GeoLite2-Country.mmdb
 *.log
 log.json
 testdata/
+
+# vendored web assets (served via go:embed) — NOT the Go module vendor dir
+!ui/vendor/
