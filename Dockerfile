@@ -1,5 +1,5 @@
 # Use a Go base image to build the Caddy binary
-FROM golang:1.24-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 # Install git and xcaddy (required for cloning the repository and building Caddy)
 RUN apk add --no-cache git wget && \
