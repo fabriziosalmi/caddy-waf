@@ -41,7 +41,7 @@ A representative response:
   "dns_blacklist_hits":            0,
   "rate_limiter_requests":         27004,
   "rate_limiter_blocked_requests": 23640,
-  "version":                       "v0.3.0"
+  "version":                       "v0.3.3"
 }
 ```
 

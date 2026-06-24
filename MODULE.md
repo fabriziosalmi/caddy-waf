@@ -8,7 +8,7 @@
 | Go module path | `github.com/fabriziosalmi/caddy-waf` |
 | License | AGPL-3.0 |
 | Latest version | see `const wafVersion` in [`caddywaf.go`](caddywaf.go) |
-| Caddy version | v2.10.x or newer |
+| Caddy version | v2.11.x or newer |
 | Go version | 1.25 or newer |
 
 ## Description
