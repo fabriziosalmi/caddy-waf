@@ -5,7 +5,7 @@
 | Component | Minimum version | Source of truth |
 |---|---|---|
 | Go | **1.25** | [`go.mod`](../go.mod) — `go 1.25` |
-| Caddy | **v2.10.x** | [`go.mod`](../go.mod) — `github.com/caddyserver/caddy/v2 v2.10.2` |
+| Caddy | **v2.11.x** | [`go.mod`](../go.mod) — `github.com/caddyserver/caddy/v2 v2.11.2` |
 | `xcaddy` | latest | [github.com/caddyserver/xcaddy](https://github.com/caddyserver/xcaddy) |
 | MaxMind GeoLite2 Country MMDB | optional, only when using country block / whitelist | [maxmind.com](https://www.maxmind.com/) |
 | MaxMind GeoLite2 ASN MMDB | optional, only when using `block_asns` | [maxmind.com](https://www.maxmind.com/) |
@@ -29,14 +29,14 @@ curl -fsSL -H "Pragma: no-cache" \
   https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
 ```
 
-The script targets Go `1.23.4` for new installs and refuses to proceed if a present Go installation is older than `1.22.3`. Review the [source](../install.sh) before piping it into a shell.
+The script targets Go `1.25.11` for new installs and refuses to proceed if a present Go installation is older than `1.25.0`. Review the [source](../install.sh) before piping it into a shell.
 
 A representative provisioning log:
 
 ```
 INFO  Provisioning WAF middleware     {"log_level":"info","log_path":"debug.json","log_json":true,"anomaly_threshold":20}
 INFO  http.handlers.waf  Tor exit nodes updated  {"count":1093}
-INFO  WAF middleware version          {"version":"v0.3.0"}
+INFO  WAF middleware version          {"version":"v0.3.3"}
 INFO  Rate limit configuration        {"requests":100,"window":10,"cleanup_interval":300,"paths":["/api/v1/.*"],"match_all_paths":false}
 WARN  GeoIP database not found. Country blacklisting/whitelisting will be disabled  {"path":"GeoLite2-Country.mmdb"}
 INFO  IP blacklist loaded             {"path":"ip_blacklist.txt","valid_entries":223770,"invalid_entries":0,"total_lines":223770}
@@ -78,7 +78,7 @@ Use Method 1, 2, or 3 above. Background and the registration checklist are in [a
 # http.handlers.waf
 
 ./caddy version
-# v2.10.x ...
+# v2.11.x ...
 ```
 
 ## Where to go next
