@@ -222,6 +222,12 @@ The repository also ships Python suites covering offensive payloads (`test.py`),
 
 ---
 
+## Commercial support & consulting
+
+Running caddy-waf in production? I offer paid support, custom rule development,
+and security consulting — WAF tuning, hardening, TLS automation, and cloud
+detection & alerting. Reach out: **fabrizio.salmi@gmail.com**.
+
 ## Contributing
 
 Pull requests are welcome. The project values:
