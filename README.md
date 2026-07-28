@@ -115,7 +115,14 @@ xcaddy build --with github.com/fabriziosalmi/caddy-waf=./
 
 ### `caddy add-package`
 
-This module is **not registered** in Caddy's official package registry; `caddy add-package github.com/fabriziosalmi/caddy-waf` will fail with `HTTP 400: ... is not a registered Caddy module package path`. Use one of the build options above. See [`docs/add-package-guide.md`](docs/add-package-guide.md) for details.
+The module is registered in Caddy's package registry, so an existing Caddy v2.7+ binary can pull it in without a Go toolchain:
+
+```bash
+caddy add-package github.com/fabriziosalmi/caddy-waf
+caddy list-modules | grep waf   # expect: http.handlers.waf
+```
+
+It is also selectable on [caddyserver.com/download](https://caddyserver.com/download). See [`docs/add-package-guide.md`](docs/add-package-guide.md) for version pinning, removal, and when to prefer `xcaddy` instead.
 
 ---
 
@@ -176,7 +183,7 @@ A fully annotated example is provided in [`Caddyfile`](Caddyfile) and [`caddyfil
 | [`docs/scripts.md`](docs/scripts.md) | Helper Python scripts for rule and blacklist generation. |
 | [`docs/testing.md`](docs/testing.md) | Running the bundled `test.py` suite. |
 | [`docs/docker.md`](docs/docker.md) | Building and running with Docker / Docker Compose. |
-| [`docs/add-package-guide.md`](docs/add-package-guide.md) | Status of `caddy add-package` registration. |
+| [`docs/add-package-guide.md`](docs/add-package-guide.md) | Installing with `caddy add-package`. |
 | [`docs/caddytest.md`](docs/caddytest.md) | The `caddytest.py` traffic-generation tool. |
 
 ---

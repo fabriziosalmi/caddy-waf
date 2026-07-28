@@ -1,94 +1,89 @@
-# `caddy add-package` — Status and Reference
+# `caddy add-package`
 
-> **Important.** This module is **not** registered in Caddy's official package registry at `caddyserver.com`. Attempting to install it with `caddy add-package` returns:
->
-> ```
-> Error: download failed: HTTP 400: github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path
-> ```
->
-> Use one of the supported installation methods documented in [installation.md](installation.md) instead:
->
-> - [Build with `xcaddy`](installation.md#method-1--build-with-xcaddy-recommended) (recommended)
-> - [Quick script](installation.md#method-2--quick-script)
-> - [Build from source](installation.md#method-3--build-from-source)
+`github.com/fabriziosalmi/caddy-waf` is registered in Caddy's package registry
+(since 2026-07-28), so it can be added to an existing Caddy binary without a Go
+toolchain. It is also selectable on <https://caddyserver.com/download>.
 
-This page is retained as a reference in case the module is registered in the future. Until then, every command shown below will fail.
+For registration status and history see
+[`CADDY_MODULE_REGISTRATION.md`](../CADDY_MODULE_REGISTRATION.md).
 
-## Prerequisites (if registration ever completes)
+## Requirements
 
-- Caddy v2.7 or newer (the `add-package` command was introduced in 2.7).
+- Caddy v2.7 or newer (`add-package` was introduced in 2.7).
 - Network access from the Caddy host to `caddyserver.com`.
 - Permission to replace the running Caddy binary.
 
-## Hypothetical install
+## Install
 
 ```bash
 caddy add-package github.com/fabriziosalmi/caddy-waf
 ```
 
-If the registration succeeds, the command would:
+This will:
 
 1. Detect the currently running Caddy and its module set.
 2. Send a build request to the Caddy build service.
-3. Download a new binary that includes the existing modules **plus** `caddy-waf`.
-4. Back up the current Caddy binary (deleted unless `--keep-backup` is passed).
+3. Download a new binary containing the existing modules **plus** `caddy-waf`.
+4. Back up the current binary (deleted unless `--keep-backup` is passed).
 5. Replace the Caddy binary in place.
 
 Verify:
 
 ```bash
 caddy list-modules | grep waf
-# Expected: http.handlers.waf
+# expect: http.handlers.waf
 ```
 
-## Hypothetical version pinning
+## Pin a version
 
 ```bash
-caddy add-package github.com/fabriziosalmi/caddy-waf@vX.Y.Z
+caddy add-package github.com/fabriziosalmi/caddy-waf@v0.3.5
 ```
 
-`vX.Y.Z` is any tag from the [GitHub Releases](https://github.com/fabriziosalmi/caddy-waf/releases) page.
+Any tag from the [Releases](https://github.com/fabriziosalmi/caddy-waf/releases)
+page works. Without a version the build service uses the latest tag.
 
-## Hypothetical removal
+Note that v0.3.4 and earlier carry a high-severity denial-of-service
+(GHSA-gfj3-cmff-q8wh); do not pin below v0.3.4.
+
+## Remove
 
 ```bash
 caddy remove-package github.com/fabriziosalmi/caddy-waf
 ```
 
-## Why `add-package` does not work today
+## When to build with xcaddy instead
 
-The Caddy build service maintains an allow-list of registered package paths. Until the maintainer of `caddy-waf` registers `github.com/fabriziosalmi/caddy-waf` through `https://caddyserver.com/account/register-package`, the build service refuses requests for it. The registration history and prior error references are tracked in [`CADDY_MODULE_REGISTRATION.md`](../CADDY_MODULE_REGISTRATION.md).
-
-## Use this instead
-
-The recommended flow on a host that already has `xcaddy` (and hence Go) installed:
+`add-package` replaces a binary in place using a remote build service. Prefer
+[`xcaddy`](installation.md#option-1--build-with-xcaddy-recommended) when you
+need to build from a fork or an untagged commit, pin the Caddy version itself,
+build in an air-gapped environment, or produce reproducible artifacts in CI:
 
 ```bash
-go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 xcaddy build --with github.com/fabriziosalmi/caddy-waf
-./caddy version
-./caddy list-modules | grep waf
 ```
-
-If Go is not available, run the bundled `install.sh` (see [installation.md](installation.md#method-2--quick-script)) which installs Go and `xcaddy` on first use.
 
 ## Troubleshooting
 
 ### `command not found: caddy add-package`
 
-You are running Caddy older than 2.7. Update Caddy and retry — but note the registration warning above still applies.
+You are running Caddy older than 2.7. Update Caddy.
 
 ### `permission denied`
 
-The new binary cannot replace the existing one. Re-run with `sudo`, or run `add-package` from a directory where the user has write access and copy the resulting binary into place manually.
+The new binary cannot replace the existing one. Re-run with `sudo`, or run
+`add-package` from a directory the user can write to and move the resulting
+binary into place manually.
 
 ### `Error: download failed: HTTP 400: ... is not a registered Caddy module package path`
 
-Expected. Use one of the build paths from [installation.md](installation.md).
+Check the import path for typos. Go module paths are not URLs, so no `https://`
+prefix and no trailing slash. If the path is correct and the error persists, the
+registration may have been removed — see
+[`CADDY_MODULE_REGISTRATION.md`](../CADDY_MODULE_REGISTRATION.md).
 
 ## References
 
-- Caddy command line documentation: <https://caddyserver.com/docs/command-line>
+- Caddy command line: <https://caddyserver.com/docs/command-line>
 - Extending Caddy: <https://caddyserver.com/docs/extending-caddy>
 - `xcaddy`: <https://github.com/caddyserver/xcaddy>
-- Module registration tracker: [`CADDY_MODULE_REGISTRATION.md`](../CADDY_MODULE_REGISTRATION.md)

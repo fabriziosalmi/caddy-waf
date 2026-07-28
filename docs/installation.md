@@ -63,13 +63,17 @@ The `=./` form of `--with` instructs `xcaddy` to use the local checkout rather t
 
 ## Method 4 — `caddy add-package`
 
-This module is **not registered** in Caddy's official package registry. Attempting `caddy add-package github.com/fabriziosalmi/caddy-waf` returns:
+The module is registered in Caddy's package registry, so an existing Caddy v2.7+ binary can pull it in without a Go toolchain:
 
-```
-Error: download failed: HTTP 400: github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path
+```bash
+caddy add-package github.com/fabriziosalmi/caddy-waf
 ```
 
-Use Method 1, 2, or 3 above. Background and the registration checklist are in [add-package-guide.md](add-package-guide.md) and [`CADDY_MODULE_REGISTRATION.md`](../CADDY_MODULE_REGISTRATION.md).
+This asks the Caddy build service for a binary containing your current module set plus `caddy-waf`, then replaces the binary in place (backing up the old one unless `--keep-backup` is passed). Pin a version with `@v0.3.5` if needed.
+
+The module is also selectable on <https://caddyserver.com/download>.
+
+See [add-package-guide.md](add-package-guide.md) for the full flow, removal, and troubleshooting.
 
 ## Verifying the build
 
