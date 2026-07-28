@@ -169,6 +169,21 @@ func TestBlacklistedIPIsBlockedEndToEnd(t *testing.T) {
 		assert.Equal(t, "UPSTREAM", w.Body.String())
 	})
 
+	t.Run("a forged X-Forwarded-For cannot skip the check", func(t *testing.T) {
+		// The peer address is blacklisted; the client forges a clean XFF.
+		// Consulting XFF *instead of* the peer address used to let this
+		// through, making the whole blacklist bypassable with one header.
+		reached = false
+		req := httptest.NewRequest(http.MethodGet, testURL, nil)
+		req.RemoteAddr = "192.0.2.10:41234"
+		req.Header.Set("X-Forwarded-For", "8.8.8.8")
+		w := httptest.NewRecorder()
+		require.NoError(t, m.ServeHTTP(w, req, next))
+
+		assert.False(t, reached, "a forged X-Forwarded-For must not bypass the blacklist")
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
 	t.Run("X-Forwarded-For is honoured for the blacklist", func(t *testing.T) {
 		reached = false
 		req := httptest.NewRequest(http.MethodGet, testURL, nil)

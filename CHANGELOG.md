@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.8] - 2026-07-28
+
+### Security
+**A single request header bypassed the IP blacklist entirely.** Phase 1 consulted `X-Forwarded-For` *instead of* `r.RemoteAddr` whenever the header was present:
+
+```go
+if xForwardedFor != "" {
+    if m.isIPBlacklisted(firstIP) { block }
+    // no else -- r.RemoteAddr was never checked
+} else {
+    if m.isIPBlacklisted(r.RemoteAddr) { block }
+}
+```
+
+Any blacklisted client could send `X-Forwarded-For: 8.8.8.8` and skip the check. No tooling, no preconditions, no authentication — one arbitrary header. Demonstrated end to end: the same client is refused with `403` without the header and served `200` with it.
+
+The peer address is now checked **first and unconditionally**, since it is the only value a client cannot forge, and the forwarded chain is checked **in addition** rather than instead. Checking more addresses can only block more, never less. A client can therefore blacklist itself by forging a listed address, which is harmless. Deciding which forwarded values to *trust* requires a `trusted_proxies` option and is tracked in [#94](https://github.com/fabriziosalmi/caddy-waf/issues/94).
+
+This was masked until v0.3.7: before that the blacklist was never populated at all (see v0.3.7), so nothing was bypassable because nothing was enforced. Fixing enforcement made this the live bypass, which is why it ships one release later.
+
+Covered by `GHSA-w6gv-76q4-prqg`, updated to reflect **v0.3.8** as the patched version.
+
+### Added
+- `TestBlacklistedIPIsBlockedEndToEnd/a_forged_X-Forwarded-For_cannot_skip_the_check` — a blacklisted peer sending a clean `X-Forwarded-For` must still be refused.
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.3.8`.
+
 ## [v0.3.7] - 2026-07-28
 
 ### Security
