@@ -138,6 +138,7 @@ type Middleware struct {
 	LogBuffer           int   `json:"log_buffer,omitempty"` // Add the LogBuffer field
 	RedactSensitiveData bool  `json:"redact_sensitive_data,omitempty"`
 	MaxRequestBodySize  int64 `json:"max_request_body_size,omitempty"`
+	MaxResponseBodySize int64 `json:"max_response_body_size,omitempty"`
 	GeoIPFailOpen       bool  `json:"geoip_fail_open,omitempty"`
 
 	ruleHits        sync.Map `json:"-"`

@@ -8,7 +8,7 @@ A Web Application Firewall middleware for the [Caddy](https://caddyserver.com/) 
 
 - **Module ID**: `http.handlers.waf`
 - **Go module path**: `github.com/fabriziosalmi/caddy-waf`
-- **Current version**: `v0.3.3` (see [`caddywaf.go`](caddywaf.go) — `const wafVersion`)
+- **Current version**: `v0.3.4` (see [`caddywaf.go`](caddywaf.go) — `const wafVersion`)
 - **License**: AGPL-3.0
 
 ---
@@ -44,6 +44,7 @@ The middleware is implemented as a single Caddy module registered under the ID `
 - **Linear-time regex**: rules are compiled by Go's `regexp` (RE2). No catastrophic backtracking.
 - **Wait-free counters**: per-rule hit counts use `atomic.Int64` stored in a `sync.Map`.
 - **Bounded body reads**: request bodies are read through `io.LimitReader` (`max_request_body_size`, default 10 MiB) and restored with `io.MultiReader` so downstream handlers still see the full body.
+- **Bounded response buffering**: the response body is only held in memory when a Phase 4 rule exists to inspect it, and never past `max_response_body_size` (default 10 MiB). Beyond that — or as soon as the upstream flushes — the WAF releases what it holds and streams the rest, so memory never scales with the response size.
 - **Zero-copy body string**: the body is exposed to rule matching via `unsafe.String` to avoid an allocation per request.
 - **Circuit breaker for GeoIP**: `geoip_fail_open` controls whether a GeoIP lookup failure blocks the request or allows it through.
 - **Panic recovery**: `ServeHTTP` installs a deferred recovery that returns `500 Internal Server Error` on panic.
@@ -66,7 +67,7 @@ A representative provisioning log:
 ```
 INFO  Provisioning WAF middleware     {"log_level":"info","log_path":"debug.json","log_json":true,"anomaly_threshold":20}
 INFO  http.handlers.waf  Tor exit nodes updated  {"count":1093}
-INFO  WAF middleware version  {"version":"v0.3.3"}
+INFO  WAF middleware version  {"version":"v0.3.4"}
 INFO  Rate limit configuration  {"requests":100,"window":10,"cleanup_interval":300,"paths":["/api/v1/.*"],"match_all_paths":false}
 WARN  GeoIP database not found. Country blacklisting/whitelisting will be disabled  {"path":"GeoLite2-Country.mmdb"}
 INFO  IP blacklist loaded     {"path":"ip_blacklist.txt","valid_entries":223770,"invalid_entries":0,"total_lines":223770}

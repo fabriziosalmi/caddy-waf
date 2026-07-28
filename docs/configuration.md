@@ -88,6 +88,8 @@ The full list is the `directiveHandlers` map in [`config.go`](../config.go). All
 | `ip_blacklist_file` | `<file>` | unset | Path to the IP blacklist (single IPs and CIDR ranges). The file is created empty if it does not exist. |
 | `dns_blacklist_file` | `<file>` | unset | Path to the DNS blacklist (one host per line). The file is created empty if it does not exist. |
 | `anomaly_threshold` | `<positive int>` | `5` (Caddyfile) / `20` (Provision fallback) | Score at which a request is blocked. Lower values are stricter. |
+| `max_request_body_size` | `<bytes>` | `10485760` (10 MiB) | Upper bound for request body reads via `io.LimitReader`. `0` means "use the default". |
+| `max_response_body_size` | `<bytes>` | `10485760` (10 MiB) | Upper bound on how much of the response body is held in memory for Phase 4 inspection. `0` means "use the default". See [Response body buffering](#response-body-buffering). |
 | `block_countries` | `<mmdb> <ISO> [<ISO> …]` | disabled | Block requests whose source country (per the GeoLite2 Country MMDB) is in the list. |
 | `whitelist_countries` | `<mmdb> <ISO> [<ISO> …]` | disabled | Allow only requests whose source country is in the list. |
 | `block_asns` | `<mmdb> <ASN> [<ASN> …]` | disabled | Block requests whose source IP belongs to one of the listed ASNs. ASN values are decimal integers without a leading `AS`. |
@@ -176,7 +178,6 @@ The following fields exist on the `Middleware` struct (in [`types.go`](../types.
 
 | Field | JSON key | Type | Default | Description |
 |---|---|---|---|---|
-| `MaxRequestBodySize` | `max_request_body_size` | int64 (bytes) | `10 * 1024 * 1024` (10 MiB) | Upper bound for body reads via `io.LimitReader`. Validated as non-negative. |
 | `GeoIPFailOpen` | `geoip_fail_open` | bool | `false` | When `true`, a GeoIP/ASN lookup error allows the request through; otherwise the request is blocked with `403`. |
 | `CustomResponses` | `custom_responses` | map[int]CustomBlockResponse | unset | Same as the `custom_response` directive but as a JSON map of status codes. |
 | `Tor.CustomTORExitNodeURL` | `tor.custom_tor_exit_node_url` | string | `https://check.torproject.org/torbulkexitlist` | Override URL for the exit-node feed. |
@@ -196,9 +197,39 @@ A JSON config snippet equivalent to the minimal Caddyfile:
   "metrics_endpoint": "/waf_metrics",
   "anomaly_threshold": 20,
   "max_request_body_size": 20971520,
+  "max_response_body_size": 20971520,
   "geoip_fail_open": true
 }
 ```
+
+---
+
+## Response body buffering
+
+Phase 4 rules match against the response body, which means the WAF has to hold
+the body until it has been inspected. That buffering is bounded on two axes:
+
+1. **It only happens when it is needed.** If no Phase 4 rule is loaded, the
+   response is never copied — it is forwarded to the client as the upstream
+   produces it. The bundled `rules.json` contains no Phase 4 rules, so the
+   default configuration does no response buffering at all.
+2. **It never exceeds `max_response_body_size`** (default 10 MiB). Once a
+   response outgrows the budget, the WAF writes out what it holds and streams
+   the remainder directly to the client. The same release happens as soon as the
+   upstream flushes, so server-sent events and chunked streaming are not stalled
+   waiting for the budget to fill.
+
+When a response is released early it cannot be blocked, because part of it is
+already on the wire. The WAF logs this at `warn` level rather than silently
+scoring a truncated body:
+
+```
+WARN  Response body exceeded the WAF inspection limit; Phase 4 rules were not applied  {"log_id":"…","max_response_body_size":10485760}
+```
+
+Raise `max_response_body_size` if you need Phase 4 rules to cover larger
+responses, keeping in mind that the value is the per-in-flight-request memory
+ceiling the WAF may occupy.
 
 ---
 
@@ -208,6 +239,7 @@ A JSON config snippet equivalent to the minimal Caddyfile:
 
 - `anomaly_threshold` ≥ 0
 - `max_request_body_size` ≥ 0
+- `max_response_body_size` ≥ 0
 - `log_buffer` ≥ 0
 - When `rate_limit.requests > 0`: `window > 0` and `cleanup_interval > 0`
 

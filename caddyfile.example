@@ -75,6 +75,16 @@ api.example.com {
             custom_response 403 application/json error.json
             custom_response 429 text/plain      "Slow down."
 
+            # Body size ceilings, in bytes.
+            #   max_request_body_size  caps request body reads (io.LimitReader).
+            #   max_response_body_size caps how much of the response body is held
+            #                          in memory for Phase 4 inspection; past
+            #                          this the response is streamed through
+            #                          un-inspected instead of buffered.
+            # Both default to 10 MiB (10485760).
+            max_request_body_size  10485760
+            max_response_body_size 10485760
+
             # Logging.
             log_severity          info
             log_json

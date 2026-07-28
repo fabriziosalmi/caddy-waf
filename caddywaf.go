@@ -49,7 +49,7 @@ var (
 )
 
 // Add or update the version constant as needed
-const wafVersion = "v0.3.3" // update this value to the new release version when tagging
+const wafVersion = "v0.3.4" // update this value to the new release version when tagging
 
 // ==================== Initialization and Setup ====================
 
@@ -635,6 +635,11 @@ func (m *Middleware) Validate() error {
 	// Validate max request body size
 	if m.MaxRequestBodySize < 0 {
 		return fmt.Errorf("max_request_body_size cannot be negative: %d", m.MaxRequestBodySize)
+	}
+
+	// Validate max response body size
+	if m.MaxResponseBodySize < 0 {
+		return fmt.Errorf("max_response_body_size cannot be negative: %d", m.MaxResponseBodySize)
 	}
 
 	// Validate log buffer
