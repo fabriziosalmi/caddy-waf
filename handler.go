@@ -288,29 +288,34 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 	if phase == 1 {
 		// IP blacklisting - the highest priority
 		m.logger.Debug("Checking for IP blacklisting", zap.String("remote_addr", r.RemoteAddr)) // Added log for checking before to isIPBlacklisted call
-		xForwardedFor := r.Header.Get("X-Forwarded-For")
-		if xForwardedFor != "" {
-			ips := strings.Split(xForwardedFor, ",")
-			if len(ips) > 0 {
-				firstIP := strings.TrimSpace(ips[0])
-				m.logger.Debug("Checking IP blacklist with X-Forwarded-For", zap.String("remote_addr_xff", firstIP), zap.String("r.RemoteAddr", r.RemoteAddr))
-				if m.isIPBlacklisted(firstIP) {
-					m.logger.Debug("Starting IP blacklist phase")
-					m.blockRequest(w, r, state, http.StatusForbidden, "ip_blacklist", "ip_blacklist_rule",
-						zap.String("message", "Request blocked by IP blacklist"),
-					)
-					if m.CustomResponses != nil {
-						m.writeCustomResponse(w, state.StatusCode)
-					}
-					return
+		// Check the peer address FIRST and unconditionally.
+		//
+		// This used to consult X-Forwarded-For *instead of* r.RemoteAddr
+		// whenever the header was present, so a blacklisted client could send
+		// any X-Forwarded-For value and skip the check entirely -- a one-header
+		// bypass of the whole blacklist. The peer address is the only value a
+		// client cannot forge, so it is always checked.
+		//
+		// The forwarded chain is checked as well, which can only ever block
+		// more, never less. Note that a client can therefore blacklist itself
+		// by forging a listed address; that is harmless. Deciding which
+		// forwarded values to *trust* needs a trusted_proxies option and is
+		// tracked in issue #94.
+		candidates := []string{r.RemoteAddr}
+		if xForwardedFor := r.Header.Get("X-Forwarded-For"); xForwardedFor != "" {
+			for _, hop := range strings.Split(xForwardedFor, ",") {
+				if hop = strings.TrimSpace(hop); hop != "" {
+					candidates = append(candidates, hop)
 				}
-			} else {
-				m.logger.Debug("X-Forwarded-For header present but empty or invalid")
 			}
-		} else {
-			m.logger.Debug("X-Forwarded-For header not present using r.RemoteAddr")
-			if m.isIPBlacklisted(r.RemoteAddr) {
-				m.logger.Debug("Starting IP blacklist phase")
+		}
+
+		for _, candidate := range candidates {
+			if m.isIPBlacklisted(candidate) {
+				m.logger.Debug("Starting IP blacklist phase",
+					zap.String("matched", candidate),
+					zap.String("remote_addr", r.RemoteAddr),
+				)
 				m.blockRequest(w, r, state, http.StatusForbidden, "ip_blacklist", "ip_blacklist_rule",
 					zap.String("message", "Request blocked by IP blacklist"),
 				)
