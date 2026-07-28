@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.6] - 2026-07-28
+
+### Security
+Cleared the Dependabot backlog on the default branch: **25 of 30 open alerts — 7 critical, 5 high, 13 moderate**. Every bump was verified by building and testing, not by trusting the suggestion.
+
+| Module | From | To | Alerts closed |
+|---|---|---|---|
+| `golang.org/x/crypto` | v0.49.0 | **v0.52.0** | 7 critical, 2 high, 4 moderate |
+| `github.com/caddyserver/caddy/v2` | v2.11.2 | **v2.11.4** | 2 high, 3 moderate |
+| `google.golang.org/grpc` | v1.79.3 | **v1.82.1** | 1 high |
+| `golang.org/x/net` | v0.52.0 | **v0.55.0** | 1 moderate |
+| `github.com/quic-go/quic-go` | v0.59.0 | **v0.59.1** | 1 moderate |
+| `go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp` | v1.43.0 | **v1.44.0** | 1 moderate |
+| `go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp` | v0.19.0 | **v0.20.0** | 1 moderate |
+
+No source changes were required. `go build`, `go vet` and the full unit suite pass, and `xcaddy build` against the bumped tree produces a working Caddy **v2.11.4** binary that registers `http.handlers.waf`.
+
+### Not fixed, and why
+
+Five alerts remain open. Leaving them undocumented would be worse than leaving them open.
+
+- **`github.com/google/cel-go` (moderate, GHSA-gcjh-h69q-9w9g)** — the suggested v0.29.0 **does not compile against Caddy v2.11.4**: `interpreter.NewCall` changed from `[]interpreter.Interpretable` to `[]interpreter.InterpretableV2`, and `caddyhttp/celmatcher.go` still passes the former. Caddy's own `go.mod` pins v0.28.1. Taking the bump would trade a moderate transitive advisory for a build that does not exist. Blocked until Caddy updates.
+- **`vite` ×3 (1 high, 2 moderate) and `esbuild` ×1 (moderate)** — introduced in v0.3.5 by the `package-lock.json` for the VitePress docs site. All four are **development-server** issues (arbitrary origins reading dev-server responses; `server.fs.deny` bypass on Windows; NTLMv2 disclosure via UNC paths on Windows; path traversal in optimized-deps `.map` handling). CI only ever runs `vitepress build`, the published site is static HTML, and `npm audit --omit=dev` reports zero. The fix requires vite ≥ 6.4.3, which no stable VitePress pulls — `latest` is 1.6.4 and pins vite ^5.4.14; only the 2.0.0-alpha line moves to vite 6. Running an alpha documentation generator to silence dev-only advisories is the worse trade.
+
+### Changed
+- Documentation references to the pinned Caddy version updated from v2.11.2 to v2.11.4.
+- Bumped version constant `wafVersion` to `v0.3.6`.
+
 ## [v0.3.5] - 2026-07-28
 
 ### Fixed
