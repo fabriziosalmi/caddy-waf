@@ -18,21 +18,27 @@ hero:
 
 features:
   - title: Rule engine
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>'
     details: Regular expressions compiled by Go's RE2, so matching is linear-time with no catastrophic backtracking. Rules carry a score; a request is blocked once the total reaches the anomaly threshold.
     link: /rules
   - title: Four inspection phases
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>'
     details: Request headers, request body, response headers and response body, each with its own rule set and target identifiers.
     link: /configuration
   - title: Blacklists and geo controls
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></svg>'
     details: IP and CIDR ranges in a prefix trie, exact-match DNS lookups, MaxMind country and ASN filtering, and a periodically refreshed Tor exit-node list.
     link: /blacklists
   - title: Rate limiting
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 1 8-8"/><path d="m12 12 5-3"/><path d="M12 4v2"/><path d="M4.9 7.5 6.3 8.6"/></svg>'
     details: Per-IP sliding window, optionally scoped to specific paths with regular expressions.
     link: /ratelimit
   - title: Observability
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h4l3 7 4-16 3 9h4"/></svg>'
     details: A JSON metrics endpoint, an async log worker with sensitive-data redaction, and worked examples for Prometheus, Grafana and ELK.
     link: /metrics
   - title: Hot reload
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>'
     details: File watchers on the rule files and both blacklists, with a documented matrix of what each reload covers and what still needs a caddy reload.
     link: /dynamicupdates
 ---

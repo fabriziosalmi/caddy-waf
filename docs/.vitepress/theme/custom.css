@@ -1,0 +1,101 @@
+/*
+ * caddy-waf docs theme.
+ *
+ * Deliberately small. Every major VitePress site does the same handful of
+ * things -- override the brand colour triple, add one signature touch on the
+ * hero, soften the default shadows -- and leaves the rest of the theme alone.
+ * Restraint is what keeps it from looking like a template with decorations
+ * bolted on.
+ *
+ * Colours sit in the blue-cyan band: it reads as network infrastructure rather
+ * than alarm. Red is reserved for the one thing that should actually alarm the
+ * reader (the danger container), so it keeps its meaning.
+ *
+ * Every value below was checked for WCAG contrast rather than picked by eye.
+ * Ratios are noted inline; all beat VitePress's own default (4.48:1).
+ */
+
+:root {
+  /* brand-1 links, brand-2 hover, brand-3 solid button background. */
+  --vp-c-brand-1: #075985; /* 7.56:1 on white */
+  --vp-c-brand-2: #0e7490; /* 5.36:1 */
+  --vp-c-brand-3: #0369a1; /* 5.93:1 behind white button text */
+  --vp-c-brand-soft: rgba(3, 105, 161, 0.14);
+
+  /* Tip containers inherit the brand, so they follow automatically. */
+  --vp-c-tip-1: var(--vp-c-brand-1);
+  --vp-c-tip-2: var(--vp-c-brand-2);
+  --vp-c-tip-3: var(--vp-c-brand-3);
+  --vp-c-tip-soft: var(--vp-c-brand-soft);
+
+  /*
+   * The one signature element: a gradient on the product name in the hero.
+   * Kept dark enough to clear 3:1 as large text -- the usual mistake here is a
+   * pastel gradient that looks good in a screenshot and is unreadable in use.
+   */
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, #075985 20%, #0891b2);
+
+  /* Softer than stock, which is heavy against light backgrounds. */
+  --vp-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --vp-shadow-2: 0 3px 12px rgba(0, 0, 0, 0.07);
+  --vp-shadow-3: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+  --vp-c-brand-1: #38bdf8; /* 8.01:1 on #1b1b1f */
+  --vp-c-brand-2: #7dd3fc; /* 10.30:1 */
+  --vp-c-brand-3: #0369a1; /* 5.93:1 behind white button text */
+  --vp-c-brand-soft: rgba(56, 189, 248, 0.16);
+
+  --vp-home-hero-name-background: linear-gradient(120deg, #38bdf8 20%, #5eead4);
+
+  --vp-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --vp-shadow-2: 0 3px 12px rgba(0, 0, 0, 0.36);
+  --vp-shadow-3: 0 12px 32px rgba(0, 0, 0, 0.44);
+}
+
+/*
+ * Feature cards: stock VitePress leaves them flat and they read as dead
+ * weight under the hero. A hairline that picks up the brand on hover is
+ * enough to make them feel like the links they are.
+ */
+.VPFeature {
+  transition:
+    border-color 0.25s,
+    background-color 0.25s;
+}
+
+.VPFeature:hover {
+  border-color: var(--vp-c-brand-1);
+}
+
+.VPFeature .icon {
+  background-color: var(--vp-c-brand-soft);
+}
+
+/*
+ * This documentation is mostly configuration reference, so inline code appears
+ * constantly in prose -- every directive name is one. The stock treatment is
+ * loud at that density; drop the weight and let it sit inside the sentence.
+ */
+:not(pre) > code {
+  font-weight: 400;
+}
+
+/*
+ * Tables carry the directive references (configuration.md is 310 lines of
+ * them). Give the header some separation so a long table stays scannable.
+ */
+.vp-doc th {
+  font-size: 0.85em;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-2);
+}
+
+/* Wide reference tables must scroll inside the page, never the page itself. */
+.vp-doc table {
+  display: block;
+  overflow-x: auto;
+}
