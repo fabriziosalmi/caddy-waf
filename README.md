@@ -167,8 +167,11 @@ A fully annotated example is provided in [`Caddyfile`](Caddyfile) and [`caddyfil
 
 ## Documentation
 
+**[fabriziosalmi.github.io/caddy-waf](https://fabriziosalmi.github.io/caddy-waf/)** — the same pages as below, with full-text search and cross-linking. The Markdown under [`docs/`](docs/) remains the source and stays readable on GitHub.
+
 | Document | Topic |
 |---|---|
+| [`docs/introduction.md`](docs/introduction.md) | What the middleware does and where it sits in the request pipeline. |
 | [`docs/installation.md`](docs/installation.md) | All installation methods. |
 | [`docs/configuration.md`](docs/configuration.md) | Caddyfile and JSON directives, request lifecycle, blocking precedence. |
 | [`docs/rules.md`](docs/rules.md) | `rules.json` schema, target identifiers, regex semantics. |

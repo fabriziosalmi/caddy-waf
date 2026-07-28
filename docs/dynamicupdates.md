@@ -2,7 +2,7 @@
 
 The WAF reloads selected configuration files in place, without restarting Caddy. This document describes exactly which paths trigger a reload, what each reload covers, and what it does not cover.
 
-Implementation: `startFileWatcher`, `ReloadRules`, `ReloadConfig` in [`caddywaf.go`](../caddywaf.go).
+Implementation: `startFileWatcher`, `ReloadRules`, `ReloadConfig` in [`caddywaf.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/caddywaf.go).
 
 ## Watched files
 

@@ -1,0 +1,119 @@
+---
+layout: home
+
+hero:
+  name: caddy-waf
+  text: Web Application Firewall for Caddy
+  tagline: Regex rule engine with anomaly scoring, IP/DNS/ASN/country blacklists, Tor exit-node blocking, per-IP rate limiting, and a JSON metrics endpoint.
+  actions:
+    - theme: brand
+      text: Get started
+      link: /introduction
+    - theme: alt
+      text: Installation
+      link: /installation
+    - theme: alt
+      text: GitHub
+      link: https://github.com/fabriziosalmi/caddy-waf
+
+features:
+  - title: Rule engine
+    details: Regular expressions compiled by Go's RE2, so matching is linear-time with no catastrophic backtracking. Rules carry a score; a request is blocked once the total reaches the anomaly threshold.
+    link: /rules
+  - title: Four inspection phases
+    details: Request headers, request body, response headers and response body, each with its own rule set and target identifiers.
+    link: /configuration
+  - title: Blacklists and geo controls
+    details: IP and CIDR ranges in a prefix trie, exact-match DNS lookups, MaxMind country and ASN filtering, and a periodically refreshed Tor exit-node list.
+    link: /blacklists
+  - title: Rate limiting
+    details: Per-IP sliding window, optionally scoped to specific paths with regular expressions.
+    link: /ratelimit
+  - title: Observability
+    details: A JSON metrics endpoint, an async log worker with sensitive-data redaction, and worked examples for Prometheus, Grafana and ELK.
+    link: /metrics
+  - title: Hot reload
+    details: File watchers on the rule files and both blacklists, with a documented matrix of what each reload covers and what still needs a caddy reload.
+    link: /dynamicupdates
+---
+
+## Install
+
+The module is registered in Caddy's package registry, so an existing Caddy v2.7+ binary can pull it in without a Go toolchain:
+
+```bash
+caddy add-package github.com/fabriziosalmi/caddy-waf
+caddy list-modules | grep waf    # http.handlers.waf
+```
+
+Or build it yourself with [`xcaddy`](https://github.com/caddyserver/xcaddy):
+
+```bash
+xcaddy build --with github.com/fabriziosalmi/caddy-waf
+```
+
+It is also selectable on the [Caddy download page](https://caddyserver.com/download?package=github.com%2Ffabriziosalmi%2Fcaddy-waf). See [Installation](installation.md) for every supported path.
+
+## Minimal configuration
+
+```caddyfile
+:8080 {
+    route {
+        waf {
+            rule_file          rules.json
+            ip_blacklist_file  ip_blacklist.txt
+            dns_blacklist_file dns_blacklist.txt
+            anomaly_threshold  20
+            metrics_endpoint   /waf_metrics
+        }
+        reverse_proxy localhost:3000
+    }
+}
+```
+
+## Reading order
+
+A first-time reader is recommended to follow this sequence:
+
+1. [Introduction](introduction.md) — what the middleware does and where it fits.
+2. [Installation](installation.md) — supported build paths and prerequisites.
+3. [Configuration](configuration.md) — the request lifecycle, every Caddyfile directive, every JSON-only field, blocking precedence.
+4. [Rules](rules.md) — the JSON rule schema and target identifiers.
+5. [Blacklists](blacklists.md) — file formats for IP and DNS blacklists.
+6. [Rate limiting](ratelimit.md) — sliding-window limiter, path matching.
+7. [Country and ASN blocking](geoblocking.md) — GeoIP / ASN behaviour.
+
+## Every page
+
+| Document | Topic |
+|---|---|
+| [introduction.md](introduction.md) | What the middleware does and where it sits in the request pipeline. |
+| [installation.md](installation.md) | Build with `xcaddy`, the install script, or from source. |
+| [add-package-guide.md](add-package-guide.md) | Installing with `caddy add-package`. |
+| [docker.md](docker.md) | Building and running the supplied `Dockerfile` / `docker-compose.yml`. |
+| [configuration.md](configuration.md) | Caddyfile directives, JSON fields, request phases, blocking precedence. |
+| [rules.md](rules.md) | `rules.json` schema, target identifiers, regex semantics. |
+| [blacklists.md](blacklists.md) | IP and DNS blacklist file formats. |
+| [ratelimit.md](ratelimit.md) | The `rate_limit` block and behaviour. |
+| [geoblocking.md](geoblocking.md) | `block_countries`, `whitelist_countries`, `block_asns`, fallback. |
+| [dynamicupdates.md](dynamicupdates.md) | File watchers, what each reload covers and what it does not. |
+| [metrics.md](metrics.md) | The `/waf_metrics` JSON document. |
+| [prometheus.md](prometheus.md) | A small exporter that scrapes the JSON metrics for Prometheus. |
+| [caddy-waf-elk.md](caddy-waf-elk.md) | Shipping the JSON log file to an ELK stack with Filebeat. |
+| [attacks.md](attacks.md) | Attack categories targeted by the bundled rule sets. |
+| [testing.md](testing.md) | Running `test.py` against a live WAF. |
+| [caddytest.md](caddytest.md) | Traffic generator for benchmarks and rule validation. |
+| [scripts.md](scripts.md) | The Python helpers under the project root. |
+
+## Bundled rule files
+
+- [`rules.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules.json) — the default rule set wired into the supplied [`Caddyfile`](https://github.com/fabriziosalmi/caddy-waf/blob/main/Caddyfile).
+- [`rules/`](https://github.com/fabriziosalmi/caddy-waf/tree/main/rules) — modular rule files grouped by attack category. Each file is a JSON array of rules and can be referenced directly with one or more `rule_file` directives.
+
+## Security
+
+Only the latest release receives security fixes. Published advisories are listed under [Security → Advisories](https://github.com/fabriziosalmi/caddy-waf/security/advisories).
+
+**v0.3.3 and earlier** are affected by [GHSA-gfj3-cmff-q8wh](https://github.com/fabriziosalmi/caddy-waf/security/advisories/GHSA-gfj3-cmff-q8wh), a high-severity unauthenticated denial of service. Fixed in v0.3.4.
+
+To report a vulnerability, use [private vulnerability reporting](https://github.com/fabriziosalmi/caddy-waf/security/advisories/new) rather than a public issue.

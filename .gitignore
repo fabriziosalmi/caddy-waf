@@ -35,3 +35,8 @@ testdata/
 
 # vendored web assets (served via go:embed) — NOT the Go module vendor dir
 !ui/vendor/
+
+# VitePress docs site
+node_modules/
+**/.vitepress/dist/
+**/.vitepress/cache/

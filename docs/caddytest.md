@@ -1,6 +1,6 @@
 # `caddytest.py` — Traffic Generator
 
-`caddytest.py` is a configurable HTTP traffic generator. It mixes legitimate and malicious payloads against a target URL to exercise WAF rules and to stress-test request handling. The script is intended for local benchmarking and rule validation, not as part of an automated CI suite — for the latter use [`test.py`](../test.py) (see [testing.md](testing.md)).
+`caddytest.py` is a configurable HTTP traffic generator. It mixes legitimate and malicious payloads against a target URL to exercise WAF rules and to stress-test request handling. The script is intended for local benchmarking and rule validation, not as part of an automated CI suite — for the latter use [`test.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/test.py) (see [testing.md](testing.md)).
 
 ## Capabilities
 

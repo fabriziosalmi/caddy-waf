@@ -1,6 +1,6 @@
 # Blacklists
 
-The middleware loads two blacklists at startup and on demand: an IP blacklist and a DNS blacklist. Both are plain-text files. Their loaders live in [`blacklist.go`](../blacklist.go) (`LoadIPBlacklistFromFile`, `LoadDNSBlacklistFromFile`).
+The middleware loads two blacklists at startup and on demand: an IP blacklist and a DNS blacklist. Both are plain-text files. Their loaders live in [`blacklist.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/blacklist.go) (`LoadIPBlacklistFromFile`, `LoadDNSBlacklistFromFile`).
 
 ## Common file syntax
 
@@ -81,7 +81,7 @@ Identical to the IP blacklist: a file write triggers `ReloadConfig`, which rebui
 
 | Metric | Source |
 |---|---|
-| `ip_blacklist_hits` | Incremented every time the IP trie returns a match (see `isIPBlacklisted` in [`blacklist.go`](../blacklist.go)). |
+| `ip_blacklist_hits` | Incremented every time the IP trie returns a match (see `isIPBlacklisted` in [`blacklist.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/blacklist.go)). |
 | `dns_blacklist_hits` | Incremented every time the DNS map returns a match (see `isDNSBlacklisted`). |
 
 Both are reported by the `/waf_metrics` endpoint — see [metrics.md](metrics.md).

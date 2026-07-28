@@ -4,8 +4,8 @@
 
 | Component | Minimum version | Source of truth |
 |---|---|---|
-| Go | **1.25** | [`go.mod`](../go.mod) — `go 1.25` |
-| Caddy | **v2.11.x** | [`go.mod`](../go.mod) — `github.com/caddyserver/caddy/v2 v2.11.2` |
+| Go | **1.25** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `go 1.25` |
+| Caddy | **v2.11.x** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `github.com/caddyserver/caddy/v2 v2.11.2` |
 | `xcaddy` | latest | [github.com/caddyserver/xcaddy](https://github.com/caddyserver/xcaddy) |
 | MaxMind GeoLite2 Country MMDB | optional, only when using country block / whitelist | [maxmind.com](https://www.maxmind.com/) |
 | MaxMind GeoLite2 ASN MMDB | optional, only when using `block_asns` | [maxmind.com](https://www.maxmind.com/) |
@@ -22,14 +22,14 @@ This produces a `./caddy` binary in the current directory with the WAF compiled 
 
 ## Method 2 — Quick script
 
-The repository ships [`install.sh`](../install.sh), which performs an end-to-end setup: it ensures Go and `xcaddy` are present, clones (or pulls) the repository, downloads the GeoLite2 Country database, builds Caddy with the WAF, formats the bundled Caddyfile, and starts the server.
+The repository ships [`install.sh`](https://github.com/fabriziosalmi/caddy-waf/blob/main/install.sh), which performs an end-to-end setup: it ensures Go and `xcaddy` are present, clones (or pulls) the repository, downloads the GeoLite2 Country database, builds Caddy with the WAF, formats the bundled Caddyfile, and starts the server.
 
 ```bash
 curl -fsSL -H "Pragma: no-cache" \
   https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
 ```
 
-The script targets Go `1.25.11` for new installs and refuses to proceed if a present Go installation is older than `1.25.0`. Review the [source](../install.sh) before piping it into a shell.
+The script targets Go `1.25.11` for new installs and refuses to proceed if a present Go installation is older than `1.25.0`. Review the [source](https://github.com/fabriziosalmi/caddy-waf/blob/main/install.sh) before piping it into a shell.
 
 A representative provisioning log:
 
@@ -87,4 +87,4 @@ See [add-package-guide.md](add-package-guide.md) for the full flow, removal, and
 
 ## Where to go next
 
-Continue with [configuration.md](configuration.md) for every directive, or jump to [the bundled `Caddyfile`](../Caddyfile) for a working example.
+Continue with [configuration.md](configuration.md) for every directive, or jump to [the bundled `Caddyfile`](https://github.com/fabriziosalmi/caddy-waf/blob/main/Caddyfile) for a working example.

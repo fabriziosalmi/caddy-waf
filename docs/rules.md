@@ -2,7 +2,7 @@
 
 The WAF evaluates a set of rules defined in one or more JSON files. Each file is a JSON array of rule objects. Files are loaded by the `rule_file` directive (which may be repeated to load several files).
 
-The schema below mirrors the `Rule` struct in [`types.go`](../types.go) and the validation in [`rules.go`](../rules.go) (`validateRule`).
+The schema below mirrors the `Rule` struct in [`types.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/types.go) and the validation in [`rules.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules.go) (`validateRule`).
 
 ---
 
@@ -34,7 +34,7 @@ The schema below mirrors the `Rule` struct in [`types.go`](../types.go) and the 
 | Description | `description` | string | no | Human-readable description, written to log records. |
 | Priority | `priority` | int | no | Higher priority is evaluated first within a phase. Defaults to `0`. |
 
-### Validation rules (from `validateRule` in [`rules.go`](../rules.go))
+### Validation rules (from `validateRule` in [`rules.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules.go))
 
 A rule is rejected (and dropped from the runtime ruleset, with a warning logged) if any of the following holds:
 
@@ -49,9 +49,9 @@ Loading a file is aborted only when the file cannot be read or its contents cann
 
 ### Field name caveat
 
-The Go struct declares the action as `Action string \`json:"mode"\`` ([`types.go`](../types.go) line 79). This means the JSON property name read by the loader is **`mode`**, not `action`. Files that use `"action"` will be parsed (the field is simply absent from the rule), and the rule will not have an explicit block — it will rely entirely on the cumulative anomaly score reaching `anomaly_threshold`.
+The Go struct declares the action as `Action string \`json:"mode"\`` ([`types.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/types.go) line 79). This means the JSON property name read by the loader is **`mode`**, not `action`. Files that use `"action"` will be parsed (the field is simply absent from the rule), and the rule will not have an explicit block — it will rely entirely on the cumulative anomaly score reaching `anomaly_threshold`.
 
-The bundled [`rules.json`](../rules.json) currently uses `"action"`; the bundled [`sample_rules.json`](../sample_rules.json) uses `"mode"`. Files under [`rules/`](../rules/) use `"action"` and therefore behave as if no explicit block were set.
+The bundled [`rules.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules.json) currently uses `"action"`; the bundled [`sample_rules.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/sample_rules.json) uses `"mode"`. Files under [`rules/`](https://github.com/fabriziosalmi/caddy-waf/tree/main/rules) use `"action"` and therefore behave as if no explicit block were set.
 
 When authoring new rules, prefer `"mode"`.
 
@@ -72,7 +72,7 @@ Within a phase, rules are sorted by descending `priority`, then evaluated in ord
 
 ## Targets
 
-Defined in [`request.go`](../request.go). Names are matched case-insensitively unless noted otherwise.
+Defined in [`request.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/request.go). Names are matched case-insensitively unless noted otherwise.
 
 ### Static targets
 
@@ -203,7 +203,7 @@ Rules with `mode == "log"` log the match at INFO level and let evaluation contin
 
 ## Authoring tips
 
-- Prefer modular files under [`rules/`](../rules/) over a single monolithic `rules.json`. Multiple `rule_file` directives load them all.
-- Always test new rules against the bundled offensive payloads in [`test.py`](../test.py) before deploying.
+- Prefer modular files under [`rules/`](https://github.com/fabriziosalmi/caddy-waf/tree/main/rules) over a single monolithic `rules.json`. Multiple `rule_file` directives load them all.
+- Always test new rules against the bundled offensive payloads in [`test.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/test.py) before deploying.
 - Set `priority` on rules that should evaluate before others within the same phase.
 - Use `mode: "log"` while tuning thresholds; switch to `mode: "block"` once false-positive rates are acceptable.

@@ -1,6 +1,6 @@
 # Rate Limiting
 
-Per-IP, sliding-window rate limiting. Implemented in [`ratelimiter.go`](../ratelimiter.go) and configured through the `rate_limit` block inside the `waf` directive.
+Per-IP, sliding-window rate limiting. Implemented in [`ratelimiter.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/ratelimiter.go) and configured through the `rate_limit` block inside the `waf` directive.
 
 ## Caddyfile
 
@@ -56,7 +56,7 @@ The rate limiter uses the host portion of `r.RemoteAddr` (parsed by `net.SplitHo
 | `rate_limiter_requests` | Total requests that passed through the limiter (counted under lock; includes both blocked and allowed). |
 | `rate_limiter_blocked_requests` | Requests blocked because the bucket counter exceeded `requests`. |
 
-When the limiter is configured with `match_all_paths=false` and a non-empty `paths`, **only path-matching requests** are counted in `rate_limiter_requests`; non-matching paths are counted in the metric increment that runs immediately before the early return (see `isRateLimited` in [`ratelimiter.go`](../ratelimiter.go)).
+When the limiter is configured with `match_all_paths=false` and a non-empty `paths`, **only path-matching requests** are counted in `rate_limiter_requests`; non-matching paths are counted in the metric increment that runs immediately before the early return (see `isRateLimited` in [`ratelimiter.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/ratelimiter.go)).
 
 ## Reload semantics
 

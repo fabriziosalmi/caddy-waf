@@ -54,7 +54,7 @@ Reload Filebeat (`brew services restart filebeat`, `systemctl restart filebeat`,
 
 ## Verifying
 
-In Kibana, open **Observability → Logs Explorer**. The `caddy-waf` records will appear with the structured fields emitted by `prepareLogFields` in [`logging.go`](../logging.go) — `log_id`, `source_ip`, `request_method`, `request_path`, `status_code`, `rule_id`, `total_score`, and so on.
+In Kibana, open **Observability → Logs Explorer**. The `caddy-waf` records will appear with the structured fields emitted by `prepareLogFields` in [`logging.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/logging.go) — `log_id`, `source_ip`, `request_method`, `request_path`, `status_code`, `rule_id`, `total_score`, and so on.
 
 A typical query for blocked requests:
 
