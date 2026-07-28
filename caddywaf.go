@@ -49,7 +49,7 @@ var (
 )
 
 // Add or update the version constant as needed
-const wafVersion = "v0.3.6" // update this value to the new release version when tagging
+const wafVersion = "v0.3.7" // update this value to the new release version when tagging
 
 // ==================== Initialization and Setup ====================
 
@@ -265,7 +265,7 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 	// Load IP blacklist
 	if m.IPBlacklistFile != "" {
 		m.ipBlacklist = iptrie.NewTrie()
-		err = m.loadIPBlacklist(m.IPBlacklistFile, *m.ipBlacklist)
+		err = m.loadIPBlacklist(m.IPBlacklistFile, m.ipBlacklist)
 		if err != nil {
 			return fmt.Errorf("failed to load IP blacklist: %w", err)
 		}
@@ -457,29 +457,41 @@ func (m *Middleware) ReloadRules() error {
 	return nil
 }
 
+// ReloadConfig rebuilds the blacklists and rule set from disk. It is called by
+// the file watcher when a blacklist file changes.
+//
+// The new structures are built off to the side and only swapped in under the
+// lock, and m.mu is never held across a call that takes it again. Holding it
+// across loadRules used to deadlock the goroutine on Go's non-reentrant
+// RWMutex while it still owned the write lock, so every later request blocked
+// forever on the RLock in isDNSBlacklisted -- one edit to a blacklist file was
+// enough to wedge the whole server.
 func (m *Middleware) ReloadConfig() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	m.logger.Info("Reloading WAF configuration")
+
 	if m.IPBlacklistFile != "" {
 		newIPBlacklist := iptrie.NewTrie()
-		if err := m.loadIPBlacklist(m.IPBlacklistFile, *newIPBlacklist); err != nil {
+		if err := m.loadIPBlacklist(m.IPBlacklistFile, newIPBlacklist); err != nil {
 			m.logger.Error("Failed to reload IP blacklist", zap.String("file", m.IPBlacklistFile), zap.Error(err))
 			return fmt.Errorf("failed to reload IP blacklist: %v", err)
 		}
+		m.mu.Lock()
 		m.ipBlacklist = newIPBlacklist
+		m.mu.Unlock()
 	}
+
 	if m.DNSBlacklistFile != "" {
 		newDNSBlacklist := make(map[string]struct{})
 		if err := m.loadDNSBlacklist(m.DNSBlacklistFile, newDNSBlacklist); err != nil {
 			m.logger.Error("Failed to reload DNS blacklist", zap.String("file", m.DNSBlacklistFile), zap.Error(err))
 			return fmt.Errorf("failed to reload DNS blacklist: %v", err)
 		}
+		m.mu.Lock()
 		m.dnsBlacklist = newDNSBlacklist
+		m.mu.Unlock()
 	}
 
-	// Call the external loadRules function
+	// loadRules takes m.mu itself, so it must be called without holding it.
 	if err := m.loadRules(m.RuleFiles); err != nil {
 		m.logger.Error("Failed to reload rules", zap.Error(err))
 		return fmt.Errorf("failed to reload rules: %v", err)
@@ -489,7 +501,14 @@ func (m *Middleware) ReloadConfig() error {
 	return nil
 }
 
-func (m *Middleware) loadIPBlacklist(path string, blacklistMap iptrie.Trie) error {
+// loadIPBlacklist parses path and inserts every entry into blacklistTrie.
+//
+// The trie MUST be taken by pointer. It was previously accepted by value, and
+// both callers dereferenced their trie to satisfy that signature, so every
+// Insert landed in a copy that was discarded on return. The middleware's own
+// trie stayed empty while the loader still logged "IP blacklist loaded" with a
+// non-zero entry count -- so the blacklist silently enforced nothing.
+func (m *Middleware) loadIPBlacklist(path string, blacklistTrie *iptrie.Trie) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		m.logger.Warn("Skipping IP blacklist load, file does not exist", zap.String("file", path))
 		return nil
@@ -516,7 +535,7 @@ func (m *Middleware) loadIPBlacklist(path string, blacklistMap iptrie.Trie) erro
 			m.logger.Warn("Skipping invalid IP in blacklist", zap.String("ip", ip), zap.Error(err))
 			continue
 		}
-		blacklistMap.Insert(prefix, nil)
+		blacklistTrie.Insert(prefix, nil)
 	}
 	return nil
 }
