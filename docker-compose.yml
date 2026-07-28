@@ -1,13 +1,20 @@
 services:
   caddy-waf:
-    build: .
+    # Pin an exact release rather than `latest`: this project has shipped
+    # security fixes, and `latest` leaves no way to name the image you tested
+    # against. Swap for `build: .` to run your local checkout instead -- since
+    # v0.3.10 that actually compiles the working tree.
+    image: ghcr.io/fabriziosalmi/caddy-waf:0.3.10
+    # build: .
     ports:
       - "8080:8080"
     volumes:
       - ./Caddyfile:/app/Caddyfile:ro
       - ./rules.json:/app/rules.json:ro
-      - ./ip_blacklist.txt:/app/ip_blacklist.txt:ro
-      - ./dns_blacklist.txt:/app/dns_blacklist.txt:ro
+      # Not :ro -- the WAF watches these and reloads on change, so a host-side
+      # updater needs to be able to rewrite them.
+      - ./ip_blacklist.txt:/app/ip_blacklist.txt
+      - ./dns_blacklist.txt:/app/dns_blacklist.txt
     restart: unless-stopped
     environment:
       - CADDY_ADMIN=0.0.0.0:2019

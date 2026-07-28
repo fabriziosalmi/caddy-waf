@@ -2,29 +2,48 @@
 
 The repository ships a [`Dockerfile`](https://github.com/fabriziosalmi/caddy-waf/blob/main/Dockerfile) and a [`docker-compose.yml`](https://github.com/fabriziosalmi/caddy-waf/blob/main/docker-compose.yml). This document describes both, and a few common operational patterns.
 
-## Image build
+## Pull the published image
+
+Images are published to GitHub Container Registry on every release tag, for `linux/amd64` and `linux/arm64`:
+
+```bash
+docker pull ghcr.io/fabriziosalmi/caddy-waf:0.3.10
+```
+
+| Tag | Meaning |
+|---|---|
+| `0.3.10` | An exact release. **Prefer this.** |
+| `0.3` | Latest patch of the 0.3 line. |
+| `latest` | Latest release, whatever it currently is. |
+
+Note the image tag carries **no `v` prefix**, unlike the Go module version: `caddy add-package …@v0.3.10` but `docker pull …:0.3.10`.
+
+Pin an exact version in anything you deploy. `latest` gives you no way to name the image you tested against, which matters when a release fixes a security defect — see [Security → Advisories](https://github.com/fabriziosalmi/caddy-waf/security/advisories).
+
+## Building the image yourself
 
 ```bash
 docker build -t caddy-waf .
 ```
 
-The build is a two-stage build:
+The build context is the source tree, so this compiles your checkout, uncommitted changes included.
 
-### Stage 1 — `builder` (`golang:1.24-alpine`)
+> Before **v0.3.10** it did not. The Dockerfile ran `git clone https://github.com/fabriziosalmi/caddy-waf.git` and built that, so `docker build .` ignored the context entirely and produced an image containing whatever was on `main` at that moment — not reproducible, impossible to pin to a version, and silently useless for testing a local change.
+
+Two stages:
+
+### Stage 1 — `builder` (`golang:1.26-alpine`)
 
 1. Installs `git` and `wget`, plus `xcaddy`.
-2. Clones `https://github.com/fabriziosalmi/caddy-waf.git`.
-3. Runs `go mod tidy`.
-4. Downloads the GeoLite2 Country database from `https://git.io/GeoLite2-Country.mmdb`.
+2. Copies `go.mod` / `go.sum` and warms the module cache, then copies the source.
+3. Downloads the GeoLite2 Country database from `https://git.io/GeoLite2-Country.mmdb` (a community mirror — see [geoblocking.md](geoblocking.md)).
+4. Cross-compiles with `GOARCH=$TARGETARCH` on the build platform, so an arm64 image costs no emulated compile.
 
-Note that the build context is the source tree. Before v0.3.10 the Dockerfile ran `git clone` against GitHub, so `docker build .` ignored your checkout and compiled whatever was on `main` at that moment.
-5. Compiles a Caddy binary with the WAF module via `xcaddy build --with github.com/fabriziosalmi/caddy-waf=./`.
-
-> The Dockerfile clones from GitHub regardless of the build context. To use a local checkout (e.g. with uncommitted changes) modify the Dockerfile to `COPY . /app/caddy-waf` instead of `git clone`, or build with `xcaddy` outside Docker and `COPY` the binary in.
+The builder image must be at least the Go version `go.mod` declares (`1.25.1`, propagated from `caddy/v2`). It was pinned to `1.24` until v0.3.10 and only worked because `GOTOOLCHAIN=auto` downloaded a newer toolchain mid-build.
 
 ### Stage 2 — runtime (`alpine:latest`)
 
-1. Copies `/app/caddy-waf/caddy` to `/usr/bin/caddy`.
+1. Copies the built binary to `/usr/bin/caddy`.
 2. Copies `GeoLite2-Country.mmdb`, `rules.json`, `ip_blacklist.txt`, `dns_blacklist.txt` into `/app/`.
 3. Copies the local `Caddyfile` into `/app/`.
 4. Creates a `caddy:caddy` non-root user, `chown`s `/app`, and `USER caddy`.
@@ -106,7 +125,7 @@ docker exec caddy-waf caddy reload --config /app/Caddyfile
 
 ## Operational checklist
 
-- **Pin the base image**. The shipped Dockerfile uses `golang:1.24-alpine` and `alpine:latest`. For reproducible builds pin `alpine:<version>`.
+- **Pin the base image**. The shipped Dockerfile uses `golang:1.26-alpine` and `alpine:latest`. For reproducible builds pin `alpine:<version>`.
 - **Run as non-root**. Already done by the Dockerfile (`USER caddy`). Do not switch to `root` for convenience.
 - **Mount configuration read-only when possible**. Only the rule files and blacklists need to be writable for `fsnotify` to fire.
 - **Expose `metrics_endpoint` only on a private network**. Use a separate Caddy site / route or a sidecar to apply authentication.
