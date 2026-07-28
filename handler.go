@@ -68,8 +68,10 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 		return nil // Request blocked, short-circuit
 	}
 
-	// Response capture and processing
-	recorder := NewResponseRecorder(w)
+	// Response capture and processing. The body is only buffered when Phase 4
+	// rules exist to inspect it, and never past MaxResponseBodySize, so a large
+	// or streaming upstream response cannot drive the process out of memory.
+	recorder := NewResponseRecorderWithLimit(w, m.MaxResponseBodySize, m.hasResponseBodyRules())
 	err := next.ServeHTTP(recorder, r)
 
 	// Phase 3: Response Header analysis
@@ -83,7 +85,10 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	if state.Blocked {
 		// Metrics and response handling if blocked after headers phase
 		m.incrementBlockedRequestsMetric()
-		m.writeCustomResponse(recorder, state.StatusCode)
+		// Write to w, not to the recorder: the recorder's buffer is discarded on
+		// the blocked path, so a custom body written into it would never reach
+		// the client.
+		m.writeCustomResponse(w, state.StatusCode)
 		return nil
 	}
 
@@ -166,16 +171,19 @@ func getLogID(ctx context.Context) string {
 	return "unknown"
 }
 
+// hasResponseBodyRules reports whether any Phase 4 rule is configured. When
+// none is, the response body never has to be held in memory at all.
+func (m *Middleware) hasResponseBodyRules() bool {
+	return len(m.Rules[4]) > 0
+}
+
 // handleResponseBodyPhase processes Phase 4 (response body).
 func (m *Middleware) handleResponseBodyPhase(recorder *responseRecorder, r *http.Request, state *WAFState) {
-	// No need to check if recorder.body is nil here, it's always initialized in NewResponseRecorder
-	body := recorder.BodyString()
 	logID := getLogID(r.Context())
 	if logID == "unknown" {
 		m.logger.Error("Log ID missing in context")
 		return
 	}
-	m.logger.Debug("Response body captured for Phase 4 analysis", zap.String("log_id", logID))
 
 	// Check if rules exist for Phase 4 before iterating
 	rules, ok := m.Rules[4]
@@ -183,6 +191,21 @@ func (m *Middleware) handleResponseBodyPhase(recorder *responseRecorder, r *http
 		m.logger.Debug("No rules found for Phase 4")
 		return
 	}
+
+	// If the recorder had to release bytes early the response is already partly
+	// on the wire, so it can no longer be blocked. Say so rather than scoring a
+	// truncated body and pretending the response was vetted.
+	if recorder.Partial() {
+		m.logger.Warn("Response body exceeded the WAF inspection limit; Phase 4 rules were not applied",
+			zap.String("log_id", logID),
+			zap.Int64("max_response_body_size", recorder.limit),
+		)
+		return
+	}
+
+	// No need to check if recorder.body is nil here, it's always initialized in NewResponseRecorder
+	body := recorder.BodyString()
+	m.logger.Debug("Response body captured for Phase 4 analysis", zap.String("log_id", logID))
 
 	for _, rule := range rules {
 		if rule.regex.MatchString(body) {
@@ -239,6 +262,12 @@ func (m *Middleware) logRequestCompletion(logID string, state *WAFState) {
 // Headers and status code are already on w because the recorder delegates Header() and
 // WriteHeader() directly to the underlying ResponseWriter, so only the body needs copying.
 func (m *Middleware) copyResponse(w http.ResponseWriter, recorder *responseRecorder, r *http.Request) {
+	// A recorder in pass-through mode already delivered every byte as it was
+	// produced; copying the retained prefix again would duplicate it.
+	if recorder.passthrough {
+		return
+	}
+
 	logID := getLogID(r.Context())
 	if logID == "unknown" {
 		m.logger.Error("Log ID not found in context during response copy")

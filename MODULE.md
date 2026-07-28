@@ -62,6 +62,8 @@ The full table is in [`docs/configuration.md`](docs/configuration.md). A summary
 | `block_asns` | `block_asns <mmdb> <ASN> [<ASN> …]` |
 | `custom_response` | `custom_response <status> <content-type> (<inline-body…>\|<file-path>)` |
 | `redact_sensitive_data` | `redact_sensitive_data` |
+| `max_request_body_size` | `max_request_body_size <bytes>` |
+| `max_response_body_size` | `max_response_body_size <bytes>` |
 | `rate_limit { … }` | block — see configuration docs |
 | `tor { … }` | block — see configuration docs |
 
@@ -71,7 +73,6 @@ The following struct fields exist on `Middleware` but are not exposed as Caddyfi
 
 | Field | JSON key | Default |
 |---|---|---|
-| `MaxRequestBodySize` | `max_request_body_size` | `10 MiB` |
 | `GeoIPFailOpen` | `geoip_fail_open` | `false` |
 | `Tor.CustomTORExitNodeURL` | `tor.custom_tor_exit_node_url` | `https://check.torproject.org/torbulkexitlist` |
 

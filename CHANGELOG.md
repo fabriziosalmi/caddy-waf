@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.4] - 2026-07-28
+
+### Security
+- **Fixed unbounded response buffering (GHSA-gfj3-cmff-q8wh, CWE-400, CVSS 3.1 7.5 high, remote unauthenticated DoS).** Up to and including v0.3.3, `responseRecorder` accumulated the *entire* upstream response body in an in-memory `bytes.Buffer` before releasing a single byte to the client, with no configurable or hard-coded ceiling. A single unauthenticated request for a large or streaming resource made the Caddy process's heap grow in step with the response size, so an attacker could OOM-kill the process and take down every site served by that instance. Reported by [@EQSTLab](https://github.com/EQSTLab).
+
+  The response body is now buffered only when it can actually be used, and only up to a bound:
+
+  - **No Phase 4 rules ⇒ no buffering.** `ServeHTTP` now asks `hasResponseBodyRules()` before capturing anything; with no `RESPONSE_BODY` rule loaded the recorder is a pass-through that forwards writes as they arrive. The bundled `rules.json` has no Phase 4 rules, so the default configuration buffers nothing at all and no longer defeats HTTP streaming.
+  - **Hard ceiling of `max_response_body_size`** (new setting, default 10 MiB). When a response outgrows the budget, the recorder writes out what it holds and streams the remainder straight to the client, so peak memory is bounded by the limit rather than by the response size.
+  - **An upstream flush releases the buffer** instead of stalling, so server-sent events and chunked streaming work through a WAF-protected route rather than being held until the budget fills.
+  - A released response cannot be blocked, since part of it is already on the wire. Phase 4 is skipped in that case and logged at `warn` (`"Response body exceeded the WAF inspection limit; Phase 4 rules were not applied"`) rather than scoring a truncated body and reporting the response as vetted.
+
+  Measured on a 512 MiB response through a WAF-protected route: heap allocated during `ServeHTTP` drops from **1535 MiB to 0 MiB**, with all 512 MiB still delivered to the client.
+
+### Added
+- `max_response_body_size` (Caddyfile directive and JSON field, default `10485760`) — ceiling on how much of the response body is retained for Phase 4 inspection. Validated as non-negative by `Validate`; `0` selects the default.
+- `max_request_body_size` is now settable from the Caddyfile as well, not only from JSON.
+- `responseRecorder` implements `http.Flusher`.
+
+### Fixed
+- A Phase 4 block no longer swallows the configured `custom_response` body. `ServeHTTP` wrote the custom response into the recorder, whose buffer is discarded on the blocked path, so the client received an empty body; it now writes to the real `ResponseWriter`.
+
+### Known limitation
+- The status code of a Phase 3/4 block is still not applied: `responseRecorder.WriteHeader` forwards the status to the underlying `ResponseWriter` as soon as the upstream sets it, so by the time the response phases run the status line is already committed and a block surfaces as `200` with the custom body. This is pre-existing behaviour, unrelated to the advisory above, and is tracked separately.
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.3.4`.
+
 ## [v0.3.2] - 2026-04-26
 
 ### Security

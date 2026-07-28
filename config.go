@@ -148,22 +148,24 @@ func (cl *ConfigLoader) UnmarshalCaddyfile(d *caddyfile.Dispenser, m *Middleware
 	m.BlockASNs.Enabled = false // Default to false
 
 	directiveHandlers := map[string]func(d *caddyfile.Dispenser, m *Middleware) error{
-		"metrics_endpoint":      cl.parseMetricsEndpoint,
-		"log_path":              cl.parseLogPath,
-		"rate_limit":            cl.parseRateLimit,
-		"block_countries":       cl.parseCountryBlockDirective(true),  // Use directive-specific helper
-		"whitelist_countries":   cl.parseCountryBlockDirective(false), // Use directive-specific helper
-		"block_asns":            cl.parseBlockASNsDirective,           // Add ASN block directive
-		"log_severity":          cl.parseLogSeverity,
-		"log_json":              cl.parseLogJSON,
-		"rule_file":             cl.parseRuleFile,
-		"ip_blacklist_file":     cl.parseBlacklistFileDirective(true),  // Use directive-specific helper
-		"dns_blacklist_file":    cl.parseBlacklistFileDirective(false), // Use directive-specific helper
-		"anomaly_threshold":     cl.parseAnomalyThreshold,
-		"custom_response":       cl.parseCustomResponse,
-		"redact_sensitive_data": cl.parseRedactSensitiveData,
-		"tor":                   cl.parseTorBlock,
-		"log_buffer":            cl.parseLogBuffer,
+		"metrics_endpoint":       cl.parseMetricsEndpoint,
+		"log_path":               cl.parseLogPath,
+		"rate_limit":             cl.parseRateLimit,
+		"block_countries":        cl.parseCountryBlockDirective(true),  // Use directive-specific helper
+		"whitelist_countries":    cl.parseCountryBlockDirective(false), // Use directive-specific helper
+		"block_asns":             cl.parseBlockASNsDirective,           // Add ASN block directive
+		"log_severity":           cl.parseLogSeverity,
+		"log_json":               cl.parseLogJSON,
+		"rule_file":              cl.parseRuleFile,
+		"ip_blacklist_file":      cl.parseBlacklistFileDirective(true),  // Use directive-specific helper
+		"dns_blacklist_file":     cl.parseBlacklistFileDirective(false), // Use directive-specific helper
+		"anomaly_threshold":      cl.parseAnomalyThreshold,
+		"custom_response":        cl.parseCustomResponse,
+		"redact_sensitive_data":  cl.parseRedactSensitiveData,
+		"tor":                    cl.parseTorBlock,
+		"log_buffer":             cl.parseLogBuffer,
+		"max_request_body_size":  cl.parseMaxRequestBodySize,
+		"max_response_body_size": cl.parseMaxResponseBodySize,
 	}
 
 	for d.Next() {
@@ -449,6 +451,42 @@ func (cl *ConfigLoader) parseLogJSON(d *caddyfile.Dispenser, m *Middleware) erro
 func (cl *ConfigLoader) parseRedactSensitiveData(d *caddyfile.Dispenser, m *Middleware) error {
 	m.RedactSensitiveData = true
 	cl.logger.Debug("Redact sensitive data enabled", zap.String("file", d.File()), zap.Int("line", d.Line()))
+	return nil
+}
+
+// parseByteSize reads a non-negative byte count argument for directiveName.
+func (cl *ConfigLoader) parseByteSize(d *caddyfile.Dispenser, directiveName string) (int64, error) {
+	if !d.NextArg() {
+		return 0, d.ArgErr()
+	}
+	valStr := d.Val()
+	val, err := strconv.ParseInt(valStr, 10, 64)
+	if err != nil {
+		return 0, d.Errf("invalid %s value '%s': expected a size in bytes", directiveName, valStr)
+	}
+	if val < 0 {
+		return 0, d.Errf("%s cannot be negative, but got '%d'", directiveName, val)
+	}
+	return val, nil
+}
+
+func (cl *ConfigLoader) parseMaxRequestBodySize(d *caddyfile.Dispenser, m *Middleware) error {
+	size, err := cl.parseByteSize(d, "max_request_body_size")
+	if err != nil {
+		return err
+	}
+	m.MaxRequestBodySize = size
+	cl.logger.Debug("Max request body size set", zap.Int64("bytes", size), zap.String("file", d.File()), zap.Int("line", d.Line()))
+	return nil
+}
+
+func (cl *ConfigLoader) parseMaxResponseBodySize(d *caddyfile.Dispenser, m *Middleware) error {
+	size, err := cl.parseByteSize(d, "max_response_body_size")
+	if err != nil {
+		return err
+	}
+	m.MaxResponseBodySize = size
+	cl.logger.Debug("Max response body size set", zap.Int64("bytes", size), zap.String("file", d.File()), zap.Int("line", d.Line()))
 	return nil
 }
 

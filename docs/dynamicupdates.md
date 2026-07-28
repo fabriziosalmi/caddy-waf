@@ -44,7 +44,8 @@ Both functions take the middleware mutex (`m.mu.Lock`) for the duration of the r
 | `tor { ... }` settings | No. The fetcher schedule is set once during `Provision`. |
 | `custom_response` definitions | No. |
 | `redact_sensitive_data` | No. |
-| `max_request_body_size` (JSON-only) | No. |
+| `max_request_body_size` | No. |
+| `max_response_body_size` | No. |
 | `geoip_fail_open` (JSON-only) | No. |
 
 For any "No" above, run `caddy reload` so Caddy re-parses the configuration and re-runs `Provision` on the WAF module.
