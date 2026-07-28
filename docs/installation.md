@@ -5,7 +5,7 @@
 | Component | Minimum version | Source of truth |
 |---|---|---|
 | Go | **1.25** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `go 1.25` |
-| Caddy | **v2.11.x** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `github.com/caddyserver/caddy/v2 v2.11.2` |
+| Caddy | **v2.11.x** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `github.com/caddyserver/caddy/v2 v2.11.4` |
 | `xcaddy` | latest | [github.com/caddyserver/xcaddy](https://github.com/caddyserver/xcaddy) |
 | MaxMind GeoLite2 Country MMDB | optional, only when using country block / whitelist | [maxmind.com](https://www.maxmind.com/) |
 | MaxMind GeoLite2 ASN MMDB | optional, only when using `block_asns` | [maxmind.com](https://www.maxmind.com/) |
@@ -36,7 +36,7 @@ A representative provisioning log:
 ```
 INFO  Provisioning WAF middleware     {"log_level":"info","log_path":"debug.json","log_json":true,"anomaly_threshold":20}
 INFO  http.handlers.waf  Tor exit nodes updated  {"count":1093}
-INFO  WAF middleware version          {"version":"v0.3.5"}
+INFO  WAF middleware version          {"version":"v0.3.6"}
 INFO  Rate limit configuration        {"requests":100,"window":10,"cleanup_interval":300,"paths":["/api/v1/.*"],"match_all_paths":false}
 WARN  GeoIP database not found. Country blacklisting/whitelisting will be disabled  {"path":"GeoLite2-Country.mmdb"}
 INFO  IP blacklist loaded             {"path":"ip_blacklist.txt","valid_entries":223770,"invalid_entries":0,"total_lines":223770}
@@ -69,7 +69,7 @@ The module is registered in Caddy's package registry, so an existing Caddy v2.7+
 caddy add-package github.com/fabriziosalmi/caddy-waf
 ```
 
-This asks the Caddy build service for a binary containing your current module set plus `caddy-waf`, then replaces the binary in place (backing up the old one unless `--keep-backup` is passed). Pin a version with `@v0.3.5` if needed.
+This asks the Caddy build service for a binary containing your current module set plus `caddy-waf`, then replaces the binary in place (backing up the old one unless `--keep-backup` is passed). Pin a version with `@v0.3.6` if needed.
 
 The module is also selectable on <https://caddyserver.com/download>.
 
