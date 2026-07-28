@@ -5,6 +5,8 @@
   "description": "Documentation site for caddy-waf, built with VitePress.",
   "scripts": {
     "docs:dev": "vitepress dev docs",
+    "docs:check-anchors": "node docs/.vitepress/check-anchors.mjs",
+    "predocs:build": "npm run docs:check-anchors",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
