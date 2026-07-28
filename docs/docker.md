@@ -16,6 +16,8 @@ The build is a two-stage build:
 2. Clones `https://github.com/fabriziosalmi/caddy-waf.git`.
 3. Runs `go mod tidy`.
 4. Downloads the GeoLite2 Country database from `https://git.io/GeoLite2-Country.mmdb`.
+
+Note that the build context is the source tree. Before v0.3.10 the Dockerfile ran `git clone` against GitHub, so `docker build .` ignored your checkout and compiled whatever was on `main` at that moment.
 5. Compiles a Caddy binary with the WAF module via `xcaddy build --with github.com/fabriziosalmi/caddy-waf=./`.
 
 > The Dockerfile clones from GitHub regardless of the build context. To use a local checkout (e.g. with uncommitted changes) modify the Dockerfile to `COPY . /app/caddy-waf` instead of `git clone`, or build with `xcaddy` outside Docker and `COPY` the binary in.
