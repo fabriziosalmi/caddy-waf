@@ -2,10 +2,13 @@
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| v0.1.x  | :white_check_mark: |
-| < 0.1.0 | :x:                |
+Only the latest release receives security fixes. There are no maintained
+backport branches: a fix ships in a new patch release off `main`.
+
+| Version  | Supported          |
+| -------- | ------------------ |
+| v0.3.4   | :white_check_mark: |
+| < v0.3.4 | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -15,8 +18,12 @@ We take the security of `caddy-waf` seriously. If you find a vulnerability, plea
 
 Please do **NOT** open a public issue on GitHub. Instead, report the vulnerability via:
 
-1.  **Email**: Send the details to the maintainer (fabrizio.salmi@gmail.com).
-2.  **GitHub Private Advisory**: Open a private advisory draft on this repository if you have permissions, or contact the maintainer to enable it.
+1.  **GitHub private vulnerability reporting** (preferred): use the
+    [Report a vulnerability](https://github.com/fabriziosalmi/caddy-waf/security/advisories/new)
+    button under the repository's Security tab. Private reporting is enabled, so
+    this works for anyone — no special permissions needed — and keeps the report
+    and the discussion private until an advisory is published.
+2.  **Email**: send the details to the maintainer (fabrizio.salmi@gmail.com).
 
 ### Required Information
 
