@@ -75,6 +75,24 @@ The module is also selectable on <https://caddyserver.com/download>.
 
 See [add-package-guide.md](add-package-guide.md) for the full flow, removal, and troubleshooting.
 
+## Method 5 — Docker
+
+Images are published to GitHub Container Registry on every release tag, for `linux/amd64` and `linux/arm64`. No Go toolchain, no build step:
+
+```bash
+docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.3.10
+```
+
+| Tag | Meaning |
+|---|---|
+| `0.3.10` | An exact release. **Prefer this in deployments.** |
+| `0.3` | Latest patch of the 0.3 line. |
+| `latest` | Latest release, whatever it currently is. |
+
+The image tag carries **no `v` prefix**, unlike the Go module version: `@v0.3.10` for `add-package`, `:0.3.10` for `docker pull`.
+
+See [docker.md](docker.md) for mounting rule files and blacklists, Docker Compose, and hot reload inside a container.
+
 ## Verifying the build
 
 ```bash
