@@ -1,57 +1,60 @@
-# Use a Go base image to build the Caddy binary
-FROM golang:1.24-alpine AS builder
+# Build Caddy with the caddy-waf module.
+#
+# The build context IS the source. This previously ran `git clone` against
+# GitHub, so `docker build .` ignored your checkout entirely and compiled
+# whatever happened to be on main at that moment: not reproducible, unable to
+# build a specific version, and it would make a CI image build test the wrong
+# code.
+#
+# Cross-compilation is done by Go on the build platform rather than by emulating
+# the target, so an arm64 image does not cost a QEMU-emulated compile.
 
-# Install git and xcaddy (required for cloning the repository and building Caddy)
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS builder
+
+# go.mod declares go 1.25.1 (propagated from caddy/v2, which requires it), so
+# the toolchain here has to be at least that. It was pinned to 1.24 and only
+# worked because GOTOOLCHAIN=auto silently downloaded a newer one mid-build.
+
 RUN apk add --no-cache git wget && \
     go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
-# Set the working directory inside the container
-WORKDIR /app
+WORKDIR /src
 
-# Clone the caddy-waf repository
-RUN git clone https://github.com/fabriziosalmi/caddy-waf.git
+# Warm the module cache before copying the rest, so a source-only edit does not
+# re-download the dependency tree.
+COPY go.mod go.sum ./
+RUN go mod download
 
-# Navigate into the caddy-waf directory
-WORKDIR /app/caddy-waf
+COPY . .
 
-# Clean up and update the go.mod file (dependencies are already defined in go.mod)
-RUN go mod tidy
+# GeoLite2 is optional at runtime, and this URL is a community mirror of
+# uncertain freshness (see docs/geoblocking.md). It is baked in so the country
+# and ASN examples work out of the box.
+RUN wget -q https://git.io/GeoLite2-Country.mmdb
 
-# Download the GeoLite2 Country database
-RUN wget https://git.io/GeoLite2-Country.mmdb
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
+    xcaddy build --with github.com/fabriziosalmi/caddy-waf=/src
 
-# Clean up previous build artifacts
-RUN rm -rf buildenv_*
-
-# Build Caddy with the caddy-waf module
-RUN xcaddy build --with github.com/fabriziosalmi/caddy-waf=./
-
-# ---  Runtime Stage (smaller final image) ---
+# --- Runtime ---
 FROM alpine:latest
 
-# Set the working directory
+RUN apk add --no-cache ca-certificates && \
+    addgroup -S caddy && adduser -S -G caddy caddy
+
 WORKDIR /app
 
-# Copy the built Caddy binary from the builder stage
-COPY --from=builder /app/caddy-waf/caddy /usr/bin/caddy
-
-# Copy the GeoLite2 database, rules, blacklists, and Caddyfile
-COPY --from=builder /app/caddy-waf/GeoLite2-Country.mmdb /app/
-COPY --from=builder /app/caddy-waf/rules.json /app/
-COPY --from=builder /app/caddy-waf/ip_blacklist.txt /app/
-COPY --from=builder /app/caddy-waf/dns_blacklist.txt /app/
+COPY --from=builder /src/caddy /usr/bin/caddy
+COPY --from=builder /src/GeoLite2-Country.mmdb /app/
+COPY --from=builder /src/rules.json /app/
+COPY --from=builder /src/ip_blacklist.txt /app/
+COPY --from=builder /src/dns_blacklist.txt /app/
 COPY Caddyfile /app/
 
-# Set the user to caddy for security
-RUN addgroup -S caddy && adduser -S -G caddy caddy
-
-# Change ownership of the /app to the caddy user
 RUN chown -R caddy:caddy /app
 
 USER caddy
 
-# Expose HTTP ports (adjust as needed)
 EXPOSE 8080
 
-# Run Caddy
 CMD ["caddy", "run", "--config", "/app/Caddyfile"]

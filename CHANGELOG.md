@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.10] - 2026-07-28
+
+### Fixed
+- **`docker build .` ignored your source tree.** The Dockerfile ran `git clone https://github.com/fabriziosalmi/caddy-waf.git` and built that, so the build context was never used: the image contained whatever happened to be on `main` at build time, could not be pinned to a version, and a CI image build would have tested the wrong code. The build context is now the source.
+- **The builder image was older than `go.mod` requires.** `golang:1.24-alpine` against a module declaring `go 1.25.1`; it only worked because `GOTOOLCHAIN=auto` silently downloaded a newer toolchain mid-build. Now `golang:1.26-alpine`.
+
+### Added
+- **Published container images at `ghcr.io/fabriziosalmi/caddy-waf`**, built on release tags for `linux/amd64` and `linux/arm64`. Tagged by version as well as `latest`, so a deployment can pin — `latest` alone would leave anyone who pulled before a security release with no way to name the image they wanted.
+- **`.github/workflows/docker.yml`** builds the image on pull requests without pushing, and asserts `caddy list-modules` reports `http.handlers.waf` rather than trusting a green build. Nothing built this image before, which is how it came to clone the repository instead of using the context, and to pin a stale Go version.
+- `.dockerignore` extended so the context excludes `node_modules`, `docs/`, tests and helper scripts. `ui/` is deliberately kept: `assets.go` embeds it behind the `with_ui` build tag.
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.3.10`.
+
 ## [v0.3.9] - 2026-07-28
 
 ### Security

@@ -1,2 +1,32 @@
+# The build context is now the source tree (see Dockerfile), so keep out
+# everything the build does not need. node_modules alone is larger than the
+# rest of the repository combined.
+
+# Pre-existing entries, kept: xcaddy leaves buildenv_* behind, and `go` was a
+# stray local toolchain directory.
 buildenv_*
 go
+
+.git
+.github
+node_modules
+docs
+# NOTE: ui/ is deliberately NOT excluded. assets.go embeds it behind the
+# with_ui build tag, and dropping it from the context would break that build
+# in a way that is invisible until someone tries it.
+*.md
+!README.md
+.dockerignore
+Dockerfile
+docker-compose.yml
+package.json
+package-lock.json
+*_test.go
+benchmark.py
+caddytest.py
+test.py
+e2e.py
+debug_waf.py
+check_waf_config.py
+get_*.py
+debug_test_results.py
