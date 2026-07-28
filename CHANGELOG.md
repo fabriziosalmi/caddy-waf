@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.7] - 2026-07-28
+
+### Security
+Two defects in the blacklist subsystem, both silent. Reported in substance by [@doogienz](https://github.com/doogienz) in discussion [#96](https://github.com/fabriziosalmi/caddy-waf/discussions/96) on 2026-05-21, with the log evidence that pinned it down.
+
+- **The IP blacklist never blocked anything.** `loadIPBlacklist` took the trie by value, and both callers — `Provision` and `ReloadConfig` — dereferenced their pointer to satisfy that signature. Every `Insert` therefore landed in a copy discarded on return: the trie the middleware consults stayed empty, while the loader still logged `IP blacklist loaded {"valid_entries": N}`. Any deployment relying on `ip_blacklist_file`, including the 223,770-entry list bundled with the project, had no IP filtering at all and no indication of it. Present since **v0.0.7** (commit `c905277`, "switch to go-trie", 2025-10-10) — 15 releases.
+
+- **Hot-reloading a blacklist deadlocked the server.** `ReloadConfig` held `m.mu` and then called `loadRules`, which takes `m.mu` again; on Go's non-reentrant `RWMutex` the goroutine blocked forever *while still owning the write lock*. Since `isDNSBlacklisted` takes `m.mu.RLock()` on every request, all subsequent requests blocked forever — no crash, no log line. The file watcher calls `ReloadConfig` whenever `ip_blacklist_file` or `dns_blacklist_file` changes, and the documented Tor setup (`docs/dynamicupdates.md`) points `ip_blacklist_file` at the file the Tor fetcher rewrites every `update_interval` (default 24h), so the configuration the docs recommend wedges the server within a day of starting, unattended.
+
+Both are fixed: the trie is passed by pointer, and `ReloadConfig` builds the new structures outside the lock, swaps them under it, and never holds `m.mu` across a call that takes it again.
+
+### Added
+- `blacklist_enforcement_test.go` — four regression tests: the trie is actually populated (IPv4, IPv6, CIDR, with and without a port), the reload path repopulates it, `ReloadConfig` completes and releases the lock under a deadline, and a full `ServeHTTP` pass confirms a blacklisted client is refused, never reaches the upstream, and that `X-Forwarded-For` is honoured.
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.3.7`.
+
 ## [v0.3.6] - 2026-07-28
 
 ### Security
