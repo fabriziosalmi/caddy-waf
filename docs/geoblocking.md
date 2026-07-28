@@ -1,6 +1,6 @@
 # Country and ASN Blocking
 
-The middleware can block or whitelist requests by country (using a MaxMind GeoLite2 Country MMDB) and block requests by Autonomous System Number (using a MaxMind GeoLite2 ASN MMDB). Implementation: [`geoip.go`](../geoip.go).
+The middleware can block or whitelist requests by country (using a MaxMind GeoLite2 Country MMDB) and block requests by Autonomous System Number (using a MaxMind GeoLite2 ASN MMDB). Implementation: [`geoip.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/geoip.go).
 
 ## Caddyfile directives
 
@@ -27,7 +27,7 @@ If the configured MMDB file does not exist, the corresponding feature is **disab
 
 ## Source IP selection
 
-GeoIP lookups use `getClientIP` ([`helpers.go`](../helpers.go)):
+GeoIP lookups use `getClientIP` ([`helpers.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/helpers.go)):
 
 1. If `X-Forwarded-For` is present, the first comma-separated value is used **provided it parses as a valid IP**.
 2. Otherwise `r.RemoteAddr` is used.
@@ -72,7 +72,7 @@ This applies to both the country whitelist/blacklist check and the ASN check. It
 | `"default"` | Treat the IP as **not** in the list and return `(false, nil)`. |
 | any ISO country code (e.g. `"US"`) | Pretend the lookup returned that country. If the country is in the configured list, the request is treated as a match. |
 
-Both cache TTL and fallback behaviour are currently set programmatically only — no Caddyfile / JSON tag exposes them at the time of writing. They are wired in `Provision` (see [`caddywaf.go`](../caddywaf.go)).
+Both cache TTL and fallback behaviour are currently set programmatically only — no Caddyfile / JSON tag exposes them at the time of writing. They are wired in `Provision` (see [`caddywaf.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/caddywaf.go)).
 
 ## Counters
 
@@ -143,4 +143,4 @@ curl -L \
 tar -xzf GeoLite2-ASN.tar.gz --strip-components=1 --wildcards '*.mmdb'
 ```
 
-The legacy `https://git.io/GeoLite2-Country.mmdb` redirect referenced by [`install.sh`](../install.sh) and the Dockerfile pulls a community-mirrored copy and may be out of date.
+The legacy `https://git.io/GeoLite2-Country.mmdb` redirect referenced by [`install.sh`](https://github.com/fabriziosalmi/caddy-waf/blob/main/install.sh) and the Dockerfile pulls a community-mirrored copy and may be out of date.

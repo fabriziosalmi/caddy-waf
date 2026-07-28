@@ -1,6 +1,6 @@
 # Metrics
 
-When `metrics_endpoint` is configured, the WAF serves a JSON metrics document at the given path. The document is emitted by `handleMetricsRequest` in [`caddywaf.go`](../caddywaf.go) and reflects the counters maintained by the runtime.
+When `metrics_endpoint` is configured, the WAF serves a JSON metrics document at the given path. The document is emitted by `handleMetricsRequest` in [`caddywaf.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/caddywaf.go) and reflects the counters maintained by the runtime.
 
 ## Endpoint
 
@@ -59,7 +59,7 @@ A representative response:
 | `dns_blacklist_hits` | int | `Middleware.DNSBlacklistBlockCount` | Number of requests whose `Host` matched the DNS blacklist map. |
 | `rate_limiter_requests` | int | `RateLimiter.totalRequests` | Total requests counted by the rate limiter (under lock). |
 | `rate_limiter_blocked_requests` | int | `RateLimiter.blockedRequests` | Requests blocked by the rate limiter for exceeding the bucket limit. |
-| `version` | string | `wafVersion` constant in [`caddywaf.go`](../caddywaf.go) | Build version of the WAF. |
+| `version` | string | `wafVersion` constant in [`caddywaf.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/caddywaf.go) | Build version of the WAF. |
 
 ## Counter semantics
 

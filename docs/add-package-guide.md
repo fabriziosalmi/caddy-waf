@@ -5,7 +5,7 @@
 toolchain. It is also selectable on <https://caddyserver.com/download>.
 
 For registration status and history see
-[`CADDY_MODULE_REGISTRATION.md`](../CADDY_MODULE_REGISTRATION.md).
+[`CADDY_MODULE_REGISTRATION.md`](https://github.com/fabriziosalmi/caddy-waf/blob/main/CADDY_MODULE_REGISTRATION.md).
 
 ## Requirements
 
@@ -80,7 +80,7 @@ binary into place manually.
 Check the import path for typos. Go module paths are not URLs, so no `https://`
 prefix and no trailing slash. If the path is correct and the error persists, the
 registration may have been removed — see
-[`CADDY_MODULE_REGISTRATION.md`](../CADDY_MODULE_REGISTRATION.md).
+[`CADDY_MODULE_REGISTRATION.md`](https://github.com/fabriziosalmi/caddy-waf/blob/main/CADDY_MODULE_REGISTRATION.md).
 
 ## References
 

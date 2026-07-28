@@ -1,6 +1,6 @@
 # Docker
 
-The repository ships a [`Dockerfile`](../Dockerfile) and a [`docker-compose.yml`](../docker-compose.yml). This document describes both, and a few common operational patterns.
+The repository ships a [`Dockerfile`](https://github.com/fabriziosalmi/caddy-waf/blob/main/Dockerfile) and a [`docker-compose.yml`](https://github.com/fabriziosalmi/caddy-waf/blob/main/docker-compose.yml). This document describes both, and a few common operational patterns.
 
 ## Image build
 
@@ -62,7 +62,7 @@ docker run -d --name caddy-waf \
 
 ## Docker Compose
 
-The shipped [`docker-compose.yml`](../docker-compose.yml) is a minimal example. A more complete file:
+The shipped [`docker-compose.yml`](https://github.com/fabriziosalmi/caddy-waf/blob/main/docker-compose.yml) is a minimal example. A more complete file:
 
 ```yaml
 services:

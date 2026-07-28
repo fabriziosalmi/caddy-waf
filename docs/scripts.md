@@ -8,12 +8,12 @@ All scripts target Python 3 and use only the standard library plus `requests` (a
 
 | Script | Inputs | Output | Purpose |
 |---|---|---|---|
-| [`get_owasp_rules.py`](../get_owasp_rules.py) | OWASP Core Rule Set repository (`coreruleset/coreruleset`) on GitHub | `rules.json` (overwritten / appended) | Downloads OWASP CRS `.conf` files via the GitHub API, parses `SecRule` directives, and converts them into the WAF's JSON rule schema. |
-| [`get_spiderlabs_rules.py`](../get_spiderlabs_rules.py) | Trustwave SpiderLabs ModSecurity rules | `rules.json` (overwritten / appended) | Same idea as the OWASP script, sourced from SpiderLabs. |
-| [`get_vulnerability_rules.py`](../get_vulnerability_rules.py) | A built-in dictionary of CVE-style payloads | `rules.json` | Generates rules from a predefined payload table without any network calls. |
-| [`get_blacklisted_ip.py`](../get_blacklisted_ip.py) | Emerging Threats, CI Army, IPsum, BlockList.de, Greensnow, Tor exit-address feed | `ip_blacklist.txt` | Downloads multiple IP feeds, merges them, deduplicates, and writes one IP/CIDR per line. |
-| [`get_blacklisted_dns.py`](../get_blacklisted_dns.py) | Phishing-Angriffe, ShadowWhisperer Malware, StevenBlack hosts, hostsVN, durablenapkin scamblocklist, hagezi DNS blocklists, blackbook, [`fabriziosalmi/blacklists`](https://github.com/fabriziosalmi/blacklists) | `dns_blacklist.txt` | Downloads multiple domain feeds, merges and deduplicates them. |
-| [`get_caddy_feeds.py`](../get_caddy_feeds.py) | Latest release of [`fabriziosalmi/caddy-feeds`](https://github.com/fabriziosalmi/caddy-feeds) | `ip_blacklist.txt`, `dns_blacklist.txt`, `rules.json` | Convenience: pulls all three feeds in one shot from a curated bundle. |
+| [`get_owasp_rules.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/get_owasp_rules.py) | OWASP Core Rule Set repository (`coreruleset/coreruleset`) on GitHub | `rules.json` (overwritten / appended) | Downloads OWASP CRS `.conf` files via the GitHub API, parses `SecRule` directives, and converts them into the WAF's JSON rule schema. |
+| [`get_spiderlabs_rules.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/get_spiderlabs_rules.py) | Trustwave SpiderLabs ModSecurity rules | `rules.json` (overwritten / appended) | Same idea as the OWASP script, sourced from SpiderLabs. |
+| [`get_vulnerability_rules.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/get_vulnerability_rules.py) | A built-in dictionary of CVE-style payloads | `rules.json` | Generates rules from a predefined payload table without any network calls. |
+| [`get_blacklisted_ip.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/get_blacklisted_ip.py) | Emerging Threats, CI Army, IPsum, BlockList.de, Greensnow, Tor exit-address feed | `ip_blacklist.txt` | Downloads multiple IP feeds, merges them, deduplicates, and writes one IP/CIDR per line. |
+| [`get_blacklisted_dns.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/get_blacklisted_dns.py) | Phishing-Angriffe, ShadowWhisperer Malware, StevenBlack hosts, hostsVN, durablenapkin scamblocklist, hagezi DNS blocklists, blackbook, [`fabriziosalmi/blacklists`](https://github.com/fabriziosalmi/blacklists) | `dns_blacklist.txt` | Downloads multiple domain feeds, merges and deduplicates them. |
+| [`get_caddy_feeds.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/get_caddy_feeds.py) | Latest release of [`fabriziosalmi/caddy-feeds`](https://github.com/fabriziosalmi/caddy-feeds) | `ip_blacklist.txt`, `dns_blacklist.txt`, `rules.json` | Convenience: pulls all three feeds in one shot from a curated bundle. |
 
 ## Common requirements
 

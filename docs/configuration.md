@@ -2,13 +2,13 @@
 
 This document describes the request lifecycle, every Caddyfile directive recognised by the `waf` block, every JSON-only field on the middleware, and the order in which blocking decisions are taken.
 
-The directive parser is implemented in [`config.go`](../config.go); the runtime fields are declared on the `Middleware` struct in [`types.go`](../types.go); the request pipeline lives in [`handler.go`](../handler.go).
+The directive parser is implemented in [`config.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/config.go); the runtime fields are declared on the `Middleware` struct in [`types.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/types.go); the request pipeline lives in [`handler.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/handler.go).
 
 ---
 
 ## Request lifecycle
 
-For each incoming request, [`Middleware.ServeHTTP`](../handler.go) performs the following steps:
+For each incoming request, [`Middleware.ServeHTTP`](https://github.com/fabriziosalmi/caddy-waf/blob/main/handler.go) performs the following steps:
 
 1. **Generate a `log_id`** (UUID v4) and propagate it via `context.Context` so all log records for the request can be correlated.
 2. **Install a panic recovery** that returns `500 Internal Server Error` on panic and logs the stack trace.
@@ -24,7 +24,7 @@ For each incoming request, [`Middleware.ServeHTTP`](../handler.go) performs the 
 
 ### Phase 1 — pre-request checks (in order)
 
-The order below reflects the actual code in [`handler.go`](../handler.go) (`handlePhase`, `phase==1`):
+The order below reflects the actual code in [`handler.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/handler.go) (`handlePhase`, `phase==1`):
 
 1. **IP blacklist** — uses `X-Forwarded-For` first IP if present, otherwise `r.RemoteAddr`. Match → `403`.
 2. **DNS blacklist** — exact (case-insensitive) match against `r.Host`. Match → `403`.
@@ -75,7 +75,7 @@ If `custom_response` is configured for the resulting status code, the registered
 
 ## Caddyfile directives
 
-The full list is the `directiveHandlers` map in [`config.go`](../config.go). All directives below appear inside a `waf { ... }` block.
+The full list is the `directiveHandlers` map in [`config.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/config.go). All directives below appear inside a `waf { ... }` block.
 
 | Directive | Arguments | Default | Description |
 |---|---|---|---|
@@ -94,13 +94,13 @@ The full list is the `directiveHandlers` map in [`config.go`](../config.go). All
 | `whitelist_countries` | `<mmdb> <ISO> [<ISO> …]` | disabled | Allow only requests whose source country is in the list. |
 | `block_asns` | `<mmdb> <ASN> [<ASN> …]` | disabled | Block requests whose source IP belongs to one of the listed ASNs. ASN values are decimal integers without a leading `AS`. |
 | `custom_response` | `<status> <content-type> <inline-body…>` _or_ `<status> <content-type> <file-path>` | unset | Custom block response. Repeat with different status codes. |
-| `redact_sensitive_data` | _(no args)_ | off | Redact sensitive query parameters and log fields. The redaction key list is in [`logging.go`](../logging.go) (`sensitiveKeys`). |
+| `redact_sensitive_data` | _(no args)_ | off | Redact sensitive query parameters and log fields. The redaction key list is in [`logging.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/logging.go) (`sensitiveKeys`). |
 | `tor` | block (see below) | disabled | Enable Tor exit-node blocking. |
 | `rate_limit` | block (see below) | disabled | Enable per-IP rate limiting. |
 
 ### `rate_limit` block
 
-Parsed in [`config.go`](../config.go) (`parseRateLimit`).
+Parsed in [`config.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/config.go) (`parseRateLimit`).
 
 | Sub-directive | Arguments | Default | Description |
 |---|---|---|---|
@@ -118,7 +118,7 @@ Behavioural details (see [ratelimit.md](ratelimit.md) for the full discussion):
 
 ### `tor` block
 
-Parsed in [`config.go`](../config.go) (`parseTorBlock`); fetcher in [`tor.go`](../tor.go).
+Parsed in [`config.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/config.go) (`parseTorBlock`); fetcher in [`tor.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/tor.go).
 
 | Sub-directive | Arguments | Default | Description |
 |---|---|---|---|
@@ -145,7 +145,7 @@ custom_response 429 text/plain Too many requests.   # inline body (joined with s
 
 ### Defaults set by the parser
 
-When the `waf` block is parsed, [`UnmarshalCaddyfile`](../config.go) sets the following defaults before processing directives:
+When the `waf` block is parsed, [`UnmarshalCaddyfile`](https://github.com/fabriziosalmi/caddy-waf/blob/main/config.go) sets the following defaults before processing directives:
 
 | Field | Default |
 |---|---|
@@ -174,7 +174,7 @@ Additional defaults applied during `Provision` (after Caddyfile parsing):
 
 ## JSON-only fields
 
-The following fields exist on the `Middleware` struct (in [`types.go`](../types.go)) and are honoured by the runtime, but are **not** wired up to the Caddyfile parser. To set them, configure Caddy via JSON instead of a Caddyfile.
+The following fields exist on the `Middleware` struct (in [`types.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/types.go)) and are honoured by the runtime, but are **not** wired up to the Caddyfile parser. To set them, configure Caddy via JSON instead of a Caddyfile.
 
 | Field | JSON key | Type | Default | Description |
 |---|---|---|---|---|
@@ -184,7 +184,7 @@ The following fields exist on the `Middleware` struct (in [`types.go`](../types.
 
 Additionally:
 
-- `geoIPCacheTTL` and `geoIPLookupFallbackBehavior` are configured on the `GeoIPHandler` programmatically (see [`caddywaf.go`](../caddywaf.go), `Provision`); they do not currently have Caddyfile or JSON tags.
+- `geoIPCacheTTL` and `geoIPLookupFallbackBehavior` are configured on the `GeoIPHandler` programmatically (see [`caddywaf.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/caddywaf.go), `Provision`); they do not currently have Caddyfile or JSON tags.
 
 A JSON config snippet equivalent to the minimal Caddyfile:
 
@@ -251,8 +251,8 @@ Any of these failing aborts startup with a descriptive error.
 
 The middleware installs `fsnotify` watchers on `rule_files` and the IP / DNS blacklist files. On a `WRITE` event:
 
-- If the modified path contains the substring `rule`, [`ReloadRules`](../caddywaf.go) re-parses every configured rule file atomically and replaces the in-memory rule map.
-- Otherwise, [`ReloadConfig`](../caddywaf.go) reloads the IP blacklist, DNS blacklist, **and** the rule files.
+- If the modified path contains the substring `rule`, [`ReloadRules`](https://github.com/fabriziosalmi/caddy-waf/blob/main/caddywaf.go) re-parses every configured rule file atomically and replaces the in-memory rule map.
+- Otherwise, [`ReloadConfig`](https://github.com/fabriziosalmi/caddy-waf/blob/main/caddywaf.go) reloads the IP blacklist, DNS blacklist, **and** the rule files.
 
 A reload does **not** rebuild the rate limiter, the GeoIP database handles, the Tor schedule, or any other Caddyfile-only setting. To apply such changes, run `caddy reload` so Caddy re-runs `Provision`.
 
@@ -262,7 +262,7 @@ See [dynamicupdates.md](dynamicupdates.md) for the full reload matrix.
 
 ## Worked example
 
-The repository ships a complete Caddyfile in [`Caddyfile`](../Caddyfile). A condensed excerpt:
+The repository ships a complete Caddyfile in [`Caddyfile`](https://github.com/fabriziosalmi/caddy-waf/blob/main/Caddyfile). A condensed excerpt:
 
 ```caddyfile
 :8080 {

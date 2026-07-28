@@ -4,12 +4,12 @@ The repository ships several testing layers:
 
 | Layer | Tool | Scope |
 |---|---|---|
-| Go unit tests | `go test ./...` (or `make test`) | Per-package logic in [`*_test.go`](../). |
+| Go unit tests | `go test ./...` (or `make test`) | Per-package logic in [`*_test.go`](https://github.com/fabriziosalmi/caddy-waf/tree/main). |
 | Go integration tests | `go test ./... -tags=it` (or `make it`) | Tests guarded by the `it` build tag. |
-| Lint | `golangci-lint run` (or `make lint`) | Style and static analysis configured in [`.golangci.yml`](../.golangci.yml). |
-| Live attack suite | [`test.py`](../test.py) (or `make test-integration`) | Sends a curated payload set to a live WAF and checks the returned status codes. |
-| Traffic generator | [`caddytest.py`](../caddytest.py) | High-volume, configurable traffic generation; see [caddytest.md](caddytest.md). |
-| Benchmark | [`benchmark.py`](../benchmark.py) | Throughput/latency measurement against a running WAF. |
+| Lint | `golangci-lint run` (or `make lint`) | Style and static analysis configured in [`.golangci.yml`](https://github.com/fabriziosalmi/caddy-waf/blob/main/.golangci.yml). |
+| Live attack suite | [`test.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/test.py) (or `make test-integration`) | Sends a curated payload set to a live WAF and checks the returned status codes. |
+| Traffic generator | [`caddytest.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/caddytest.py) | High-volume, configurable traffic generation; see [caddytest.md](caddytest.md). |
+| Benchmark | [`benchmark.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/benchmark.py) | Throughput/latency measurement against a running WAF. |
 
 This page focuses on the live attack suite; the others are documented inline in their files.
 
@@ -21,7 +21,7 @@ This page focuses on the live attack suite; the others are documented inline in 
 
 ### Configuration constants
 
-Defined at the top of [`test.py`](../test.py):
+Defined at the top of [`test.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/test.py):
 
 | Constant | Default | Meaning |
 |---|---|---|
@@ -101,9 +101,9 @@ This requires Docker and a WAF reachable at `http://localhost:8080` from inside 
 
 A pragmatic tuning loop:
 
-1. Start with the bundled `rules.json` (or a curated subset under [`rules/`](../rules/)).
+1. Start with the bundled `rules.json` (or a curated subset under [`rules/`](https://github.com/fabriziosalmi/caddy-waf/tree/main/rules)).
 2. Run `test.py` to confirm the baseline behaviour.
-3. Use [`caddytest.py`](../caddytest.py) with `--behavior burst_calm` and `--composite` to mix legitimate and malicious traffic and watch the false-positive rate.
+3. Use [`caddytest.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/caddytest.py) with `--behavior burst_calm` and `--composite` to mix legitimate and malicious traffic and watch the false-positive rate.
 4. Watch the WAF metrics endpoint (`/waf_metrics`) for the rule IDs with the highest hit counts. False positives usually concentrate on a small number of rules.
 5. Adjust the offending rules: tighten the regex, scope the `targets`, lower the `score`, or move them to `mode: log` for observation.
 6. Reload — the file watcher applies the new rule set without restarting Caddy (see [dynamicupdates.md](dynamicupdates.md)).
@@ -125,7 +125,7 @@ Test files cover: blacklist loading, configuration parsing, GeoIP, rate limiter,
 
 ## CI
 
-The repository ships three GitHub Actions workflows in [`.github/workflows/`](../.github/workflows/):
+The repository ships three GitHub Actions workflows in [`.github/workflows/`](https://github.com/fabriziosalmi/caddy-waf/tree/main/.github/workflows):
 
 - `test.yml` — runs `go test ./...` and the lint suite on push and pull request.
 - `build-run-validate.yml` — builds Caddy with the WAF, starts it, and runs validation requests.
