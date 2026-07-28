@@ -86,7 +86,7 @@ INFO  WAF middleware provisioned successfully
 - Caddy **v2.11.x** or newer (current build uses `github.com/caddyserver/caddy/v2 v2.11.2`)
 - [`xcaddy`](https://github.com/caddyserver/xcaddy) for building Caddy with plugins
 
-### Option 1 — Build with xcaddy (recommended)
+### Method 1 — Build with xcaddy (recommended)
 
 ```bash
 go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
@@ -94,14 +94,14 @@ xcaddy build --with github.com/fabriziosalmi/caddy-waf
 ./caddy list-modules | grep waf   # expect: http.handlers.waf
 ```
 
-### Option 2 — Quick script
+### Method 2 — Quick script
 
 ```bash
 curl -fsSL -H "Pragma: no-cache" \
   https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
 ```
 
-### Option 3 — Build from source
+### Method 3 — Build from source
 
 ```bash
 git clone https://github.com/fabriziosalmi/caddy-waf.git
@@ -113,7 +113,7 @@ xcaddy build --with github.com/fabriziosalmi/caddy-waf=./
 ./caddy run
 ```
 
-### `caddy add-package`
+### Method 4 — `caddy add-package`
 
 The module is registered in Caddy's package registry, so an existing Caddy v2.7+ binary can pull it in without a Go toolchain:
 

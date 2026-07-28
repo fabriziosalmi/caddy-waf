@@ -43,8 +43,9 @@ caddy add-package github.com/fabriziosalmi/caddy-waf@v0.3.5
 Any tag from the [Releases](https://github.com/fabriziosalmi/caddy-waf/releases)
 page works. Without a version the build service uses the latest tag.
 
-Note that v0.3.4 and earlier carry a high-severity denial-of-service
-(GHSA-gfj3-cmff-q8wh); do not pin below v0.3.4.
+Note that v0.3.3 and earlier carry a high-severity denial-of-service
+([GHSA-gfj3-cmff-q8wh](https://github.com/fabriziosalmi/caddy-waf/security/advisories/GHSA-gfj3-cmff-q8wh)),
+fixed in v0.3.4; do not pin below v0.3.4.
 
 ## Remove
 
@@ -55,7 +56,7 @@ caddy remove-package github.com/fabriziosalmi/caddy-waf
 ## When to build with xcaddy instead
 
 `add-package` replaces a binary in place using a remote build service. Prefer
-[`xcaddy`](installation.md#option-1--build-with-xcaddy-recommended) when you
+[`xcaddy`](installation.md#method-1--build-with-xcaddy-recommended) when you
 need to build from a fork or an untagged commit, pin the Caddy version itself,
 build in an air-gapped environment, or produce reproducible artifacts in CI:
 
