@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="caddy-waf">
+  <!--
+    A shield, because the product is a firewall, tapering into four stacked
+    bands: the four inspection phases (request headers, request body, response
+    headers, response body) that define this WAF specifically. The bands narrow
+    downward so they follow the shield's own taper rather than fighting it.
+
+    Filled rather than stroked so it survives being rendered at 16px in a
+    browser tab, and the bands are translucent white so the mark reads on any
+    background without needing a light and a dark variant.
+  -->
+  <defs>
+    <linearGradient id="waf-mark" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0c4a6e"/>
+      <stop offset="1" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#waf-mark)" d="M32 3.5 56.5 12.7V32c0 13.6-10.4 24.6-24.5 29.2C17.9 56.6 7.5 45.6 7.5 32V12.7z"/>
+  <g fill="#ffffff" opacity="0.92">
+    <rect x="18" y="20" width="28" height="4.5" rx="2.25"/>
+    <rect x="21" y="29" width="22" height="4.5" rx="2.25"/>
+    <rect x="24" y="38" width="16" height="4.5" rx="2.25"/>
+    <rect x="27" y="47" width="10" height="4.5" rx="2.25"/>
+  </g>
+</svg>

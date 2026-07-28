@@ -30,11 +30,19 @@
 
   /*
    * The one signature element: a gradient on the product name in the hero.
-   * Kept dark enough to clear 3:1 as large text -- the usual mistake here is a
-   * pastel gradient that looks good in a screenshot and is unreadable in use.
+   *
+   * Two constraints pull against each other. Both stops must clear 3:1 on
+   * white to be readable as large text, which pushes them dark; but a gradient
+   * whose stops sit close in luminance is invisible, which is exactly what the
+   * first attempt here got wrong -- #075985 to #0891b2 is only a 2.65x
+   * luminance ratio and read as flat colour.
+   *
+   * #0c4a6e to #0891b2 is 3.85x, so the sweep is visible, and the lighter stop
+   * still measures 3.68:1. Going further (#06b6d4, 6.27x) would look better
+   * and measure 2.43:1, which is the trade this refuses to make.
    */
   --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(120deg, #075985 20%, #0891b2);
+  --vp-home-hero-name-background: linear-gradient(120deg, #0c4a6e 10%, #0891b2);
 
   /* Softer than stock, which is heavy against light backgrounds. */
   --vp-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -48,7 +56,7 @@
   --vp-c-brand-3: #0369a1; /* 5.93:1 behind white button text */
   --vp-c-brand-soft: rgba(56, 189, 248, 0.16);
 
-  --vp-home-hero-name-background: linear-gradient(120deg, #38bdf8 20%, #5eead4);
+  --vp-home-hero-name-background: linear-gradient(120deg, #0ea5e9 10%, #5eead4);
 
   --vp-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.28);
   --vp-shadow-2: 0 3px 12px rgba(0, 0, 0, 0.36);
@@ -70,8 +78,14 @@
   border-color: var(--vp-c-brand-1);
 }
 
+/*
+ * The icons inherit currentColor, so without this they render in body-text
+ * black inside a brand-tinted box -- which makes the tinted box look like an
+ * accident rather than a decision.
+ */
 .VPFeature .icon {
   background-color: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
 }
 
 /*
