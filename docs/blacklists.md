@@ -15,7 +15,8 @@ The middleware loads two blacklists at startup and on demand: an IP blacklist an
 - **Configuration directive**: `ip_blacklist_file <path>`
 - **Storage**: a [`go-iptrie`](https://github.com/phemmer/go-iptrie) prefix trie. Single addresses are stored as `/32` (IPv4) or `/128` (IPv6) prefixes; CIDR ranges are stored as-is.
 - **Lookup path**: at request time the source IP is parsed with `netip.ParseAddr` and a `Contains` check against the trie is performed. If the file is missing, the lookup is a no-op (no requests are blocked by the IP layer).
-- **Source IP selection**: when the `X-Forwarded-For` header is present, the **first** comma-separated value is used; otherwise `r.RemoteAddr` (host portion) is used.
+- **Source IP selection**: `r.RemoteAddr` (host portion) is **always** checked, since it is the only value a client cannot forge. Every hop in `X-Forwarded-For` is checked **in addition**, so a deployment behind a proxy still matches on the forwarded client IP. Consulting the header *instead of* the peer address, as releases before v0.3.8 did, let any blacklisted client bypass the list with one header (GHSA-gfj3-cmff-q8wh's sibling advisory, GHSA-w6gv-76q4-prqg).
+- **Host normalisation**: the DNS blacklist lowercases the `Host` header and strips the port and any trailing dot before matching, so `evil.example`, `EVIL.EXAMPLE:8080` and `evil.example.` all match the same entry.
 - **Validation**: each entry is parsed first as a CIDR range (`net.ParseCIDR`) and, on failure, as a single IP (`net.ParseIP`). Invalid lines are logged at WARN level and counted as `invalid_entries`; valid lines are counted as `valid_entries`.
 
 ### Accepted entry forms

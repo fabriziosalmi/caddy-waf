@@ -78,7 +78,18 @@ func (m *Middleware) isIPBlacklisted(addr string) bool {
 		return false
 	}
 
-	if m.ipBlacklist.Contains(parsedIP) {
+	// ReloadConfig swaps m.ipBlacklist under m.mu, so the read must be
+	// synchronised or the swap races with every in-flight request. Mirrors
+	// what isDNSBlacklisted already does for the DNS map.
+	m.mu.RLock()
+	trie := m.ipBlacklist
+	m.mu.RUnlock()
+
+	if trie == nil {
+		return false
+	}
+
+	if trie.Contains(parsedIP) {
 		m.muIPBlacklistMetrics.Lock()                            // Acquire lock before accessing shared counter
 		m.IPBlacklistBlockCount++                                // Increment the counter
 		m.muIPBlacklistMetrics.Unlock()                          // Release lock after accessing counter
@@ -98,8 +109,37 @@ func (m *Middleware) isCountryInList(remoteAddr string, countryList []string, ge
 }
 
 // isDNSBlacklisted checks if the given host is in the DNS blacklist.
+// normalizeHost reduces a Host header to the bare hostname used for blacklist
+// lookups: lowercased, without the optional port, and without the trailing dot
+// of a fully qualified name.
+//
+// Both of those are client-controlled and were previously left in place, so
+// "evil.example:8080" and "evil.example." both missed an entry for
+// "evil.example". The port form is not exotic: r.Host carries the port
+// whenever the site is served on anything other than 80/443 -- which every
+// example in this repository does -- and a client may send an explicit
+// ":443" even there. The blacklist was bypassable with one header, and inert
+// altogether on a non-default port.
+func normalizeHost(host string) string {
+	h := strings.ToLower(strings.TrimSpace(host))
+	if h == "" {
+		return ""
+	}
+	// Strip the port. net.SplitHostPort fails when there is none, and would
+	// also mis-handle a bare IPv6 literal, so only take its result on success.
+	if stripped, _, err := net.SplitHostPort(h); err == nil && stripped != "" {
+		h = stripped
+	}
+	// "example.com." and "example.com" are the same name.
+	h = strings.TrimSuffix(h, ".")
+	// A bracketed IPv6 literal reaches us as "[::1]".
+	h = strings.TrimPrefix(h, "[")
+	h = strings.TrimSuffix(h, "]")
+	return h
+}
+
 func (m *Middleware) isDNSBlacklisted(host string) bool {
-	normalizedHost := strings.ToLower(strings.TrimSpace(host))
+	normalizedHost := normalizeHost(host)
 	if normalizedHost == "" {
 		m.logger.Warn("Empty host provided for DNS blacklist check")
 		return false

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.9] - 2026-07-28
+
+### Security
+Two further defects in the same subsystem, one of them the sibling of a bug fixed in v0.3.7. Both were surfaced by an adversarial sweep that drives real requests through `ServeHTTP` and asks whether the client is actually refused, rather than whether a helper returns `true`.
+
+- **`ReloadRules` had the identical self-deadlock fixed in `ReloadConfig`.** It took `m.mu` and then called `loadRules`, which takes `m.mu` again; the goroutine blocked forever while owning the write lock, so every later request stalled on the `RLock` in the request path. This is the *primary* hot-reload branch: `startFileWatcher` routes any changed path containing `"rule"` to `ReloadRules`, which means editing `rules.json` — the case `docs/dynamicupdates.md` documents — wedged the server. v0.3.7 fixed one branch of the watcher and missed the other. Found by the automated review on [#130](https://github.com/fabriziosalmi/caddy-waf/pull/130).
+
+- **The DNS blacklist was bypassable, and inert on non-default ports.** `isDNSBlacklisted` only lowercased and trimmed the `Host` header, so `evil.example:8080` and `evil.example.` both missed an entry for `evil.example`. `r.Host` carries the port whenever the site is served on anything other than 80/443 — which every example in this repository does — so those deployments had no DNS filtering at all; and a client may send an explicit `:443` even on the default port, making it a one-header bypass. Hosts are now normalised (lowercase, port stripped, trailing dot removed, IPv6 brackets removed).
+
+### Fixed
+- **Data race on the IP blacklist during hot reload.** `ReloadConfig` swapped `m.ipBlacklist` under `m.mu`, but `isIPBlacklisted` read it without taking the lock, so the swap never synchronised with in-flight requests. The read is now under `RLock`, mirroring `isDNSBlacklisted`. Found by the automated review on [#130](https://github.com/fabriziosalmi/caddy-waf/pull/130).
+- Documentation described the pre-v0.3.8 `X-Forwarded-For` behaviour ("first XFF value if present, otherwise `r.RemoteAddr`"), which stopped being true when that bypass was closed.
+
+### Added
+- `TestReloadRulesDoesNotDeadlock` — the branch v0.3.7 missed, asserted on a deadline and followed by a reader that must get through.
+- The full suite now passes under `-race`.
+
+### Changed
+- Documented Go requirement corrected to **1.25.1**. `go.mod` declares it because `caddy/v2 v2.11.4` and `go.step.sm/crypto` require it and Go propagates the maximum; forcing `1.25.0` breaks the build.
+- Bumped version constant `wafVersion` to `v0.3.9`.
+
 ## [v0.3.8] - 2026-07-28
 
 ### Security
