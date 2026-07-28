@@ -49,7 +49,7 @@ var (
 )
 
 // Add or update the version constant as needed
-const wafVersion = "v0.3.8" // update this value to the new release version when tagging
+const wafVersion = "v0.3.9" // update this value to the new release version when tagging
 
 // ==================== Initialization and Setup ====================
 
@@ -442,10 +442,15 @@ func (m *Middleware) startFileWatcher(filePaths []string) {
 	}
 }
 
+// ReloadRules re-reads the rule files. It is called by the file watcher when a
+// path containing "rule" changes, which is the primary hot-reload case.
+//
+// It must NOT take m.mu: loadRules takes it, and Go's RWMutex is not
+// reentrant, so an outer lock self-deadlocked the goroutine while it still
+// owned the write lock -- wedging every later request on the RLock in the
+// request path. Same defect as the one fixed in ReloadConfig; this branch was
+// missed there and is covered by TestReloadRulesDoesNotDeadlock.
 func (m *Middleware) ReloadRules() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	m.logger.Info("Reloading WAF rules")
 	// Call the external loadRules function
 	if err := m.loadRules(m.RuleFiles); err != nil {

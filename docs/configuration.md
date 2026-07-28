@@ -26,7 +26,7 @@ For each incoming request, [`Middleware.ServeHTTP`](https://github.com/fabrizios
 
 The order below reflects the actual code in [`handler.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/handler.go) (`handlePhase`, `phase==1`):
 
-1. **IP blacklist** — uses `X-Forwarded-For` first IP if present, otherwise `r.RemoteAddr`. Match → `403`.
+1. **IP blacklist** — always checks `r.RemoteAddr`, plus every `X-Forwarded-For` hop in addition. Match → `403`.
 2. **DNS blacklist** — exact (case-insensitive) match against `r.Host`. Match → `403`.
 3. **Rate limit** — when configured. Exceeded → `429 Too Many Requests`.
 4. **Country whitelist** — when enabled, request is blocked unless the source country is in the list. On lookup failure: `geoip_fail_open` controls behaviour.

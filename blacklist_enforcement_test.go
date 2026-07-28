@@ -118,6 +118,45 @@ func TestReloadConfigDoesNotDeadlock(t *testing.T) {
 	}
 }
 
+// TestReloadRulesDoesNotDeadlock covers the sibling of the ReloadConfig
+// defect. The file watcher routes any changed path containing "rule" to
+// ReloadRules, so this is the primary hot-reload case -- editing rules.json.
+func TestReloadRulesDoesNotDeadlock(t *testing.T) {
+	f, err := os.CreateTemp(t.TempDir(), "rules*.json")
+	require.NoError(t, err)
+	_, err = f.WriteString(`[{"id":"r1","pattern":"x","targets":["URI"],"phase":1,"score":1,"action":"log"}]`)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	logger := zap.NewNop()
+	m := &Middleware{
+		logger:          logger,
+		blacklistLoader: NewBlacklistLoader(logger),
+		RuleFiles:       []string{f.Name()},
+		Rules:           map[int][]Rule{},
+		ruleCache:       NewRuleCache(),
+		ipBlacklist:     iptrie.NewTrie(),
+		dnsBlacklist:    map[string]struct{}{},
+	}
+
+	done := make(chan error, 1)
+	go func() { done <- m.ReloadRules() }()
+	select {
+	case err := <-done:
+		require.NoError(t, err)
+	case <-time.After(10 * time.Second):
+		t.Fatal("ReloadRules deadlocked: it must not hold m.mu across loadRules")
+	}
+
+	readerDone := make(chan bool, 1)
+	go func() { readerDone <- m.isIPBlacklisted("192.0.2.1:1") }()
+	select {
+	case <-readerDone:
+	case <-time.After(5 * time.Second):
+		t.Fatal("a request-path reader blocked after ReloadRules")
+	}
+}
+
 // TestBlacklistedIPIsBlockedEndToEnd drives a full request through ServeHTTP,
 // so the guarantee is "the client is refused", not merely "a lookup returns
 // true". Without this, a future refactor could keep the trie correct and still
