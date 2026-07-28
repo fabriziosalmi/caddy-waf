@@ -6,10 +6,10 @@ A Web Application Firewall middleware for the [Caddy](https://caddyserver.com/) 
 [![CodeQL](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/github-code-scanning/codeql)
 [![Build, Run and Validate](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/build-run-validate.yml/badge.svg)](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/build-run-validate.yml)
 
-- **Module ID**: `http.handlers.waf`
+- **Module ID**: `http.handlers.waf` — [registered in Caddy's package registry](https://caddyserver.com/docs/modules/http.handlers.waf), so `caddy add-package` and the [download page](https://caddyserver.com/download?package=github.com%2Ffabriziosalmi%2Fcaddy-waf) both work
 - **Go module path**: `github.com/fabriziosalmi/caddy-waf`
 - **Current version**: `v0.3.5` (see [`caddywaf.go`](caddywaf.go) — `const wafVersion`)
-- **License**: AGPL-3.0
+- **License**: AGPL-3.0 — note this is a copyleft licence; check it suits your deployment before integrating
 
 ---
 
@@ -204,10 +204,14 @@ A fully annotated example is provided in [`Caddyfile`](Caddyfile) and [`caddyfil
 ├── tor.go                 Periodic Tor exit-node list fetcher
 ├── logging.go             Async log worker, sensitive-data redaction
 ├── helpers.go             IP parsing helpers
+├── debug_waf.go           Debug helpers for rule evaluation
+├── assets.go              Embedded dashboard assets (build tag)
+├── assets_stub.go         No-op asset provider for builds without the dashboard
 ├── types.go               Public types (Middleware, Rule, RateLimit, ...)
 ├── doc.go                 Package documentation
 ├── rules.json             Default rule set (used by Caddyfile)
 ├── rules/                 Modular rule files by category
+├── ui/                    Dashboard, with third-party assets vendored same-origin
 ├── ip_blacklist.txt       Default IP blacklist
 ├── dns_blacklist.txt      Default DNS blacklist
 ├── tor_blacklist.txt      Tor exit-node cache (auto-managed)
@@ -248,7 +252,11 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the workflow and [`CODE_OF_CONDUCT.
 
 ## Security
 
-For vulnerability disclosure see [`SECURITY.md`](SECURITY.md). Reports may be sent to `fabrizio.salmi@gmail.com` or as a private GitHub Security Advisory; please do not open a public issue.
+Please do not open a public issue for a vulnerability. Use [private vulnerability reporting](https://github.com/fabriziosalmi/caddy-waf/security/advisories/new) — it is enabled on this repository, so it works for anyone without special permissions — or email `fabrizio.salmi@gmail.com`. Full policy in [`SECURITY.md`](SECURITY.md).
+
+Only the latest release receives security fixes; there are no backport branches. Published advisories are listed under [Security → Advisories](https://github.com/fabriziosalmi/caddy-waf/security/advisories).
+
+**Upgrade note:** v0.3.3 and earlier are affected by [GHSA-gfj3-cmff-q8wh](https://github.com/fabriziosalmi/caddy-waf/security/advisories/GHSA-gfj3-cmff-q8wh), a high-severity unauthenticated denial of service (unbounded response buffering, CVSS 7.5). Fixed in v0.3.4.
 
 ## License
 
