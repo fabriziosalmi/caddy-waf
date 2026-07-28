@@ -38,7 +38,7 @@ A first-time reader is recommended to follow this sequence:
 | [testing.md](testing.md) | Running `test.py` against a live WAF. |
 | [caddytest.md](caddytest.md) | Traffic generator for benchmarks and rule validation. |
 | [docker.md](docker.md) | Building and running the supplied `Dockerfile` / `docker-compose.yml`. |
-| [add-package-guide.md](add-package-guide.md) | Status of `caddy add-package` registration. |
+| [add-package-guide.md](add-package-guide.md) | Installing with `caddy add-package`. |
 
 ## Bundled rule files
 

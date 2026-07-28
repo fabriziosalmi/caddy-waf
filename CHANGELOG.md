@@ -18,8 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `TestRegisterModuleArgumentIsScannable` — parses the package's own AST and asserts the `caddy.RegisterModule` argument stays a composite literal or `new()`, so the registry constraint cannot silently regress on a future edit. Verified to fail against the v0.3.4 pattern and pass against the fix.
 
 ### Changed
-- Rewrote `CADDY_MODULE_REGISTRATION.md`, which was stale (referenced v0.0.6 and Caddy v2.9.1) and speculated that the failures were server-side and "may resolve automatically". It now records the verified root cause, the readiness evidence, and the remaining manual step.
+- Rewrote `CADDY_MODULE_REGISTRATION.md`, which was stale (referenced v0.0.6 and Caddy v2.9.1) and speculated that the failures were server-side and "may resolve automatically". It now records the verified root cause and the maintenance notes.
 - Bumped version constant `wafVersion` to `v0.3.5`.
+
+### Registered
+With the scan fixed, `github.com/fabriziosalmi/caddy-waf` was claimed in Caddy's package registry on 2026-07-28 at 10:05:52 UTC, at `v0.3.5`. The build service now serves it (`GET /api/download?p=github.com%2Ffabriziosalmi%2Fcaddy-waf` returns a binary instead of HTTP 400), so `caddy add-package github.com/fabriziosalmi/caddy-waf` works and the module is selectable on <https://caddyserver.com/download>. `README.md`, `docs/installation.md` and `docs/add-package-guide.md` updated accordingly — they previously documented the install path as unavailable.
+
+Note the module documentation shown on caddyserver.com is extracted from the doc comment on the `Middleware` struct in `types.go`.
 
 ## [v0.3.4] - 2026-07-28
 
