@@ -1,154 +1,107 @@
-# Caddy Module Registration Checklist
+# Caddy Module Registration — Status
 
-This document outlines the requirements and steps for successfully registering the caddy-waf module in the official Caddy modules directory.
+Tracks whether `github.com/fabriziosalmi/caddy-waf` is registered in Caddy's
+package registry, which is what makes the module appear on
+<https://caddyserver.com/download> and installable with `caddy add-package`.
 
-## ⚠️ Current Status
+## Current status: NOT REGISTERED
 
-**The module is NOT currently registered** in Caddy's official module registry. Attempts to use `caddy add-package github.com/fabriziosalmi/caddy-waf` will fail with:
-```
-Error: download failed: HTTP 400: github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path
-```
+Verified 2026-07-28 against the build service endpoint that `add-package` calls:
 
-**Alternative installation methods are available and recommended:**
-- [Quick Script Installation](docs/installation.md#method-1-quick-script-installation-recommended)
-- [Build with xcaddy](docs/installation.md#method-2-build-with-xcaddy)
-- [Build from Source](docs/installation.md#method-3-build-from-source-advanced)
-
-## ✅ Completed Requirements
-
-### 1. Module Structure Compliance
-- [x] **Module Interface Implementation**: Properly implements `caddy.Module` interface
-- [x] **Module ID**: Correctly uses `http.handlers.waf` as module ID
-- [x] **Registration**: Module is registered in `init()` function using `caddy.RegisterModule()`
-- [x] **Interface Guards**: Proper interface guards implemented for compile-time checking
-- [x] **Caddyfile Support**: Implements `caddyfile.Unmarshaler` for Caddyfile parsing
-
-### 2. Required Interfaces
-- [x] **caddy.Module**: Implemented via `CaddyModule()` method
-- [x] **caddy.Provisioner**: Implemented via `Provision()` method
-- [x] **caddy.Validator**: Implemented via `Validate()` method
-- [x] **caddyhttp.MiddlewareHandler**: Implemented via `ServeHTTP()` method
-- [x] **caddyfile.Unmarshaler**: Implemented via `UnmarshalCaddyfile()` method
-
-### 3. Documentation Requirements
-- [x] **Package Documentation**: Added comprehensive package-level documentation
-- [x] **Struct Documentation**: Added detailed documentation for main Middleware struct
-- [x] **README.md**: Comprehensive README with examples and installation instructions
-- [x] **Module Metadata**: Created `MODULE.md` with standardized module information
-- [x] **Usage Examples**: Created `caddyfile.example` with practical configuration examples
-- [x] **API Documentation**: Generated via `go doc` commands
-
-### 4. Code Quality and Standards
-- [x] **Go Module Structure**: Proper `go.mod` with correct module path
-- [x] **Version Consistency**: Updated version constant to match latest release (v0.0.6)
-- [x] **Build Verification**: Module builds successfully with `go build`
-- [x] **Module Verification**: Passes `go mod verify`
-- [x] **No Build Errors**: Clean compilation with no warnings or errors
-
-### 5. Release Management
-- [x] **Git Tags**: Proper semantic versioning tags (v0.0.3, v0.0.4, v0.0.5, v0.0.6)
-- [x] **GitHub Releases**: Automated release workflow creating GitHub releases
-- [x] **Release Notes**: Proper release descriptions and changelogs
-- [x] **Binary Assets**: Cross-platform binaries generated for releases
-
-### 6. Testing and Validation
-- [x] **Test Suite**: Comprehensive test coverage across multiple files
-- [x] **CI/CD Pipeline**: GitHub Actions workflows for testing and building
-- [x] **Module Import**: Can be imported and used with `xcaddy build`
-- [ ] **caddy add-package**: NOT compatible - module not registered in Caddy's registry
-
-## 🔍 Registration Status and Issues
-
-### Current Status: NOT REGISTERED
-
-The module has been attempted to be registered but the registration failed. The error returned indicates the module path is not recognized by Caddy's build service.
-
-### Error Details
-
-When users attempt to install via `caddy add-package`:
-```
-Error: download failed: HTTP 400: github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path
+```console
+$ curl -s "https://caddyserver.com/api/download?p=github.com%2Ffabriziosalmi%2Fcaddy-waf&os=linux&arch=amd64"
+{"status_code":400,"error":{"message":"github.com/fabriziosalmi/caddy-waf is not a registered Caddy module package path","id":"aed165cf-9d85-4b97-9b65-c5404988d648"}}
 ```
 
-Reference error IDs from failed registration attempts:
-- `d9ae3bd6-bc8f-4f8a-a0de-dcff0399e7a9`
-- `2b782e50-057d-4dac-bbd5-4cd1c1188669`
+Until this returns a build, `caddy add-package github.com/fabriziosalmi/caddy-waf`
+fails and users must build with `xcaddy`. See [docs/installation.md](docs/installation.md).
 
-### Issue Analysis: Registration Error ID `2b782e50-057d-4dac-bbd5-4cd1c1188669`
+## Module readiness: verified ready
 
-Based on the error ID mentioned in the issue comments, this appears to be a server-side error during the registration process rather than a module compliance issue. Common causes and solutions:
+The registry validates a package by resolving it from the Go module proxy and
+building it. That exact path was reproduced end to end on 2026-07-28 against the
+**published** module — not a local `replace` — and it succeeds:
 
-### 1. **Server-Side Registration Issues**
-- **Cause**: Temporary issues with the Caddy module registration service
-- **Solution**: Retry registration after some time
-- **Status**: May resolve automatically
+```console
+$ xcaddy build --with github.com/fabriziosalmi/caddy-waf@v0.3.4
+go: downloading github.com/fabriziosalmi/caddy-waf v0.3.4
+[INFO] Build complete: ./caddy
 
-### 2. **Module Path Validation**
-- **Cause**: Registration service may have strict validation rules
-- **Solution**: Ensure `github.com/fabriziosalmi/caddy-waf` is accessible and properly formatted
-- **Status**: ✅ Module path is valid and accessible
+$ ./caddy version
+v2.11.4 h1:XKxkMTgNSizEvKG6QHue6cAsFOteU2qA61w2tKkCWi0=
 
-### 3. **Go Module Accessibility**
-- **Cause**: Registration service needs to fetch and validate the module
-- **Solution**: Ensure module is publicly accessible and properly tagged
-- **Status**: ✅ Repository is public with proper tags
-
-### 4. **Caddy Version Compatibility**
-- **Cause**: Module might require specific Caddy version
-- **Solution**: Verify compatibility with latest Caddy version
-- **Status**: ✅ Uses Caddy v2.9.1 (latest)
-
-## 🚀 Next Steps for Registration
-
-### 1. **Retry Registration**
-- Visit https://caddyserver.com/account/register-package
-- Use the exact module path: `github.com/fabriziosalmi/caddy-waf`
-- Ensure using the latest tag: `v0.0.6`
-
-### 2. **Contact Caddy Team**
-- If registration continues to fail, contact Caddy maintainers
-- Provide the error ID: `2b782e50-057d-4dac-bbd5-4cd1c1188669`
-- Reference this module's compliance with all requirements
-
-### 3. **Alternative Registration Paths**
-- Consider submitting a PR to the Caddy Community repository
-- Engage with the Caddy community on forums or Discord
-- Document the module in community wikis or resources
-
-## 📋 Final Verification Commands
-
-Run these commands to verify module readiness:
-
-```bash
-# Verify module builds successfully
-go build -v
-
-# Verify module interfaces
-go doc -short
-
-# Test module import
-go list -m github.com/fabriziosalmi/caddy-waf
-
-# Test with caddy add-package (recommended)
-caddy add-package github.com/fabriziosalmi/caddy-waf
-
-# Verify with xcaddy (alternative method)
-xcaddy build --with github.com/fabriziosalmi/caddy-waf
-
-# Check latest version/tag
-git describe --tags --abbrev=0
-
-# Verify module is loaded
-caddy list-modules | grep waf
+$ ./caddy list-modules | grep waf
+http.handlers.waf
 ```
 
-## 📞 Support Information
+Checked alongside it:
 
-- **Repository**: https://github.com/fabriziosalmi/caddy-waf
-- **Issues**: https://github.com/fabriziosalmi/caddy-waf/issues
-- **License**: AGPLv3
-- **Maintainer**: @fabriziosalmi
+| Requirement | Status |
+|---|---|
+| Module path matches `go.mod` (`github.com/fabriziosalmi/caddy-waf`) | OK |
+| Semantic import versioning (`/vN` suffix required only at v2+; this module is v0.x) | Not applicable |
+| Resolvable on `proxy.golang.org` at the latest tag | OK — `v0.3.4` |
+| Builds against current Caddy from the proxy | OK — Caddy v2.11.4 |
+| Registers module ID `http.handlers.waf` at runtime | OK |
+| Cross-compiles for linux/amd64, linux/arm64, windows/amd64 | OK |
 
----
+Note that CI builds with `xcaddy build --with github.com/fabriziosalmi/caddy-waf=./`,
+a local `replace`. That verifies the working tree but **not** that the published
+module resolves and builds from the proxy, which is what the registry does. When
+diagnosing a registration failure, always reproduce with `@<tag>` rather than `=./`.
 
-**Conclusion**: The caddy-waf module meets all technical requirements for Caddy module registration. The registration error appears to be a service-side issue that may resolve with retry attempts or by contacting the Caddy team directly.
+## What is left
+
+Registration is a web form behind a GitHub login; there is no API for it.
+
+1. Sign in at <https://caddyserver.com/account>.
+2. Click **Register package**.
+3. Package import path: `github.com/fabriziosalmi/caddy-waf`
+4. Version: `v0.3.4` (the field is optional; the registry resolves the latest tag otherwise).
+5. Re-run the `curl` above. A `200` with a binary means it is live; a `400` with a
+   fresh error `id` means it still failed — quote that id when asking the Caddy
+   maintainers, since it is what lets them find the server-side log.
+
+## Root cause of the earlier failures — fixed in v0.3.5
+
+Registering a package does more than resolve and build the module: the registry
+runs a **static analyzer** over the source to discover which Caddy modules the
+package registers. That analyzer is deliberately simple, and it only accepts two
+forms as the argument to `caddy.RegisterModule`:
+
+- a composite literal — `caddy.RegisterModule(Foo{})`
+- `new()` — `caddy.RegisterModule(new(Foo))`
+
+Anything else fails. Until v0.3.4 this module used:
+
+```go
+caddy.RegisterModule(&Middleware{}) // parses as ast.UnaryExpr -> rejected
+```
+
+`&Middleware{}` is a `*ast.UnaryExpr` wrapping the literal, not a literal, so the
+scan aborts and the portal reports the generic:
+
+```
+Sorry, something went wrong:
+unable to scan modules in package github.com/fabriziosalmi/caddy-waf
+Please include this error ID if reporting: <uuid>
+```
+
+That message never names the offending line, which is why the earlier attempts
+(error ids `d9ae3bd6-bc8f-4f8a-a0de-dcff0399e7a9` and
+`2b782e50-057d-4dac-bbd5-4cd1c1188669`, logged while the module was at v0.0.6)
+were never diagnosed. The same failure and its resolution are documented in the
+Caddy community thread [Unable to register module in the
+portal](https://caddy.community/t/unable-to-register-module-in-the-portal/33572),
+where Matt Holt identifies the underlying analyzer error:
+
+> `unexpected argument to RegisterModule(): &ast.UnaryExpr{...} - expect either composite literal or new()`
+
+**v0.3.5 switches both `caddy.RegisterModule` and `ModuleInfo.New` to `new(Middleware)`.**
+The forms are semantically identical — each allocates a zeroed `Middleware` and
+yields a pointer — so there is no behavioural change; it only makes the source
+legible to the scanner. `Middleware` must stay a pointer here: `CaddyModule` has a
+pointer receiver, and the struct carries mutexes that must not be copied.
+
+Do not reintroduce `&Middleware{}` in either place, or registration will break
+again on the next version bump.

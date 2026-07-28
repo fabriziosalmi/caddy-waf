@@ -49,19 +49,24 @@ var (
 )
 
 // Add or update the version constant as needed
-const wafVersion = "v0.3.4" // update this value to the new release version when tagging
+const wafVersion = "v0.3.5" // update this value to the new release version when tagging
 
 // ==================== Initialization and Setup ====================
 
+// Use new(Middleware) rather than &Middleware{} here. Caddy's package registry
+// scans this call with a simple static analyzer that only accepts a composite
+// literal or new(); an &-prefixed literal parses as an ast.UnaryExpr and makes
+// registration fail with "unable to scan modules in package". The two forms are
+// otherwise identical -- both allocate a zeroed Middleware and yield a pointer.
 func init() {
-	caddy.RegisterModule(&Middleware{}) // Register the module with Caddy
+	caddy.RegisterModule(new(Middleware)) // Register the module with Caddy
 	httpcaddyfile.RegisterHandlerDirective("waf", parseCaddyfile)
 }
 
 func (*Middleware) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "http.handlers.waf",
-		New: func() caddy.Module { return &Middleware{} },
+		New: func() caddy.Module { return new(Middleware) },
 	}
 }
 
