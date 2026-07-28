@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.5] - 2026-07-28
+
+### Fixed
+- **Caddy package registry could not scan this module.** `caddy.RegisterModule(&Middleware{})` parses as an `ast.UnaryExpr` wrapping the literal, and the static analyzer behind <https://caddyserver.com/account/register-package> accepts only a composite literal or `new()`. Every registration attempt therefore failed with the opaque portal error `unable to scan modules in package github.com/fabriziosalmi/caddy-waf`, which never names the offending line — leaving the module absent from <https://caddyserver.com/download> and `caddy add-package github.com/fabriziosalmi/caddy-waf` returning HTTP 400. Both `caddy.RegisterModule` and `ModuleInfo.New` now use `new(Middleware)`.
+
+  The two forms are semantically identical (each allocates a zeroed `Middleware` and yields a pointer), so there is no behavioural change. The pointer is required regardless: `CaddyModule` has a pointer receiver and `Middleware` carries mutexes that must not be copied.
+
+  Diagnosis courtesy of the Caddy community thread [Unable to register module in the portal](https://caddy.community/t/unable-to-register-module-in-the-portal/33572), where the underlying analyzer error is quoted as `unexpected argument to RegisterModule(): &ast.UnaryExpr{...} - expect either composite literal or new()`.
+
+### Added
+- `TestRegisterModuleArgumentIsScannable` — parses the package's own AST and asserts the `caddy.RegisterModule` argument stays a composite literal or `new()`, so the registry constraint cannot silently regress on a future edit. Verified to fail against the v0.3.4 pattern and pass against the fix.
+
+### Changed
+- Rewrote `CADDY_MODULE_REGISTRATION.md`, which was stale (referenced v0.0.6 and Caddy v2.9.1) and speculated that the failures were server-side and "may resolve automatically". It now records the verified root cause, the readiness evidence, and the remaining manual step.
+- Bumped version constant `wafVersion` to `v0.3.5`.
+
 ## [v0.3.4] - 2026-07-28
 
 ### Security
