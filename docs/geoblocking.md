@@ -34,6 +34,15 @@ GeoIP lookups use `getClientIP` ([`helpers.go`](https://github.com/fabriziosalmi
 
 The host portion is then extracted (port stripped) and passed to the MMDB reader.
 
+> [!TIP]
+> **Private and unresolvable addresses.** `whitelist_countries` blocks anything it
+> cannot geolocate, which includes every address on your LAN — so enabling it can
+> lock you out of your own service from inside the network. Use
+> [`whitelist_ip private_ranges`](configuration.md#ip-whitelist) to exempt those
+> addresses from geolocation while keeping the rule engine and rate limiter
+> applied to them. `geoip_fail_open` also unblocks them, but it unblocks every
+> unresolvable public address as well.
+
 ## Evaluation order in Phase 1
 
 ```

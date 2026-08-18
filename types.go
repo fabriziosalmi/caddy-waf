@@ -114,8 +114,12 @@ type WAFState struct {
 type Middleware struct {
 	mu sync.RWMutex
 
-	RuleFiles        []string            `json:"rule_files"`
-	IPBlacklistFile  string              `json:"ip_blacklist_file"`
+	RuleFiles       []string `json:"rule_files"`
+	IPBlacklistFile string   `json:"ip_blacklist_file"`
+	// IPWhitelist holds entries exempt from the IP-reputation checks: bare IPs,
+	// CIDR ranges, or the token "private_ranges". See whitelist_ip in
+	// docs/configuration.md.
+	IPWhitelist      []string            `json:"ip_whitelist,omitempty"`
 	DNSBlacklistFile string              `json:"dns_blacklist_file"`
 	AnomalyThreshold int                 `json:"anomaly_threshold"`
 	CountryBlacklist CountryAccessFilter `json:"country_blacklist"`
@@ -123,6 +127,7 @@ type Middleware struct {
 	BlockASNs        ASNAccessFilter     `json:"block_asns"`
 	Rules            map[int][]Rule      `json:"-"`
 	ipBlacklist      *iptrie.Trie        `json:"-"`
+	ipWhitelist      *iptrie.Trie        `json:"-"`
 	dnsBlacklist     map[string]struct{} `json:"-"` // Changed to map[string]struct{}
 	logger           *zap.Logger
 	LogSeverity      string `json:"log_severity,omitempty"`

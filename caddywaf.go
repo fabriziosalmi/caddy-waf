@@ -49,7 +49,7 @@ var (
 )
 
 // Add or update the version constant as needed
-const wafVersion = "v0.3.10" // update this value to the new release version when tagging
+const wafVersion = "v0.3.11" // update this value to the new release version when tagging
 
 // ==================== Initialization and Setup ====================
 
@@ -268,6 +268,31 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 		err = m.loadIPBlacklist(m.IPBlacklistFile, m.ipBlacklist)
 		if err != nil {
 			return fmt.Errorf("failed to load IP blacklist: %w", err)
+		}
+	}
+
+	// Build the IP whitelist
+	if len(m.IPWhitelist) > 0 {
+		trie, expanded, err := buildIPWhitelist(m.IPWhitelist)
+		if err != nil {
+			return err
+		}
+		m.ipWhitelist = trie
+		m.logger.Info("IP whitelist loaded",
+			zap.Int("entries", len(expanded)),
+			zap.Strings("ranges", expanded),
+		)
+
+		// Warn loudly when private ranges are exempt. The whitelist matches on
+		// the peer address, which is correct when caddy-waf is the edge but
+		// means the peer is the *proxy* when it is not -- and a proxy on
+		// localhost or a private network would exempt every request passing
+		// through it, silently turning these controls off.
+		for _, entry := range m.IPWhitelist {
+			if strings.EqualFold(strings.TrimSpace(entry), PrivateRangesToken) {
+				m.logger.Warn("whitelist_ip includes private_ranges: requests whose PEER address is private are exempt from the IP blacklist, country filter and ASN filter. This is only what you want if caddy-waf is the edge. Behind another proxy the peer is that proxy, which would exempt all traffic.")
+				break
+			}
 		}
 	}
 

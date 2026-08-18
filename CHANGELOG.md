@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.11] - 2026-08-18
+
+### Added
+- **`whitelist_ip` — exempt addresses from the IP-reputation checks without switching the WAF off for them.** Accepts bare IPs, CIDR ranges, or the token `private_ranges`, and is repeatable:
+
+  ```caddyfile
+  whitelist_ip private_ranges
+  whitelist_ip 203.0.113.4 198.51.100.0/24
+  ```
+
+  Requested in [#137](https://github.com/fabriziosalmi/caddy-waf/issues/137) by [@nozonyan](https://github.com/nozonyan): `whitelist_countries` blocks anything it cannot geolocate, which includes every address on the local network, so enabling it locks you out of your own service from inside the LAN. The only workarounds were `geoip_fail_open` — which also admits every unresolvable *public* address — or maintaining two site blocks with separate rule sets, with the risk of leaving the public one unprotected after a test.
+
+  The exemption covers the checks that judge a client by where it comes from: the **IP blacklist** (including Tor exit nodes fed into it), **`whitelist_countries` / `block_countries`**, and **`block_asns`**. It deliberately does **not** cover the DNS blacklist (which judges the requested host, not the client), the rate limiter, or the regex rules in any phase. Exempting an address from geolocation is the fix; stopping inspection of its requests is not.
+
+  `private_ranges` expands to exactly the set Caddy uses for its own placeholder — `192.168.0.0/16`, `172.16.0.0/12`, `10.0.0.0/8`, `127.0.0.1/8`, `fd00::/8`, `::1`. Identical rather than "improved": a WAF and the server in front of it disagreeing about which addresses are private is how bypasses get built. An entry that does not parse fails startup rather than being skipped with a warning.
+
+### Security notes on the design
+- **The whitelist matches the peer address only, never `X-Forwarded-For`.** This is the deliberate opposite of the blacklist, which checks the peer address *and* every forwarded hop. When blocking, consulting extra addresses can only block more; when allowing, honouring a client-supplied header would let anyone send `X-Forwarded-For: 10.0.0.1` and exempt themselves from the blacklist, the country filter and the ASN filter in a single header. Covered by `TestWhitelistIgnoresForwardedHeaders`.
+- **`private_ranges` is only safe when caddy-waf is the edge.** Because the check is on the peer address, running behind another proxy makes the peer that proxy — typically a private or loopback address — which would exempt every request passing through it. The WAF now logs a warning at startup when `private_ranges` is whitelisted, and `docs/configuration.md` documents the trap.
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.3.11`.
+
 ## [v0.3.10] - 2026-07-28
 
 ### Fixed

@@ -300,6 +300,19 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 	)
 
 	if phase == 1 {
+		// A whitelisted peer is exempt from the IP-reputation controls: the IP
+		// blacklist, the country allow/block lists and the ASN filter. It is NOT
+		// exempt from the DNS blacklist (which is about the requested host, not
+		// who is asking), the rate limiter, or the rule engine -- those still
+		// apply. See issue #137: the case this solves is a private address being
+		// blocked by whitelist_countries because it has no geolocation, and the
+		// answer to that is not to switch the WAF off for it.
+		ipExempt := m.isIPWhitelisted(r.RemoteAddr)
+		if ipExempt {
+			m.logger.Debug("Peer address is whitelisted; skipping IP reputation checks",
+				zap.String("remote_addr", r.RemoteAddr))
+		}
+
 		// IP blacklisting - the highest priority
 		m.logger.Debug("Checking for IP blacklisting", zap.String("remote_addr", r.RemoteAddr)) // Added log for checking before to isIPBlacklisted call
 		// Check the peer address FIRST and unconditionally.
@@ -322,6 +335,10 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 					candidates = append(candidates, hop)
 				}
 			}
+		}
+
+		if ipExempt {
+			candidates = nil
 		}
 
 		for _, candidate := range candidates {
@@ -372,7 +389,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		}
 
 		// Whitelisting
-		if m.CountryWhitelist.Enabled {
+		if m.CountryWhitelist.Enabled && !ipExempt {
 			m.logger.Debug("Starting country whitelisting phase")
 			clientIP := getClientIP(r)
 			allowed, err := m.isCountryInList(clientIP, m.CountryWhitelist.CountryList, m.CountryWhitelist.geoIP)
@@ -405,7 +422,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		}
 
 		// ASN Blocking
-		if m.BlockASNs.Enabled {
+		if m.BlockASNs.Enabled && !ipExempt {
 			m.logger.Debug("Starting ASN blocking phase")
 			clientIP := getClientIP(r)
 			blocked, err := m.geoIPHandler.IsASNInList(clientIP, m.BlockASNs.BlockedASNs, m.BlockASNs.geoIP)
@@ -440,7 +457,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		}
 
 		// Blacklisting
-		if m.CountryBlacklist.Enabled {
+		if m.CountryBlacklist.Enabled && !ipExempt {
 			m.logger.Debug("Starting country blacklisting phase")
 			clientIP := getClientIP(r)
 			blocked, err := m.isCountryInList(clientIP, m.CountryBlacklist.CountryList, m.CountryBlacklist.geoIP)

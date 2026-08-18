@@ -157,7 +157,8 @@ func (cl *ConfigLoader) UnmarshalCaddyfile(d *caddyfile.Dispenser, m *Middleware
 		"log_severity":           cl.parseLogSeverity,
 		"log_json":               cl.parseLogJSON,
 		"rule_file":              cl.parseRuleFile,
-		"ip_blacklist_file":      cl.parseBlacklistFileDirective(true),  // Use directive-specific helper
+		"ip_blacklist_file":      cl.parseBlacklistFileDirective(true), // Use directive-specific helper
+		"whitelist_ip":           cl.parseWhitelistIP,
 		"dns_blacklist_file":     cl.parseBlacklistFileDirective(false), // Use directive-specific helper
 		"anomaly_threshold":      cl.parseAnomalyThreshold,
 		"custom_response":        cl.parseCustomResponse,
@@ -487,6 +488,27 @@ func (cl *ConfigLoader) parseMaxResponseBodySize(d *caddyfile.Dispenser, m *Midd
 	}
 	m.MaxResponseBodySize = size
 	cl.logger.Debug("Max response body size set", zap.Int64("bytes", size), zap.String("file", d.File()), zap.Int("line", d.Line()))
+	return nil
+}
+
+// parseWhitelistIP parses the whitelist_ip directive.
+//
+//	whitelist_ip private_ranges 203.0.113.4 198.51.100.0/24
+//
+// Repeatable; entries accumulate. Values are validated at Provision time by
+// buildIPWhitelist, so a typo fails startup rather than silently leaving an
+// address unprotected -- or, worse, unexempted.
+func (cl *ConfigLoader) parseWhitelistIP(d *caddyfile.Dispenser, m *Middleware) error {
+	entries := d.RemainingArgs()
+	if len(entries) == 0 {
+		return d.Err("whitelist_ip requires at least one IP, CIDR range, or the token private_ranges")
+	}
+	m.IPWhitelist = append(m.IPWhitelist, entries...)
+	cl.logger.Debug("IP whitelist entries added",
+		zap.Strings("entries", entries),
+		zap.String("file", d.File()),
+		zap.Int("line", d.Line()),
+	)
 	return nil
 }
 
