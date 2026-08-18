@@ -93,16 +93,16 @@ See [add-package-guide.md](add-package-guide.md) for the full flow, removal, and
 Images are published to GitHub Container Registry on every release tag, for `linux/amd64` and `linux/arm64`. No Go toolchain, no build step:
 
 ```bash
-docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.3.11
+docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.0
 ```
 
 | Tag | Meaning |
 |---|---|
-| `0.3.11` | An exact release. **Prefer this in deployments.** |
-| `0.3` | Latest patch of the 0.3 line. |
+| `0.4.0` | An exact release. **Prefer this in deployments.** |
+| `0.4` | Latest patch of the 0.3 line. |
 | `latest` | Latest release, whatever it currently is. |
 
-The image tag carries **no `v` prefix**, unlike the Go module version: `@v0.4.0` for `add-package`, `:0.3.11` for `docker pull`.
+The image tag carries **no `v` prefix**, unlike the Go module version: `@v0.4.0` for `add-package`, `:0.4.0` for `docker pull`.
 
 See [docker.md](docker.md) for mounting rule files and blacklists, Docker Compose, and hot reload inside a container.
 

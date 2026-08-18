@@ -148,7 +148,7 @@ When a rule does not set `transformations`, the raw request targets `ARGS`,
 3. `compressWhitespace` — fold runs of whitespace to one space (defeats
    tab/newline substitution).
 
-`PATH` and `ARGS:name` are already decoded by Go and are left untouched by the
+`PATH` and `URL_PARAM:<name>` are already decoded by Go and are left untouched by the
 default. All other targets get no default transformation.
 
 ### Per-rule transformations

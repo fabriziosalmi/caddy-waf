@@ -7,16 +7,16 @@ The repository ships a [`Dockerfile`](https://github.com/fabriziosalmi/caddy-waf
 Images are published to GitHub Container Registry on every release tag, for `linux/amd64` and `linux/arm64`:
 
 ```bash
-docker pull ghcr.io/fabriziosalmi/caddy-waf:0.3.11
+docker pull ghcr.io/fabriziosalmi/caddy-waf:0.4.0
 ```
 
 | Tag | Meaning |
 |---|---|
-| `0.3.11` | An exact release. **Prefer this.** |
-| `0.3` | Latest patch of the 0.3 line. |
+| `0.4.0` | An exact release. **Prefer this.** |
+| `0.4` | Latest patch of the 0.3 line. |
 | `latest` | Latest release, whatever it currently is. |
 
-Note the image tag carries **no `v` prefix**, unlike the Go module version: `caddy add-package …@v0.4.0` but `docker pull …:0.3.11`.
+Note the image tag carries **no `v` prefix**, unlike the Go module version: `caddy add-package …@v0.4.0` but `docker pull …:0.4.0`.
 
 Pin an exact version in anything you deploy. `latest` gives you no way to name the image you tested against, which matters when a release fixes a security defect — see [Security → Advisories](https://github.com/fabriziosalmi/caddy-waf/security/advisories).
 

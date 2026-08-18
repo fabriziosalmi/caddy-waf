@@ -156,16 +156,18 @@ func replaceComments(s string) string {
 
 // htmlEntityDecodeOnce decodes the small set of HTML entities that matter for
 // XSS detection: numeric (&#39; &#x27;) and the common named ones. Single pass.
+// htmlEntityReplacer is built once; strings.Replacer is safe for concurrent use.
+var htmlEntityReplacer = strings.NewReplacer(
+	"&lt;", "<", "&gt;", ">", "&quot;", "\"", "&apos;", "'", "&amp;", "&",
+	"&#39;", "'", "&#x27;", "'", "&#34;", "\"", "&#x22;", "\"",
+	"&#60;", "<", "&#x3c;", "<", "&#62;", ">", "&#x3e;", ">",
+)
+
 func htmlEntityDecodeOnce(s string) string {
 	if !strings.Contains(s, "&") {
 		return s
 	}
-	repl := strings.NewReplacer(
-		"&lt;", "<", "&gt;", ">", "&quot;", "\"", "&apos;", "'", "&amp;", "&",
-		"&#39;", "'", "&#x27;", "'", "&#34;", "\"", "&#x22;", "\"",
-		"&#60;", "<", "&#x3c;", "<", "&#62;", ">", "&#x3e;", ">",
-	)
-	return repl.Replace(s)
+	return htmlEntityReplacer.Replace(s)
 }
 
 // rawRequestTargets are the request targets extracted in their still-encoded
