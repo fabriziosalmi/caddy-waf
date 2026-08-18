@@ -46,6 +46,18 @@ const (
 	TargetResponseHeadersPrefix = "RESPONSE_HEADERS:" // Dynamic response header extraction prefix
 )
 
+var targetAliases = map[string]string{
+	"REQUEST_HEADERS":  "HEADERS",
+	"REQUEST_COOKIES":  "COOKIES",
+	"REQUEST_URI":      "URI",
+	"REQUEST_URI_RAW":  "URI",
+	"QUERY_STRING":     "ARGS",
+	"REQUEST_BODY":     "BODY",
+	"REQUEST_FILENAME": "PATH",
+	"REQUEST_METHOD":   "METHOD",
+	"REMOTE_ADDR":      "REMOTE_IP",
+}
+
 var sensitiveTargets = []string{"password", "token", "apikey", "authorization", "secret"} // Define sensitive targets for redaction as package variable
 
 // NewRequestValueExtractor creates a new RequestValueExtractor with a given logger
@@ -85,6 +97,13 @@ func (rve *RequestValueExtractor) ExtractValue(target string, r *http.Request, w
 func (rve *RequestValueExtractor) extractSingleValue(target string, r *http.Request, w http.ResponseWriter) (string, error) {
 	origTarget := target
 	targetUpper := strings.ToUpper(strings.TrimSpace(target))
+	// Canonicalise ModSecurity/CRS target aliases so SecLang-derived rule files
+	// resolve. Without this, targets like REQUEST_COOKIES fell through to
+	// "unknown extraction target" and were silently skipped -- 135 bundled rules
+	// lost cookie/header coverage and one was fully inert.
+	if canon, ok := targetAliases[targetUpper]; ok {
+		targetUpper = canon
+	}
 	var unredactedValue string
 	var err error
 

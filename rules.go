@@ -154,6 +154,11 @@ func validateRule(rule *Rule) error {
 	if rule.Action != "" && rule.Action != "block" && rule.Action != "log" {
 		return fmt.Errorf("rule '%s' has an invalid action: '%s'. Valid actions are 'block' or 'log'", rule.ID, rule.Action)
 	}
+	if rule.Transformations != nil {
+		if err := validateTransformations(*rule.Transformations); err != nil {
+			return fmt.Errorf("rule '%s': %w", rule.ID, err)
+		}
+	}
 	return nil
 }
 

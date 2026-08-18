@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.0] - 2026-08-18
+
+### Security
+**Rule matching now inspects requests the way the application will decode them, closing encoding evasion.** Confirmed empirically before the fix: a percent-encoded attack in a raw request target slipped past literal rule patterns. `rules/sql-injection.json` blocked `id=1 UNION SELECT` but **not** `id=1 %55NION%20SELECT`, nor `%75nion`, nor the same payload in an `application/x-www-form-urlencoded` body. Because the application decodes the request before acting on it, the WAF must match the decoded form. This affected the raw targets `ARGS`, `URI`, `URL` and `BODY` — the targets used by the bulk of the bundled and modular rules (SQLi, XSS, RCE, SSTI, SSRF).
+
+The fix is **additive dual-match**: each target is matched against the raw value first, then against a normalized copy, and the rule fires if either matches. Testing the raw value first is a mathematical guarantee that no rule which matches today can stop matching — the change only adds coverage, never removes it. Unencoded traffic runs no extra regex (the normalized pass is skipped when normalization does not change the value).
+
+Design followed ModSecurity/OWASP-CRS/Coraza prior art, including its guardrails:
+
+- **Single-pass decoding**, never recursive. `%2555` decodes to the literal `%55`, matching what a single-decoding backend sees; decoding twice would manufacture false positives and diverge from reality.
+- **Context-aware `+`**: a space in query/body context, literal in the path portion of `URI`/`URL`, which are split on the first `?`.
+- **Lenient decoder**: a malformed escape (`%`, `%zz`, a truncated `%a`) is left literal, never dropped — Go's `url.QueryUnescape` blanks the whole value on one bad byte, which would itself be a bypass.
+
+### Added
+- **Optional per-rule `transformations` field** (ModSecurity/CRS-style pipeline): `["urlDecodeUni","removeNulls","replaceComments","htmlEntityDecode",…]`. Absent means the per-target default chain (`urlDecode`, `removeNulls`, `compressWhitespace`); an explicit `[]` means match the raw value only. Names are case-insensitive, accept a `t:` prefix, and an unknown name **fails at load time** rather than silently doing nothing.
+- **ModSecurity/CRS target aliases** so SecLang-derived rule files resolve: `REQUEST_HEADERS`→`HEADERS`, `REQUEST_COOKIES`→`COOKIES`, `QUERY_STRING`→`ARGS`, `REQUEST_URI`→`URI`, `REQUEST_BODY`→`BODY`, `REQUEST_FILENAME`→`PATH`. Previously these fell through to "unknown extraction target" and were skipped, so 135 bundled rules (88 using `REQUEST_COOKIES`, 47 `REQUEST_HEADERS`) silently lost cookie/header coverage and one rule was fully inert.
+- `transform.go` with the transformation registry and lenient single-pass decoders; `normalization_test.go` and `transform_test.go` covering the closed evasions, the zero-regression property, per-rule transformations, the aliases, load-time validation, and — as an explicit test — the documented limit that double-encoding is not decoded twice.
+
+### Honest limits
+Single-pass decoding does not catch double-encoding (correct against a single-decoding backend), and `%uXXXX` / overlong-UTF-8 are not decoded by the default pipeline. Cookie and header targets are not normalized by default; a rule that needs it can set `transformations`. See [Input normalization](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/rules.md#input-normalization).
+
+### Migration
+This changes what every rule targeting `ARGS`/`URI`/`URL`/`BODY` sees. Because matching is additive (raw tested first), **no existing rule stops firing** and no config change is required. Rule authors who want the raw, un-normalized value only can set `"transformations": []` on a rule. Custom rule files using ModSecurity target names now gain coverage they were silently missing.
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.4.0`.
+
 ## [v0.3.11] - 2026-08-18
 
 ### Added
