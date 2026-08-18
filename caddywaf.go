@@ -595,18 +595,48 @@ func (m *Middleware) handleMetricsRequest(w http.ResponseWriter, r *http.Request
 	// Collect rule hits using getRuleHitStats
 	ruleHits := m.getRuleHitStats()
 
+	// Snapshot the shared counters under the locks that guard their writers.
+	//
+	// These used to be read straight off the struct, which raced with every
+	// in-flight request. rule_hits_by_phase made it worse than a benign race:
+	// it is a map, and it was handed to json.Marshal by reference, so the
+	// marshal iterated it while requests wrote to it. Go's runtime answers that
+	// with "concurrent map read and map write" -- a throw, not a data race the
+	// program can shrug off -- which ServeHTTP's panic recovery then turns into
+	// a 500. Scraping metrics under traffic could take out requests, which also
+	// made the endpoint unusable as the source for any dashboard.
+	m.muMetrics.RLock()
+	totalRequests := m.totalRequests
+	blockedRequests := m.blockedRequests
+	allowedRequests := m.allowedRequests
+	geoIPBlocked := m.geoIPBlocked
+	hitsByPhase := make(map[int]int64, len(m.ruleHitsByPhase))
+	for phase, hits := range m.ruleHitsByPhase {
+		hitsByPhase[phase] = hits
+	}
+	m.muMetrics.RUnlock()
+
+	// The blacklist counters have their own mutexes.
+	m.muIPBlacklistMetrics.Lock()
+	ipBlacklistHits := m.IPBlacklistBlockCount
+	m.muIPBlacklistMetrics.Unlock()
+
+	m.muDNSBlacklistMetrics.Lock()
+	dnsBlacklistHits := m.DNSBlacklistBlockCount
+	m.muDNSBlacklistMetrics.Unlock()
+
 	// Collect all metrics
 	metrics := map[string]interface{}{
-		"total_requests":                m.totalRequests,
-		"blocked_requests":              m.blockedRequests,
-		"allowed_requests":              m.allowedRequests,
+		"total_requests":                totalRequests,
+		"blocked_requests":              blockedRequests,
+		"allowed_requests":              allowedRequests,
 		"rule_hits":                     ruleHits,
-		"rule_hits_by_phase":            m.ruleHitsByPhase,          // Include rule hits by phase
-		"geoip_blocked":                 m.geoIPBlocked,             // Add the new geoIPBlocked metric
-		"ip_blacklist_hits":             m.IPBlacklistBlockCount,    // Add IP blacklist hits metric
-		"dns_blacklist_hits":            m.DNSBlacklistBlockCount,   // Add DNS blacklist hits metric
-		"rate_limiter_requests":         rateLimiterTotalRequests,   // Add rate limiter total requests
-		"rate_limiter_blocked_requests": rateLimiterBlockedRequests, // Add rate limiter blocked requests
+		"rule_hits_by_phase":            hitsByPhase,
+		"geoip_blocked":                 geoIPBlocked,
+		"ip_blacklist_hits":             ipBlacklistHits,
+		"dns_blacklist_hits":            dnsBlacklistHits,
+		"rate_limiter_requests":         rateLimiterTotalRequests,
+		"rate_limiter_blocked_requests": rateLimiterBlockedRequests,
 		"version":                       wafVersion,
 	}
 

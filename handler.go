@@ -68,6 +68,25 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 		return nil // Request blocked, short-circuit
 	}
 
+	// Serve the metrics document before touching the upstream.
+	//
+	// This check used to sit after next.ServeHTTP, which only appeared to work:
+	// the recorder buffered unconditionally, so the upstream's body went into a
+	// buffer that the metrics path never copied out, and the JSON came back
+	// clean by accident. Once the recorder became a pass-through when no Phase 4
+	// rule is loaded (v0.3.4), the upstream body started going straight to the
+	// client with the metrics JSON appended after it -- a corrupt response
+	// served as application/json. It also called the upstream for every scrape,
+	// which is work no one asked for.
+	//
+	// It sits after Phase 1 and 2 on purpose: the IP blacklist, the rate limiter
+	// and the request rules still apply, so the endpoint can be protected.
+	if m.isMetricsRequest(r) {
+		m.incrementAllowedRequestsMetric()
+		m.logRequestCompletion(logID, state)
+		return m.handleMetricsRequest(w, r)
+	}
+
 	// Response capture and processing. The body is only buffered when Phase 4
 	// rules exist to inspect it, and never past MaxResponseBodySize, so a large
 	// or streaming upstream response cannot drive the process out of memory.
@@ -90,11 +109,6 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 		// the client.
 		m.writeCustomResponse(w, state.StatusCode)
 		return nil
-	}
-
-	// Handle metrics request separately
-	if m.isMetricsRequest(r) {
-		return m.handleMetricsRequest(w, r)
 	}
 
 	// If not blocked, copy recorded response back to original writer
