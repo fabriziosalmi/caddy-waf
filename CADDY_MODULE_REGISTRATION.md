@@ -32,6 +32,22 @@ The module documentation rendered on caddyserver.com is extracted from the
 doc comment on the `Middleware` struct in [types.go](types.go). Editing that
 comment changes what users read on Caddy's site.
 
+## Upstream may retire `add-package`
+
+Caddy's maintainers have proposed moving `add-package`, `remove-package` and
+`upgrade` out of core to discourage their use
+([caddyserver/caddy#7010](https://github.com/caddyserver/caddy/issues/7010)),
+because those commands call Caddy's shared build server and are being used in
+CI/CD. Raised for this project in
+[#138](https://github.com/fabriziosalmi/caddy-waf/issues/138) by a Caddy
+maintainer.
+
+**Registration is still worth keeping regardless.** It is what lists the module
+on <https://caddyserver.com/download> and renders its documentation page — the
+discovery surface — which is independent of whether the `add-package` command
+survives. What changed is the documentation: `xcaddy` and the container image are
+now presented as the install paths, and `add-package` as a convenience.
+
 ## Do not reintroduce `&Middleware{}`
 
 Registering a package makes the registry run a **static analyzer** over the

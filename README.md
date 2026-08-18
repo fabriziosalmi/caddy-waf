@@ -6,7 +6,7 @@ A Web Application Firewall middleware for the [Caddy](https://caddyserver.com/) 
 [![CodeQL](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/github-code-scanning/codeql)
 [![Build, Run and Validate](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/build-run-validate.yml/badge.svg)](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/build-run-validate.yml)
 
-- **Module ID**: `http.handlers.waf` — [registered in Caddy's package registry](https://caddyserver.com/docs/modules/http.handlers.waf), so `caddy add-package` and the [download page](https://caddyserver.com/download?package=github.com%2Ffabriziosalmi%2Fcaddy-waf) both work
+- **Module ID**: `http.handlers.waf` — [registered in Caddy's package registry](https://caddyserver.com/docs/modules/http.handlers.waf), so the module is selectable on the [download page](https://caddyserver.com/download?package=github.com%2Ffabriziosalmi%2Fcaddy-waf)
 - **Go module path**: `github.com/fabriziosalmi/caddy-waf`
 - **Current version**: `v0.3.10` (see [`caddywaf.go`](caddywaf.go) — `const wafVersion`)
 - **License**: AGPL-3.0 — note this is a copyleft licence; check it suits your deployment before integrating
@@ -114,6 +114,19 @@ xcaddy build --with github.com/fabriziosalmi/caddy-waf=./
 ```
 
 ### Method 4 — `caddy add-package`
+
+> [!IMPORTANT]
+> **Prefer `xcaddy` or the container image.** Caddy's maintainers have proposed
+> moving `add-package`, `remove-package` and `upgrade` out of Caddy's core to
+> discourage their use ([caddyserver/caddy#7010](https://github.com/caddyserver/caddy/issues/7010)):
+> the commands call Caddy's shared build server, and using them in CI/CD is an
+> anti-pattern. Raised for this project in
+> [#138](https://github.com/fabriziosalmi/caddy-waf/issues/138) by a Caddy
+> maintainer.
+>
+> The command works today and the module remains registered, so this section
+> stays accurate. Treat it as a convenience for one-off, hand-operated installs
+> — not as the way to build or deploy caddy-waf.
 
 The module is registered in Caddy's package registry, so an existing Caddy v2.7+ binary can pull it in without a Go toolchain:
 

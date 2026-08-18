@@ -51,20 +51,22 @@ features:
 
 ## Install
 
-The module is registered in Caddy's package registry, so an existing Caddy v2.7+ binary can pull it in without a Go toolchain:
-
-```bash
-caddy add-package github.com/fabriziosalmi/caddy-waf
-caddy list-modules | grep waf    # http.handlers.waf
-```
-
-Or build it yourself with [`xcaddy`](https://github.com/caddyserver/xcaddy):
+Build a Caddy binary with the module using [`xcaddy`](https://github.com/caddyserver/xcaddy):
 
 ```bash
 xcaddy build --with github.com/fabriziosalmi/caddy-waf
+./caddy list-modules | grep waf    # http.handlers.waf
 ```
 
-It is also selectable on the [Caddy download page](https://caddyserver.com/download?package=github.com%2Ffabriziosalmi%2Fcaddy-waf). See [Installation](installation.md) for every supported path.
+Or run the published container image, which needs no Go toolchain:
+
+```bash
+docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.3.10
+```
+
+The module is also selectable on the [Caddy download page](https://caddyserver.com/download?package=github.com%2Ffabriziosalmi%2Fcaddy-waf), and `caddy add-package github.com/fabriziosalmi/caddy-waf` works for a one-off install — though Caddy's maintainers have proposed moving that command out of core, so do not build a deployment around it ([#138](https://github.com/fabriziosalmi/caddy-waf/issues/138)).
+
+See [Installation](installation.md) for every supported path.
 
 ## Minimal configuration
 
