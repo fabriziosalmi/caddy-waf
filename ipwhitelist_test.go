@@ -173,10 +173,14 @@ func TestParseWhitelistIPDirective(t *testing.T) {
 		wantErr   bool
 		want      []string
 	}{
-		{"token plus entries", "waf {\n rule_file rules.json\n whitelist_ip private_ranges 203.0.113.4\n}", false,
-			[]string{"private_ranges", "203.0.113.4"}},
-		{"repeatable", "waf {\n rule_file rules.json\n whitelist_ip 10.0.0.0/8\n whitelist_ip 203.0.113.4\n}", false,
-			[]string{"10.0.0.0/8", "203.0.113.4"}},
+		{
+			"token plus entries", "waf {\n rule_file rules.json\n whitelist_ip private_ranges 203.0.113.4\n}", false,
+			[]string{"private_ranges", "203.0.113.4"},
+		},
+		{
+			"repeatable", "waf {\n rule_file rules.json\n whitelist_ip 10.0.0.0/8\n whitelist_ip 203.0.113.4\n}", false,
+			[]string{"10.0.0.0/8", "203.0.113.4"},
+		},
 		{"no arguments is an error", "waf {\n rule_file rules.json\n whitelist_ip\n}", true, nil},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

@@ -87,6 +87,7 @@ func percentDecodeOnce(s string, plusToSpace bool) string {
 func isHex(c byte) bool {
 	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
 }
+
 func unhex(c byte) byte {
 	switch {
 	case c >= '0' && c <= '9':

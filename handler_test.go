@@ -171,7 +171,6 @@ func TestBlockedRequestPhase1_GeoIPBlocking(t *testing.T) {
 	})
 
 	t.Run("GeoIP whitelist and blacklist: whitelist has the priority", func(t *testing.T) {
-
 		w := httptest.NewRecorder()
 
 		// BR should be allowed
