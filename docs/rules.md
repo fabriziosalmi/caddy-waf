@@ -28,6 +28,7 @@ The schema below mirrors the `Rule` struct in [`types.go`](https://github.com/fa
 | Phase | `phase` | int | yes | One of `1`, `2`, `3`, `4`. See [Phases](#phases). |
 | Pattern | `pattern` | string | yes | A Go [`regexp`](https://pkg.go.dev/regexp) pattern (RE2 syntax). Compiled at load time and cached per rule ID. Invalid patterns drop the rule with a warning. |
 | Targets | `targets` | array of string | yes | One or more target identifiers. See [Targets](#targets). |
+| Transformations | `transformations` | array of string | no | Optional per-rule input transformation pipeline (ModSecurity/CRS names, e.g. `["urlDecodeUni","removeNulls"]`). See [Input normalization](#input-normalization). Absent = the per-target default chain; explicit `[]` = no transformation. |
 | Severity | `severity` | string | no | Free-form label used only for logging (e.g. `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`). It does **not** affect blocking decisions. |
 | Score | `score` | int | yes (validated ≥ 0) | Added to the request's anomaly score on match. |
 | Mode | `mode` | string | no | `"block"` (block immediately on match) or `"log"` (log and continue). Empty / missing means: rely on the anomaly threshold only. The Go field is `Action` but the JSON tag is `mode` — see [Field name caveat](#field-name-caveat). |
@@ -74,6 +75,8 @@ Within a phase, rules are sorted by descending `priority`, then evaluated in ord
 
 Defined in [`request.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/request.go). Names are matched case-insensitively unless noted otherwise.
 
+ModSecurity/CRS target names are accepted as aliases: `REQUEST_HEADERS`→`HEADERS`, `REQUEST_COOKIES`→`COOKIES`, `QUERY_STRING`→`ARGS`, `REQUEST_URI`→`URI`, `REQUEST_BODY`→`BODY`, `REQUEST_FILENAME`→`PATH`.
+
 ### Static targets
 
 | Target | Source |
@@ -117,6 +120,74 @@ A single `targets` entry may itself be a comma-separated list. The extractor wil
 ```
 
 ---
+
+## Input normalization
+
+Rule patterns are matched against the request the way the **application behind
+the WAF will consume it**, not only the raw bytes on the wire. This closes
+encoding evasion: a payload like `%75nion%20select` (or a fully percent-encoded
+query, or a percent-encoded form body) reaches a SQL engine as `union select`,
+so the WAF must see it that way too.
+
+### How matching works
+
+Each target value is matched **twice**: once as the raw extracted value, and
+once as a transformed copy. The rule fires if **either** matches. Because the
+raw value is always tested first, a rule that matches today can never stop
+matching — transformations only add coverage. Unencoded traffic pays no extra
+regex (the second pass runs only when normalization actually changed the value).
+
+### Default chain
+
+When a rule does not set `transformations`, the raw request targets `ARGS`,
+`URI`, `URL` and `BODY` get a conservative default chain:
+
+1. `urlDecode` — single-pass percent-decode. `+` becomes a space in query/body
+   context; in the path portion of `URI`/`URL` it stays literal.
+2. `removeNulls` — strip NUL bytes used to split keywords (`un%00ion`).
+3. `compressWhitespace` — fold runs of whitespace to one space (defeats
+   tab/newline substitution).
+
+`PATH` and `ARGS:name` are already decoded by Go and are left untouched by the
+default. All other targets get no default transformation.
+
+### Per-rule transformations
+
+A rule may override the default with its own pipeline, applied in order:
+
+```json
+{
+  "id": "941-xss-entity",
+  "phase": 2,
+  "pattern": "(?i)<script",
+  "targets": ["ARGS", "BODY"],
+  "transformations": ["urlDecode", "htmlEntityDecode"]
+}
+```
+
+| Name | Effect |
+|---|---|
+| `urlDecode` / `urlDecodeUni` | Single-pass percent-decode (context-aware `+`). |
+| `removeNulls` | Remove NUL bytes. |
+| `compressWhitespace` | Collapse whitespace runs to one space. |
+| `replaceComments` | Replace `/* … */` with a space (defeats `union/**/select`). |
+| `htmlEntityDecode` | Decode common HTML entities (`&lt;`, `&#39;`, …). |
+| `lowercase` | Lowercase (patterns already use `(?i)`, so rarely needed). |
+| `none` | No-op. |
+
+Names are case-insensitive and an optional `t:` prefix is accepted, so both
+`t:urlDecodeUni` and `urldecodeuni` resolve. An unknown name **fails at load
+time** rather than silently doing nothing. An explicit empty array means "match
+the raw value only".
+
+### What this does NOT close
+
+Decoding is **single-pass by design**: `%2555` decodes to the literal `%55`,
+not to `U`. This is correct — an application that decodes once also sees `%55` —
+so double-encoding is not "caught" because it is not an attack against a
+single-decoding backend. `%uXXXX` (IIS/.NET Unicode) and overlong UTF-8 are not
+decoded by the current pipeline. Cookie and header targets are not normalized by
+default; add `transformations` to a rule that needs it.
 
 ## How a match becomes a block
 

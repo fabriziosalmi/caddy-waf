@@ -78,8 +78,15 @@ type Rule struct {
 	Score       int      `json:"score"`
 	Action      string   `json:"mode"` // CRITICAL FIX: This should map to the "mode" field in JSON
 	Description string   `json:"description"`
-	regex       *regexp.Regexp
-	Priority    int // New field for rule priority
+	// Transformations is an optional per-rule ModSecurity/CRS-style pipeline
+	// (e.g. ["urlDecodeUni","removeNulls","replaceComments"]) applied to the
+	// extracted value before matching. A pointer so JSON can distinguish an
+	// absent field (use the per-target default chain) from an explicit empty
+	// array (apply no transformation). Names are matched case-insensitively and
+	// an optional "t:" prefix is accepted.
+	Transformations *[]string `json:"transformations,omitempty"`
+	regex           *regexp.Regexp
+	Priority        int // New field for rule priority
 }
 
 // CustomBlockResponse struct

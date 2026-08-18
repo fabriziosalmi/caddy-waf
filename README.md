@@ -8,7 +8,7 @@ A Web Application Firewall middleware for the [Caddy](https://caddyserver.com/) 
 
 - **Module ID**: `http.handlers.waf` — [registered in Caddy's package registry](https://caddyserver.com/docs/modules/http.handlers.waf), so the module is selectable on the [download page](https://caddyserver.com/download?package=github.com%2Ffabriziosalmi%2Fcaddy-waf)
 - **Go module path**: `github.com/fabriziosalmi/caddy-waf`
-- **Current version**: `v0.3.11` (see [`caddywaf.go`](caddywaf.go) — `const wafVersion`)
+- **Current version**: `v0.4.0` (see [`caddywaf.go`](caddywaf.go) — `const wafVersion`)
 - **License**: AGPL-3.0 — note this is a copyleft licence; check it suits your deployment before integrating
 
 ---
@@ -67,7 +67,7 @@ A representative provisioning log:
 ```
 INFO  Provisioning WAF middleware     {"log_level":"info","log_path":"debug.json","log_json":true,"anomaly_threshold":20}
 INFO  http.handlers.waf  Tor exit nodes updated  {"count":1093}
-INFO  WAF middleware version  {"version":"v0.3.11"}
+INFO  WAF middleware version  {"version":"v0.4.0"}
 INFO  Rate limit configuration  {"requests":100,"window":10,"cleanup_interval":300,"paths":["/api/v1/.*"],"match_all_paths":false}
 WARN  GeoIP database not found. Country blacklisting/whitelisting will be disabled  {"path":"GeoLite2-Country.mmdb"}
 INFO  IP blacklist loaded     {"path":"ip_blacklist.txt","valid_entries":223770,"invalid_entries":0,"total_lines":223770}

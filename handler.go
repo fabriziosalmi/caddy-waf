@@ -539,7 +539,17 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 				zap.String("value", redactedValue),
 			)
 
-			if rule.regex.MatchString(value) {
+			// Additive dual-match: test the raw value first, then a normalized
+			// copy. Because raw is tested first, a rule that matches today cannot
+			// stop matching; the normalized pass can only add coverage. The
+			// nv != value guard means unencoded traffic pays no extra regex.
+			matched := rule.regex.MatchString(value)
+			if !matched {
+				if nv, changed := normalizeForTarget(&rule, target, value); changed {
+					matched = rule.regex.MatchString(nv)
+				}
+			}
+			if matched {
 				m.logger.Debug("Rule matched",
 					zap.String("rule_id", rule.ID),
 					zap.String("target", target),
