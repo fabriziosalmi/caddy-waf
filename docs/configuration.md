@@ -26,6 +26,7 @@ For each incoming request, [`Middleware.ServeHTTP`](https://github.com/fabrizios
 
 The order below reflects the actual code in [`handler.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/handler.go) (`handlePhase`, `phase==1`):
 
+0. **IP whitelist** — when `whitelist_ip` is configured and the **peer address** matches, steps 1, 4, 5 and 6 below are skipped. See [IP whitelist](#ip-whitelist).
 1. **IP blacklist** — always checks `r.RemoteAddr`, plus every `X-Forwarded-For` hop in addition. Match → `403`.
 2. **DNS blacklist** — exact (case-insensitive) match against `r.Host`. Match → `403`.
 3. **Rate limit** — when configured. Exceeded → `429 Too Many Requests`.
@@ -53,6 +54,7 @@ Within each phase the runtime iterates over the rules already sorted by descendi
 ### Blocking precedence summary
 
 ```
+IP whitelist          (Phase 1, first)          — exempts the four IP-reputation checks below
 IP blacklist          (Phase 1, before rules)
 DNS blacklist         (Phase 1, before rules)
 Rate limit            (Phase 1, before rules)
@@ -87,6 +89,7 @@ The full list is the `directiveHandlers` map in [`config.go`](https://github.com
 | `rule_file` | `<file>` | none | Path to a JSON rule file. Repeat the directive to load multiple files. At least one `rule_file` is required. |
 | `ip_blacklist_file` | `<file>` | unset | Path to the IP blacklist (single IPs and CIDR ranges). The file is created empty if it does not exist. |
 | `dns_blacklist_file` | `<file>` | unset | Path to the DNS blacklist (one host per line). The file is created empty if it does not exist. |
+| `whitelist_ip` | `<entry> [<entry> …]` | unset | IPs, CIDR ranges, or the token `private_ranges`, exempt from the **IP-reputation** checks. Repeatable. See [IP whitelist](#ip-whitelist). |
 | `anomaly_threshold` | `<positive int>` | `5` (Caddyfile) / `20` (Provision fallback) | Score at which a request is blocked. Lower values are stricter. |
 | `max_request_body_size` | `<bytes>` | `10485760` (10 MiB) | Upper bound for request body reads via `io.LimitReader`. `0` means "use the default". |
 | `max_response_body_size` | `<bytes>` | `10485760` (10 MiB) | Upper bound on how much of the response body is held in memory for Phase 4 inspection. `0` means "use the default". See [Response body buffering](#response-body-buffering). |
@@ -201,6 +204,93 @@ A JSON config snippet equivalent to the minimal Caddyfile:
   "geoip_fail_open": true
 }
 ```
+
+---
+
+## IP whitelist
+
+`whitelist_ip` exempts an address from the checks that judge a client by *where
+it comes from*, without switching the WAF off for it.
+
+```caddyfile
+waf {
+    rule_file rules.json
+
+    # The token expands to Caddy's own private_ranges set.
+    whitelist_ip private_ranges
+
+    # Bare IPs and CIDR ranges work too, and the directive is repeatable.
+    whitelist_ip 203.0.113.4 198.51.100.0/24
+}
+```
+
+`private_ranges` expands to exactly the set Caddy uses for its own placeholder:
+`192.168.0.0/16`, `172.16.0.0/12`, `10.0.0.0/8`, `127.0.0.1/8`, `fd00::/8`,
+`::1`. Deliberately identical rather than "improved" — a WAF and the server in
+front of it disagreeing about which addresses are private is how bypasses get
+built.
+
+An entry that does not parse fails startup. It is not skipped with a warning:
+silently dropping an entry leaves the operator believing an address is exempt
+when it is not.
+
+### What the exemption covers
+
+| Check | Exempt? |
+|---|---|
+| IP blacklist (including Tor exit nodes fed into it) | **yes** |
+| `whitelist_countries` / `block_countries` (GeoIP) | **yes** |
+| `block_asns` | **yes** |
+| DNS blacklist | no — it judges the requested host, not the client |
+| Rate limiting | no |
+| Regex rules, all four phases | no |
+
+This is the point of the feature rather than a limitation. The case it solves
+([#137](https://github.com/fabriziosalmi/caddy-waf/issues/137)) is a private
+address being blocked by `whitelist_countries` because it has no geolocation.
+The answer to that is to exempt it from geolocation — not to stop inspecting its
+requests.
+
+Previously the only workaround was `geoip_fail_open`, which lets *every*
+unresolvable address through, or maintaining two site blocks with separate rule
+sets.
+
+### It matches the peer address only
+
+The whitelist reads `r.RemoteAddr` and **never** `X-Forwarded-For`. That is the
+opposite of the blacklist, which checks the peer address *and* every forwarded
+hop, and the asymmetry is deliberate:
+
+- When **blocking**, consulting extra addresses can only block more. Safe.
+- When **allowing**, honouring a client-supplied header would let anyone send
+  `X-Forwarded-For: 10.0.0.1` and exempt themselves from the blacklist, the
+  country filter and the ASN filter in one move.
+
+The peer address is the only value a client cannot forge, so it is the only one
+trusted here.
+
+> [!WARNING]
+> **`private_ranges` is only safe when caddy-waf is the edge.**
+>
+> Because the check is on the peer address, running caddy-waf *behind* another
+> proxy means the peer is that proxy — typically a loopback or private address.
+> Whitelisting `private_ranges` would then exempt **every** request arriving
+> through it, silently disabling the IP blacklist, the country filter and the ASN
+> filter for all traffic.
+>
+> The WAF logs a warning at startup when `private_ranges` is whitelisted, for
+> exactly this reason.
+>
+> **Listing specific client addresses is not a workaround.** Behind a proxy the
+> peer address is *always* that proxy, so no entry naming a real client will ever
+> match — the only address `whitelist_ip` can match is the proxy itself, which
+> exempts all traffic through it. In that topology the directive cannot express
+> "exempt this client" at all.
+>
+> Until [#94](https://github.com/fabriziosalmi/caddy-waf/issues/94) adds
+> `trusted_proxies`, and with it a defensible way to act on forwarded addresses,
+> the options behind a proxy are: leave `whitelist_ip` unset, or place the WAF at
+> the edge where the peer address is the client.
 
 ---
 
