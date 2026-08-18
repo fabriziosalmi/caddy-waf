@@ -279,10 +279,18 @@ trusted here.
 > filter for all traffic.
 >
 > The WAF logs a warning at startup when `private_ranges` is whitelisted, for
-> exactly this reason. If caddy-waf sits behind a proxy, list the specific
-> addresses you mean instead, and see
-> [#94](https://github.com/fabriziosalmi/caddy-waf/issues/94) for the
-> `trusted_proxies` work that will make forwarded addresses usable.
+> exactly this reason.
+>
+> **Listing specific client addresses is not a workaround.** Behind a proxy the
+> peer address is *always* that proxy, so no entry naming a real client will ever
+> match — the only address `whitelist_ip` can match is the proxy itself, which
+> exempts all traffic through it. In that topology the directive cannot express
+> "exempt this client" at all.
+>
+> Until [#94](https://github.com/fabriziosalmi/caddy-waf/issues/94) adds
+> `trusted_proxies`, and with it a defensible way to act on forwarded addresses,
+> the options behind a proxy are: leave `whitelist_ip` unset, or place the WAF at
+> the edge where the peer address is the client.
 
 ---
 
