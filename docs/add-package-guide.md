@@ -1,5 +1,22 @@
 # `caddy add-package`
 
+> [!IMPORTANT]
+> **This is not the recommended way to install caddy-waf.** Caddy's maintainers
+> have proposed moving `add-package`, `remove-package` and `upgrade` out of
+> Caddy's core to discourage their use
+> ([caddyserver/caddy#7010](https://github.com/caddyserver/caddy/issues/7010)):
+> the commands call Caddy's shared build server, and periodic use from CI/CD is
+> an anti-pattern. Raised for this project in
+> [#138](https://github.com/fabriziosalmi/caddy-waf/issues/138) by a Caddy
+> maintainer.
+>
+> Build with [`xcaddy`](installation.md#method-1--build-with-xcaddy-recommended)
+> or run the [container image](installation.md#method-5--docker) instead. Both
+> are reproducible, pinnable, and do not depend on someone else's build service.
+>
+> The command still works and the module remains registered, so this page is
+> accurate — treat it as a convenience for a one-off, hand-operated install.
+
 `github.com/fabriziosalmi/caddy-waf` is registered in Caddy's package registry
 (since 2026-07-28), so it can be added to an existing Caddy binary without a Go
 toolchain. It is also selectable on <https://caddyserver.com/download>.
