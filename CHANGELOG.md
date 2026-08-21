@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.1] - 2026-08-21
+
+### Fixed
+- **A response-target rule in an early phase no longer panics the request.** A rule listing `RESPONSE_HEADERS` (or `RESPONSE_HEADERS:<name>`) in phase 1 or 2 — as several OWASP CRS rules do, e.g. `950010` — reached `w.Header()` on the nil `http.ResponseWriter` that `handlePhase` passes before the response exists. The panic was recovered into an HTTP 500, so **every** request behind the WAF failed. Response-header extraction is now nil-safe (mirroring the existing response-body guard): an out-of-phase response target degrades to a skipped target instead of crashing. Reported on OPNsense with OWASP rules ([#144](https://github.com/fabriziosalmi/caddy-waf/issues/144), [#146](https://github.com/fabriziosalmi/caddy-waf/pull/146)).
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.4.1`.
+
+### Internal
+- `TestTorConfig_Provision` is now hermetic — it serves the Tor exit-node list from a local `httptest.Server` instead of a live external CDN, removing the last third-party network dependency from CI ([#147](https://github.com/fabriziosalmi/caddy-waf/pull/147)).
+
 ## [v0.4.0] - 2026-08-18
 
 ### Security
