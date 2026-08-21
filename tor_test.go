@@ -13,6 +13,15 @@ import (
 )
 
 func TestTorConfig_Provision(t *testing.T) {
+	// Serve a fake exit-node list locally so provisioning never reaches an
+	// external host. This test used to point CustomTORExitNodeURL at a real CDN
+	// (torListURL), so a transient TLS/network hiccup on the runner became a red
+	// CI run unrelated to any code change -- exactly what bit PR #146.
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("1.1.1.1\n2.2.2.2\n3.3.3.3\n"))
+	}))
+	defer ts.Close()
+
 	// Create temp file for testing
 	tmpFile, err := os.CreateTemp("", "tor_blacklist_*.txt")
 	if err != nil {
@@ -42,7 +51,7 @@ func TestTorConfig_Provision(t *testing.T) {
 			name: "enabled config",
 			config: TorConfig{
 				Enabled:              true,
-				CustomTORExitNodeURL: torListURL,
+				CustomTORExitNodeURL: ts.URL,
 				TORIPBlacklistFile:   tmpFile.Name(),
 				UpdateInterval:       "5m",
 				logger:               logger,
