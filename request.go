@@ -133,7 +133,7 @@ func (rve *RequestValueExtractor) extractSingleValue(target string, r *http.Requ
 		},
 		TargetBody:            func() (string, error) { return rve.extractBody(r, target) },                                     // Separate body extraction
 		TargetHeaders:         func() (string, error) { return rve.extractAllHeaders(r.Header, "Request headers", target) },     // Helper for headers
-		TargetResponseHeaders: func() (string, error) { return rve.extractAllHeaders(w.Header(), "Response headers", target) },  // Helper for response headers
+		TargetResponseHeaders: func() (string, error) { return rve.extractResponseHeaders(w, target) },                          // nil-safe; see issue #144
 		TargetResponseBody:    func() (string, error) { return rve.extractResponseBody(w, target) },                             // Helper for response body
 		TargetFileName:        func() (string, error) { return rve.extractFileName(r, target) },                                 // Helper for filename
 		TargetFileMIMEType:    func() (string, error) { return rve.extractFileMIMEType(r, target) },                             // Helper for mime type
@@ -157,6 +157,9 @@ func (rve *RequestValueExtractor) extractSingleValue(target string, r *http.Requ
 			return "", err
 		}
 	} else if strings.HasPrefix(target, TargetResponseHeadersPrefix) {
+		if w == nil {
+			return "", fmt.Errorf("response headers not accessible outside Phase 3/4 for target: %s", target)
+		}
 		unredactedValue, err = rve.extractDynamicResponseHeader(w.Header(), strings.TrimPrefix(target, TargetResponseHeadersPrefix), target)
 		if err != nil {
 			return "", err
@@ -264,6 +267,18 @@ func (rve *RequestValueExtractor) extractAllHeaders(header http.Header, logMessa
 		headers = append(headers, fmt.Sprintf("%s: %s", name, strings.Join(values, ",")))
 	}
 	return strings.Join(headers, "; "), nil
+}
+
+// extractResponseHeaders returns the full response header set. Response targets
+// are only populated in Phase 3/4; when a rule file places RESPONSE_HEADERS in
+// an earlier phase (several OWASP CRS rules do, e.g. 950010), handlePhase passes
+// a nil writer, so this must degrade to an error rather than dereference nil.
+// See issue #144.
+func (rve *RequestValueExtractor) extractResponseHeaders(w http.ResponseWriter, target string) (string, error) {
+	if w == nil {
+		return "", fmt.Errorf("response headers not accessible outside Phase 3/4 for target: %s", target)
+	}
+	return rve.extractAllHeaders(w.Header(), "Response headers", target)
 }
 
 // Helper function to extract response body (for phase 4)
