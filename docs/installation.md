@@ -99,7 +99,7 @@ docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.1
 | Tag | Meaning |
 |---|---|
 | `0.4.1` | An exact release. **Prefer this in deployments.** |
-| `0.4` | Latest patch of the 0.3 line. |
+| `0.4` | Latest patch of the 0.4 line. |
 | `latest` | Latest release, whatever it currently is. |
 
 The image tag carries **no `v` prefix**, unlike the Go module version: `@v0.4.1` for `add-package`, `:0.4.1` for `docker pull`.

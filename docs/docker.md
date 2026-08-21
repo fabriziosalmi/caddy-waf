@@ -13,7 +13,7 @@ docker pull ghcr.io/fabriziosalmi/caddy-waf:0.4.1
 | Tag | Meaning |
 |---|---|
 | `0.4.1` | An exact release. **Prefer this.** |
-| `0.4` | Latest patch of the 0.3 line. |
+| `0.4` | Latest patch of the 0.4 line. |
 | `latest` | Latest release, whatever it currently is. |
 
 Note the image tag carries **no `v` prefix**, unlike the Go module version: `caddy add-package …@v0.4.1` but `docker pull …:0.4.1`.
