@@ -67,11 +67,6 @@ func (bl *BlacklistLoader) LoadDNSBlacklistFromFile(path string, dnsBlacklist ma
 func (m *Middleware) isIPBlacklisted(addr string) bool {
 	ip := extractIP(addr)
 
-	if m.ipBlacklist == nil {
-		m.logger.Debug("IP blacklist not initialized, skipping check")
-		return false
-	}
-
 	parsedIP, err := netip.ParseAddr(ip)
 	if err != nil {
 		m.logger.Debug("Failed to parse IP address for blacklist check", zap.String("ip", ip), zap.Error(err))
@@ -79,13 +74,17 @@ func (m *Middleware) isIPBlacklisted(addr string) bool {
 	}
 
 	// ReloadConfig swaps m.ipBlacklist under m.mu, so the read must be
-	// synchronised or the swap races with every in-flight request. Mirrors
-	// what isDNSBlacklisted already does for the DNS map.
+	// synchronised or the swap races with every in-flight request (the hot
+	// reload the file watcher triggers is exactly such a swap). Snapshot the
+	// trie under the lock and nil-check the snapshot -- the old unsynchronised
+	// m.ipBlacklist == nil probe above the lock was a data race. Mirrors what
+	// isDNSBlacklisted already does for the DNS map.
 	m.mu.RLock()
 	trie := m.ipBlacklist
 	m.mu.RUnlock()
 
 	if trie == nil {
+		m.logger.Debug("IP blacklist not initialized, skipping check")
 		return false
 	}
 

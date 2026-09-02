@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"net/netip"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -433,33 +434,57 @@ func (m *Middleware) startFileWatcher(filePaths []string) {
 			}
 			defer watcher.Close()
 
-			err = watcher.Add(file)
-			if err != nil {
-				m.logger.Error("Failed to watch file", zap.String("file", file), zap.Error(err))
+			// Watch the parent directory, not the file inode. An atomic update
+			// (write a temp file, then os.Rename it over the target -- the standard
+			// pattern for blocklist/rule refreshes) replaces the target's inode. A
+			// watch on the file itself only ever sees Rename/Remove on the now-dead
+			// old inode, never fires for the replacement, and is left permanently
+			// deaf. Watching the directory and filtering by basename survives the
+			// swap with no re-arming, because the directory inode is stable.
+			dir := filepath.Dir(file)
+			base := filepath.Base(file)
+			if err := watcher.Add(dir); err != nil {
+				m.logger.Error("Failed to watch directory", zap.String("dir", dir), zap.String("file", file), zap.Error(err))
 				return
 			}
 
 			for {
 				select {
-				case event := <-watcher.Events:
-					if event.Op&fsnotify.Write == fsnotify.Write {
-						m.logger.Info("Detected configuration change. Reloading...", zap.String("file", file))
-						if strings.Contains(file, "rule") {
-							if err := m.ReloadRules(); err != nil {
-								m.logger.Error("Failed to reload rules after change", zap.String("file", file), zap.Error(err))
-							} else {
-								m.logger.Info("Rules reloaded successfully", zap.String("file", file))
-							}
+				case event, ok := <-watcher.Events:
+					if !ok {
+						return
+					}
+					// Only react to events for the file we track, not its siblings
+					// (e.g. the temp file an atomic write leaves behind).
+					if filepath.Base(event.Name) != base {
+						continue
+					}
+					// A plain edit emits Write; an atomic rename-into-place emits
+					// Create (inotify IN_MOVED_TO) and sometimes Rename for the
+					// target name. Any of the three means the contents changed and we
+					// must reload. A bare Remove (deletion, no replacement) is ignored.
+					if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Rename) == 0 {
+						continue
+					}
+					m.logger.Info("Detected configuration change. Reloading...",
+						zap.String("file", file), zap.String("op", event.Op.String()))
+					if strings.Contains(file, "rule") {
+						if err := m.ReloadRules(); err != nil {
+							m.logger.Error("Failed to reload rules after change", zap.String("file", file), zap.Error(err))
 						} else {
-							err := m.ReloadConfig()
-							if err != nil {
-								m.logger.Error("Failed to reload config after change", zap.Error(err))
-							} else {
-								m.logger.Info("Configuration reloaded successfully")
-							}
+							m.logger.Info("Rules reloaded successfully", zap.String("file", file))
+						}
+					} else {
+						if err := m.ReloadConfig(); err != nil {
+							m.logger.Error("Failed to reload config after change", zap.Error(err))
+						} else {
+							m.logger.Info("Configuration reloaded successfully")
 						}
 					}
-				case err := <-watcher.Errors:
+				case err, ok := <-watcher.Errors:
+					if !ok {
+						return
+					}
 					m.logger.Error("File watcher error", zap.Error(err))
 				}
 			}
