@@ -454,8 +454,10 @@ func (m *Middleware) startFileWatcher(filePaths []string) {
 					if !ok {
 						return
 					}
-					// Only react to events for the file we track, not its siblings
-					// (e.g. the temp file an atomic write leaves behind).
+					// Only react to events for the file we track, not its
+					// siblings -- e.g. the temp file an atomic write creates and
+					// then renames away during the swap, whose Create/Write/Rename
+					// events all carry a different basename.
 					if filepath.Base(event.Name) != base {
 						continue
 					}
