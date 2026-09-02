@@ -7,16 +7,16 @@ The repository ships a [`Dockerfile`](https://github.com/fabriziosalmi/caddy-waf
 Images are published to GitHub Container Registry on every release tag, for `linux/amd64` and `linux/arm64`:
 
 ```bash
-docker pull ghcr.io/fabriziosalmi/caddy-waf:0.4.1
+docker pull ghcr.io/fabriziosalmi/caddy-waf:0.4.2
 ```
 
 | Tag | Meaning |
 |---|---|
-| `0.4.1` | An exact release. **Prefer this.** |
+| `0.4.2` | An exact release. **Prefer this.** |
 | `0.4` | Latest patch of the 0.4 line. |
 | `latest` | Latest release, whatever it currently is. |
 
-Note the image tag carries **no `v` prefix**, unlike the Go module version: `caddy add-package …@v0.4.1` but `docker pull …:0.4.1`.
+Note the image tag carries **no `v` prefix**, unlike the Go module version: `caddy add-package …@v0.4.2` but `docker pull …:0.4.2`.
 
 Pin an exact version in anything you deploy. `latest` gives you no way to name the image you tested against, which matters when a release fixes a security defect — see [Security → Advisories](https://github.com/fabriziosalmi/caddy-waf/security/advisories).
 
@@ -32,7 +32,7 @@ The build context is the source tree, so this compiles your checkout, uncommitte
 
 Two stages:
 
-### Stage 1 — `builder` (`golang:1.26-alpine`)
+### Stage 1 — `builder` (`golang:1.27-alpine`)
 
 1. Installs `git` and `wget`, plus `xcaddy`.
 2. Copies `go.mod` / `go.sum` and warms the module cache, then copies the source.
@@ -125,7 +125,7 @@ docker exec caddy-waf caddy reload --config /app/Caddyfile
 
 ## Operational checklist
 
-- **Pin the base image**. The shipped Dockerfile uses `golang:1.26-alpine` and `alpine:latest`. For reproducible builds pin `alpine:<version>`.
+- **Pin the base image**. The shipped Dockerfile uses `golang:1.27-alpine` and `alpine:latest`. For reproducible builds pin `alpine:<version>`.
 - **Run as non-root**. Already done by the Dockerfile (`USER caddy`). Do not switch to `root` for convenience.
 - **Mount configuration read-only when possible**. Only the rule files and blacklists need to be writable for `fsnotify` to fire.
 - **Expose `metrics_endpoint` only on a private network**. Use a separate Caddy site / route or a sidecar to apply authentication.
