@@ -90,6 +90,7 @@ The full list is the `directiveHandlers` map in [`config.go`](https://github.com
 | `ip_blacklist_file` | `<file>` | unset | Path to the IP blacklist (single IPs and CIDR ranges). The file is created empty if it does not exist. |
 | `dns_blacklist_file` | `<file>` | unset | Path to the DNS blacklist (one host per line). The file is created empty if it does not exist. |
 | `whitelist_ip` | `<entry> [<entry> …]` | unset | IPs, CIDR ranges, or the token `private_ranges`, exempt from the **IP-reputation** checks. Repeatable. See [IP whitelist](#ip-whitelist). |
+| `whitelist_file` | `<file>` | unset | Path to a file of IPs/CIDR ranges (one per line, `#` comments allowed) exempt from the **IP-reputation** checks. Hot-reloaded on change — the whitelist counterpart to `ip_blacklist_file`. See [IP whitelist](#ip-whitelist). |
 | `anomaly_threshold` | `<positive int>` | `5` (Caddyfile) / `20` (Provision fallback) | Score at which a request is blocked. Lower values are stricter. |
 | `max_request_body_size` | `<bytes>` | `10485760` (10 MiB) | Upper bound for request body reads via `io.LimitReader`. `0` means "use the default". |
 | `max_response_body_size` | `<bytes>` | `10485760` (10 MiB) | Upper bound on how much of the response body is held in memory for Phase 4 inspection. `0` means "use the default". See [Response body buffering](#response-body-buffering). |
@@ -229,6 +230,29 @@ waf {
 `::1`. Deliberately identical rather than "improved" — a WAF and the server in
 front of it disagreeing about which addresses are private is how bypasses get
 built.
+
+### From a file (`whitelist_file`)
+
+For a long or externally-maintained allowlist — a cloud provider's published
+ranges, a partner's egress IPs, country-blocking exceptions — point
+`whitelist_file` at a text file of IPs and CIDR ranges, one per line (`#`
+comments and blank lines are ignored):
+
+```caddyfile
+waf {
+    whitelist_file /etc/caddy/allowlist.txt
+    # Combine with inline entries; both feed the same whitelist.
+    whitelist_ip private_ranges
+}
+```
+
+The file is **hot-reloaded** on change, exactly like `ip_blacklist_file`, so a
+job that refreshes the list (fetching a provider's ranges, say) takes effect
+without a restart. The file need not exist at startup — it is skipped with a
+warning and picked up when it appears. A malformed line is skipped with a
+warning rather than failing the whole load, so one bad entry in a maintained
+feed does not drop every exemption. Inline `whitelist_ip` entries, by contrast,
+are validated strictly and fail startup on a typo.
 
 An entry that does not parse fails startup. It is not skipped with a warning:
 silently dropping an entry leaves the operator believing an address is exempt

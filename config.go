@@ -159,6 +159,7 @@ func (cl *ConfigLoader) UnmarshalCaddyfile(d *caddyfile.Dispenser, m *Middleware
 		"rule_file":              cl.parseRuleFile,
 		"ip_blacklist_file":      cl.parseBlacklistFileDirective(true), // Use directive-specific helper
 		"whitelist_ip":           cl.parseWhitelistIP,
+		"whitelist_file":         cl.parseWhitelistFile,
 		"dns_blacklist_file":     cl.parseBlacklistFileDirective(false), // Use directive-specific helper
 		"anomaly_threshold":      cl.parseAnomalyThreshold,
 		"custom_response":        cl.parseCustomResponse,
@@ -509,6 +510,26 @@ func (cl *ConfigLoader) parseWhitelistIP(d *caddyfile.Dispenser, m *Middleware) 
 		zap.String("file", d.File()),
 		zap.Int("line", d.Line()),
 	)
+	return nil
+}
+
+// parseWhitelistFile parses the whitelist_file directive: a file of IP/CIDR
+// entries (one per line, # comments allowed) exempt from the IP-reputation
+// checks, hot-reloaded on change -- the whitelist counterpart to
+// ip_blacklist_file.
+//
+//	whitelist_file /etc/caddy/allowlist.txt
+//
+// The file need not exist at startup: a missing file is skipped with a warning
+// and picked up when it appears (the watcher follows the directory), so a feed
+// that writes the list later works. Malformed lines in the file are skipped
+// with a warning rather than failing the load.
+func (cl *ConfigLoader) parseWhitelistFile(d *caddyfile.Dispenser, m *Middleware) error {
+	if !d.NextArg() {
+		return d.ArgErr()
+	}
+	m.IPWhitelistFile = d.Val()
+	cl.logger.Info("IP whitelist file configured", zap.String("path", m.IPWhitelistFile))
 	return nil
 }
 

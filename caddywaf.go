@@ -175,7 +175,7 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 	// Start file watchers for rule files and blacklist files
 	// Context cancellation could be added in the future to gracefully stop watchers.
 	m.startFileWatcher(m.RuleFiles)
-	m.startFileWatcher([]string{m.IPBlacklistFile, m.DNSBlacklistFile})
+	m.startFileWatcher([]string{m.IPBlacklistFile, m.DNSBlacklistFile, m.IPWhitelistFile})
 
 	// Configure rate limiting
 	if m.RateLimit.Requests > 0 {
@@ -272,17 +272,11 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 		}
 	}
 
-	// Build the IP whitelist
-	if len(m.IPWhitelist) > 0 {
-		trie, expanded, err := buildIPWhitelist(m.IPWhitelist)
-		if err != nil {
+	// Build the IP whitelist from inline entries and/or the whitelist file.
+	if len(m.IPWhitelist) > 0 || m.IPWhitelistFile != "" {
+		if err := m.rebuildIPWhitelist(); err != nil {
 			return err
 		}
-		m.ipWhitelist = trie
-		m.logger.Info("IP whitelist loaded",
-			zap.Int("entries", len(expanded)),
-			zap.Strings("ranges", expanded),
-		)
 
 		// Warn loudly when private ranges are exempt. The whitelist matches on
 		// the peer address, which is correct when caddy-waf is the edge but
@@ -415,12 +409,32 @@ func (m *Middleware) logVersion() {
 	m.logger.Info("WAF middleware version", zap.String("version", wafVersion))
 }
 
+// isRuleFile reports whether path is one of the configured rule files, so the
+// watcher can pick ReloadRules vs ReloadConfig by identity rather than by a
+// "rule" substring match (which would misroute a blacklist/whitelist file whose
+// path happens to contain "rule").
+func (m *Middleware) isRuleFile(path string) bool {
+	clean := filepath.Clean(path)
+	for _, rf := range m.RuleFiles {
+		if filepath.Clean(rf) == clean {
+			return true
+		}
+	}
+	return false
+}
+
 func (m *Middleware) startFileWatcher(filePaths []string) {
 	for _, path := range filePaths {
-		// Skip watching if the file doesn't exist
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			m.logger.Warn("Skipping file watch, file does not exist",
-				zap.String("file", path),
+		if strings.TrimSpace(path) == "" {
+			continue // unset optional file (e.g. no whitelist_file configured)
+		}
+		// Watch the parent directory, so the target file need not exist yet: a
+		// file created after start (a feed that writes the whitelist/blacklist
+		// later) is picked up via its Create event. Only the directory must
+		// exist now.
+		if _, err := os.Stat(filepath.Dir(path)); err != nil {
+			m.logger.Warn("Skipping file watch, directory does not exist",
+				zap.String("file", path), zap.String("dir", filepath.Dir(path)), zap.Error(err),
 			)
 			continue
 		}
@@ -470,7 +484,7 @@ func (m *Middleware) startFileWatcher(filePaths []string) {
 					}
 					m.logger.Info("Detected configuration change. Reloading...",
 						zap.String("file", file), zap.String("op", event.Op.String()))
-					if strings.Contains(file, "rule") {
+					if m.isRuleFile(file) {
 						if err := m.ReloadRules(); err != nil {
 							m.logger.Error("Failed to reload rules after change", zap.String("file", file), zap.Error(err))
 						} else {
@@ -546,6 +560,16 @@ func (m *Middleware) ReloadConfig() error {
 		m.mu.Lock()
 		m.dnsBlacklist = newDNSBlacklist
 		m.mu.Unlock()
+	}
+
+	// Rebuild the whitelist (inline entries + file) when a whitelist file is
+	// configured. rebuildIPWhitelist swaps the trie under the lock itself, so it
+	// must be called without holding m.mu.
+	if m.IPWhitelistFile != "" {
+		if err := m.rebuildIPWhitelist(); err != nil {
+			m.logger.Error("Failed to reload IP whitelist", zap.String("file", m.IPWhitelistFile), zap.Error(err))
+			return fmt.Errorf("failed to reload IP whitelist: %v", err)
+		}
 	}
 
 	// loadRules takes m.mu itself, so it must be called without holding it.
