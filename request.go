@@ -1,6 +1,7 @@
 package caddywaf
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,7 +9,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"unsafe"
 
 	"go.uber.org/zap"
 )
@@ -222,6 +222,62 @@ func (rve *RequestValueExtractor) logIfEmpty(value string, target string, messag
 }
 
 // Helper function to extract body
+// bodyBufferKey carries the buffered request body (the inspection window) in the
+// request context. ServeHTTP captures the body once via captureRequestBody, so
+// extraction reads it here without draining r.Body -- the body the upstream
+// still needs.
+type bodyBufferKey struct{}
+
+// bufferRequestBody reads up to limit bytes of the request body for inspection
+// and rebuilds r.Body so the full body still reaches downstream and the upstream
+// proxy. It returns the inspection window (at most limit bytes).
+//
+// A body within the limit is made fully re-readable (bytes.Reader) with GetBody
+// set, so the upstream and its retries get the exact bytes. A larger body is
+// forwarded whole -- the buffered prefix followed by the un-read remainder --
+// while only the prefix is inspected; GetBody is left unset because that tail is
+// a one-shot stream.
+//
+// This replaces the previous restore, which spliced an already-consumed r.Body
+// into an io.MultiReader. The reconstructed stream stopped yielding the bytes
+// while r.ContentLength kept its original value, so the upstream saw
+// "ContentLength=N with Body length 0", broke the connection, and every POST
+// carrying a body failed with a 502.
+func bufferRequestBody(r *http.Request, limit int64) ([]byte, error) {
+	// Read the inspection window plus one byte, to learn whether the body
+	// exceeded the window without discarding the overflow.
+	buf, err := io.ReadAll(io.LimitReader(r.Body, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(buf)) <= limit {
+		bodyBytes := buf
+		_ = r.Body.Close()
+		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		r.GetBody = func() (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewReader(bodyBytes)), nil
+		}
+		return bodyBytes, nil
+	}
+	// Body exceeds the inspection window: forward prefix + remainder, inspect the
+	// prefix only. The original body keeps streaming after the buffered bytes,
+	// and its Closer is preserved.
+	prefix := buf[:limit]
+	original := r.Body
+	r.Body = struct {
+		io.Reader
+		io.Closer
+	}{io.MultiReader(bytes.NewReader(buf), original), original}
+	return prefix, nil
+}
+
+// readAndRestoreBody buffers the body against the extractor's maxBodySize. It is
+// the fallback for extraction paths that were not pre-buffered by ServeHTTP
+// (e.g. a direct unit test).
+func (rve *RequestValueExtractor) readAndRestoreBody(r *http.Request) ([]byte, error) {
+	return bufferRequestBody(r, rve.maxBodySize)
+}
+
 func (rve *RequestValueExtractor) extractBody(r *http.Request, target string) (string, error) {
 	if r.Body == nil {
 		rve.logger.Warn("Request body is nil", zap.String("target", target))
@@ -231,29 +287,20 @@ func (rve *RequestValueExtractor) extractBody(r *http.Request, target string) (s
 		rve.logger.Debug("Request body is empty", zap.String("target", target))
 		return "", fmt.Errorf("request body is empty for target: %s", target)
 	}
-	reader := io.LimitReader(r.Body, rve.maxBodySize)
-	bodyBytes, err := io.ReadAll(reader)
+	// ServeHTTP buffers the body up front and stashes the inspection window in
+	// the context; read it there so extraction never drains the body the
+	// upstream will read.
+	if buf, ok := r.Context().Value(bodyBufferKey{}).([]byte); ok {
+		return string(buf), nil
+	}
+	// Fallback (a caller that did not pre-buffer, e.g. a direct unit test):
+	// consume once and restore.
+	bodyBytes, err := rve.readAndRestoreBody(r)
 	if err != nil {
 		rve.logger.Error("Failed to read request body", zap.Error(err))
 		return "", fmt.Errorf("failed to read request body for target %s: %w", target, err)
 	}
-	// Restore body for next read, verifying if we need to combine with remaining body
-	// We use io.MultiReader to concatenate the bytes we read with the *remaining* bytes in the original body.
-	// This ensures that even if we hit the limit, the downstream consumer can read the full body.
-	// We also ensure the original Closer is preserved.
-	r.Body = &struct {
-		io.Reader
-		io.Closer
-	}{
-		Reader: io.MultiReader(strings.NewReader(string(bodyBytes)), r.Body),
-		Closer: r.Body,
-	}
-
-	// SOTA Pattern: Zero-Copy (avoid allocation for string conversion)
-	if len(bodyBytes) == 0 {
-		return "", nil
-	}
-	return unsafe.String(&bodyBytes[0], len(bodyBytes)), nil
+	return string(bodyBytes), nil
 }
 
 // Helper function to extract all headers
@@ -389,13 +436,15 @@ func (rve *RequestValueExtractor) extractValueForJSONPath(r *http.Request, jsonP
 		return "", fmt.Errorf("request body is empty for target: %s", target)
 	}
 
-	reader := io.LimitReader(r.Body, rve.maxBodySize)
-	bodyBytes, err := io.ReadAll(reader)
-	if err != nil {
-		rve.logger.Error("Failed to read request body", zap.Error(err))
-		return "", fmt.Errorf("failed to read request body for JSON_PATH target %s: %w", target, err)
+	bodyBytes, ok := r.Context().Value(bodyBufferKey{}).([]byte)
+	if !ok {
+		var err error
+		bodyBytes, err = rve.readAndRestoreBody(r)
+		if err != nil {
+			rve.logger.Error("Failed to read request body", zap.Error(err))
+			return "", fmt.Errorf("failed to read request body for JSON_PATH target %s: %w", target, err)
+		}
 	}
-	r.Body = io.NopCloser(strings.NewReader(string(bodyBytes))) // Restore body for next read
 
 	// Use helper method to dynamically extract value based on JSON path (e.g., 'data.items.0.name').
 	unredactedValue, err := rve.extractJSONPath(string(bodyBytes), jsonPath)

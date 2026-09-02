@@ -53,6 +53,17 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	// as {http.vars.waf_log_id}, allowing correlation between WAF and access logs.
 	caddyhttp.SetVar(r.Context(), "waf_log_id", logID)
 
+	// Buffer the request body once, up front, when a rule will read it. Rule
+	// extraction runs against per-rule request copies (handlePhase clones the
+	// request via WithContext to tag the rule id), so a body consumed and
+	// "restored" there never reaches the request handed to next -- the upstream
+	// then saw an empty body and every POST with a body failed with a 502.
+	// Capturing it here, on the request that flows downstream, and reading it
+	// from the context during extraction keeps the body intact for the upstream.
+	if m.hasRequestBodyRules() {
+		r = m.captureRequestBody(r)
+	}
+
 	m.incrementTotalRequestsMetric()
 
 	// Initialize WAF state for this request
@@ -189,6 +200,49 @@ func getLogID(ctx context.Context) string {
 // none is, the response body never has to be held in memory at all.
 func (m *Middleware) hasResponseBodyRules() bool {
 	return len(m.Rules[4]) > 0
+}
+
+// hasRequestBodyRules reports whether any request-phase rule reads the request
+// body (a BODY / REQUEST_BODY target, or a JSON_PATH: target). When none do,
+// ServeHTTP leaves the body untouched so it streams straight through.
+func (m *Middleware) hasRequestBodyRules() bool {
+	for _, phase := range []int{1, 2, 3} {
+		for _, rule := range m.Rules[phase] {
+			for _, t := range rule.Targets {
+				u := strings.ToUpper(strings.TrimSpace(t))
+				if u == "BODY" || u == "REQUEST_BODY" || strings.HasPrefix(u, "JSON_PATH:") {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// captureRequestBody buffers the request body once and stashes the inspection
+// window in the request context, so rule extraction reads it without draining
+// r.Body -- the body the upstream still needs.
+//
+// A body within the inspection limit is handed downstream fully re-readable
+// (bytes.Reader) with GetBody set, so the upstream and its retries get the exact
+// bytes. A body larger than the limit is forwarded whole -- the buffered prefix
+// followed by the un-read remainder -- while only the prefix is inspected;
+// GetBody is left unset because that tail is a one-shot stream. Either way the
+// upstream receives the complete body, which the previous restore did not.
+func (m *Middleware) captureRequestBody(r *http.Request) *http.Request {
+	if r.Body == nil || r.Body == http.NoBody {
+		return r
+	}
+	limit := m.MaxRequestBodySize
+	if limit <= 0 {
+		limit = 10 * 1024 * 1024 // 10MB, matching the extractor default
+	}
+	buf, err := bufferRequestBody(r, limit)
+	if err != nil {
+		m.logger.Warn("Failed to buffer request body; leaving it untouched", zap.Error(err))
+		return r
+	}
+	return r.WithContext(context.WithValue(r.Context(), bodyBufferKey{}, buf))
 }
 
 // handleResponseBodyPhase processes Phase 4 (response body).
