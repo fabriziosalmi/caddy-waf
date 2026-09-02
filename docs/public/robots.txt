@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://caddy-waf.com/sitemap.xml
+Sitemap: https://www.caddy-waf.com/sitemap.xml

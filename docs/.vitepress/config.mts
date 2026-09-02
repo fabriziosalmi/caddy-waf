@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const repo = 'https://github.com/fabriziosalmi/caddy-waf'
-const site = 'https://caddy-waf.com/'
+const site = 'https://www.caddy-waf.com/'
 
 // Read the version straight out of the source rather than hard-coding it here,
 // so the number shown in the nav cannot drift from the module it documents.
@@ -24,7 +24,7 @@ export default defineConfig({
     'Web Application Firewall middleware for Caddy — regex rule engine with anomaly scoring, IP/DNS/ASN/country blacklists, rate limiting, and a JSON metrics endpoint.',
   lang: 'en-US',
 
-  // Served from the custom domain https://caddy-waf.com/ (CNAME in docs/public),
+  // Served from the custom domain https://www.caddy-waf.com/ (CNAME in docs/public),
   // so the site lives at the root: base must be '/', not the old project subpath.
   base: '/',
 
