@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.3] - 2026-09-02
+
+### Added
+- **`whitelist_file` — load whitelisted IPs from a file, hot-reloaded on change.** The counterpart to `ip_blacklist_file`: point it at a text file of IPs/CIDR ranges (one per line, `#` comments allowed) exempt from the IP-reputation checks, so a job that refreshes the list (a cloud provider's published ranges, a partner's egress IPs, country-blocking exceptions) takes effect without a restart. Inline `whitelist_ip` entries and the file feed the same trie; the file need not exist at startup and is picked up when it appears. ([#158](https://github.com/fabriziosalmi/caddy-waf/pull/158), closes [#151](https://github.com/fabriziosalmi/caddy-waf/issues/151))
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.4.3`.
+- The file watcher now follows the parent directory even when the watched file does not yet exist (so a later-created blocklist/whitelist file is picked up on creation), and selects ReloadRules vs ReloadConfig by rule-file identity rather than a path substring.
+
 ## [v0.4.2] - 2026-09-02
 
 ### Fixed
