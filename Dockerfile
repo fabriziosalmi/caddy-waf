@@ -9,7 +9,7 @@
 # Cross-compilation is done by Go on the build platform rather than by emulating
 # the target, so an arm64 image does not cost a QEMU-emulated compile.
 
-FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS builder
 
 # go.mod declares go 1.25.1 (propagated from caddy/v2, which requires it), so
 # the toolchain here has to be at least that. It was pinned to 1.24 and only
