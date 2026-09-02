@@ -175,7 +175,7 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 	// Start file watchers for rule files and blacklist files
 	// Context cancellation could be added in the future to gracefully stop watchers.
 	m.startFileWatcher(m.RuleFiles)
-	m.startFileWatcher([]string{m.IPBlacklistFile, m.DNSBlacklistFile})
+	m.startFileWatcher([]string{m.IPBlacklistFile, m.DNSBlacklistFile, m.IPWhitelistFile})
 
 	// Configure rate limiting
 	if m.RateLimit.Requests > 0 {
@@ -272,17 +272,11 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 		}
 	}
 
-	// Build the IP whitelist
-	if len(m.IPWhitelist) > 0 {
-		trie, expanded, err := buildIPWhitelist(m.IPWhitelist)
-		if err != nil {
+	// Build the IP whitelist from inline entries and/or the whitelist file.
+	if len(m.IPWhitelist) > 0 || m.IPWhitelistFile != "" {
+		if err := m.rebuildIPWhitelist(); err != nil {
 			return err
 		}
-		m.ipWhitelist = trie
-		m.logger.Info("IP whitelist loaded",
-			zap.Int("entries", len(expanded)),
-			zap.Strings("ranges", expanded),
-		)
 
 		// Warn loudly when private ranges are exempt. The whitelist matches on
 		// the peer address, which is correct when caddy-waf is the edge but
@@ -546,6 +540,16 @@ func (m *Middleware) ReloadConfig() error {
 		m.mu.Lock()
 		m.dnsBlacklist = newDNSBlacklist
 		m.mu.Unlock()
+	}
+
+	// Rebuild the whitelist (inline entries + file) when a whitelist file is
+	// configured. rebuildIPWhitelist swaps the trie under the lock itself, so it
+	// must be called without holding m.mu.
+	if m.IPWhitelistFile != "" {
+		if err := m.rebuildIPWhitelist(); err != nil {
+			m.logger.Error("Failed to reload IP whitelist", zap.String("file", m.IPWhitelistFile), zap.Error(err))
+			return fmt.Errorf("failed to reload IP whitelist: %v", err)
+		}
 	}
 
 	// loadRules takes m.mu itself, so it must be called without holding it.

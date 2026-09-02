@@ -1,8 +1,10 @@
 package caddywaf
 
 import (
+	"bufio"
 	"fmt"
 	"net/netip"
+	"os"
 	"strings"
 
 	"github.com/phemmer/go-iptrie"
@@ -91,4 +93,79 @@ func (m *Middleware) isIPWhitelisted(remoteAddr string) bool {
 	}
 
 	return trie.Contains(parsed)
+}
+
+// loadIPWhitelistFile reads IP/CIDR entries from path and inserts them into
+// trie, returning the number of valid entries. Blank lines and # comments are
+// ignored. A malformed line is skipped with a warning rather than failing the
+// whole load: a whitelist fed from a maintained external list (a provider's
+// published ranges) should tolerate the odd bad line instead of dropping every
+// exemption. Mirrors the IP blacklist file loader.
+func (m *Middleware) loadIPWhitelistFile(path string, trie *iptrie.Trie) (int, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return 0, fmt.Errorf("failed to open whitelist file %q: %w", path, err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	valid := 0
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		cidr := line
+		if !strings.Contains(cidr, "/") {
+			cidr = appendCIDR(cidr)
+		}
+		prefix, err := netip.ParsePrefix(cidr)
+		if err != nil {
+			m.logger.Warn("Skipping invalid entry in whitelist file",
+				zap.String("file", path), zap.String("entry", line), zap.Error(err))
+			continue
+		}
+		trie.Insert(prefix, nil)
+		valid++
+	}
+	if err := scanner.Err(); err != nil {
+		return valid, fmt.Errorf("error reading whitelist file %q: %w", path, err)
+	}
+	return valid, nil
+}
+
+// rebuildIPWhitelist builds the whitelist trie from the inline whitelist_ip
+// entries and, if configured, the whitelist_file, then swaps it in under the
+// lock. It is used at Provision and on hot reload. Inline entries are validated
+// strictly (a typo fails startup); file entries are lenient (bad lines skipped),
+// matching the blacklist inline-vs-file split.
+func (m *Middleware) rebuildIPWhitelist() error {
+	trie, expanded, err := buildIPWhitelist(m.IPWhitelist)
+	if err != nil {
+		return err
+	}
+
+	fileEntries := 0
+	if m.IPWhitelistFile != "" {
+		if _, statErr := os.Stat(m.IPWhitelistFile); os.IsNotExist(statErr) {
+			m.logger.Warn("Skipping whitelist file load, file does not exist",
+				zap.String("file", m.IPWhitelistFile))
+		} else {
+			n, loadErr := m.loadIPWhitelistFile(m.IPWhitelistFile, trie)
+			if loadErr != nil {
+				return loadErr
+			}
+			fileEntries = n
+		}
+	}
+
+	m.mu.Lock()
+	m.ipWhitelist = trie
+	m.mu.Unlock()
+
+	m.logger.Info("IP whitelist loaded",
+		zap.Int("inline_entries", len(expanded)),
+		zap.Int("file_entries", fileEntries),
+		zap.String("file", m.IPWhitelistFile))
+	return nil
 }

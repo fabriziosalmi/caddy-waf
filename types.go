@@ -126,7 +126,11 @@ type Middleware struct {
 	// IPWhitelist holds entries exempt from the IP-reputation checks: bare IPs,
 	// CIDR ranges, or the token "private_ranges". See whitelist_ip in
 	// docs/configuration.md.
-	IPWhitelist      []string            `json:"ip_whitelist,omitempty"`
+	IPWhitelist []string `json:"ip_whitelist,omitempty"`
+	// IPWhitelistFile is an optional file of IP/CIDR entries exempt from the
+	// IP-reputation checks, one per line (# comments allowed). It is hot-reloaded
+	// on change, the whitelist counterpart to ip_blacklist_file. See whitelist_file.
+	IPWhitelistFile  string              `json:"ip_whitelist_file,omitempty"`
 	DNSBlacklistFile string              `json:"dns_blacklist_file"`
 	AnomalyThreshold int                 `json:"anomaly_threshold"`
 	CountryBlacklist CountryAccessFilter `json:"country_blacklist"`

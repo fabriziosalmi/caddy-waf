@@ -36,6 +36,7 @@ Both functions take the middleware mutex (`m.mu.Lock`) for the duration of the r
 | `rule_file` contents | Yes (atomic). |
 | `ip_blacklist_file` contents | Yes (atomic). |
 | `dns_blacklist_file` contents | Yes (atomic). |
+| `ip_whitelist_file` contents (`whitelist_file`) | Yes (atomic). |
 | `anomaly_threshold` | No. |
 | `metrics_endpoint` | No. |
 | `log_severity` / `log_path` / `log_json` / `log_buffer` | No. |
