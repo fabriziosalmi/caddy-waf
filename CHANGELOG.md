@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.2] - 2026-09-02
+
+### Fixed
+- **Every `POST` carrying a body no longer fails with a 502.** The WAF drained the request body during rule inspection and the upstream received an empty body while `Content-Length` kept its value, so `reverse_proxy` reported `ContentLength=N with Body length 0` and broke the connection. Rule extraction runs against per-rule request copies (`handlePhase` clones the request to tag the rule id), so restoring the body there never reached the request handed to the upstream. The body is now buffered once, up front, on the request that flows downstream and read from context during extraction; bodies within the inspection limit are re-readable with `GetBody` set, and larger bodies are forwarded whole (no upload truncation). ([#156](https://github.com/fabriziosalmi/caddy-waf/pull/156))
+- **Hot-reload now follows atomic file updates.** The file watcher watched the file inode and reacted only to `Write`, so an atomic update (write temp + `os.Rename` over the target — the standard blocklist/rule refresh) replaced the inode and left the watch permanently deaf. It now watches the parent directory, filters by basename, and reloads on `Create`/`Rename`/`Write`. ([#155](https://github.com/fabriziosalmi/caddy-waf/pull/155))
+- **Data race in the IP blacklist check.** `isIPBlacklisted` probed `m.ipBlacklist` outside the read lock, racing `ReloadConfig`'s locked swap (which hot reload performs). The redundant unsynchronised probe was removed; `go test -race ./...` is clean. ([#155](https://github.com/fabriziosalmi/caddy-waf/pull/155))
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.4.2`.
+- Dependency bumps already on `main`: `stretchr/testify` 1.12.1, `google.golang.org/grpc` 1.83.1, and the Docker builder image to Go 1.27-alpine.
+
 ## [v0.4.1] - 2026-08-21
 
 ### Fixed
