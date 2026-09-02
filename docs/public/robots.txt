@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://fabriziosalmi.github.io/caddy-waf/sitemap.xml
+Sitemap: https://caddy-waf.com/sitemap.xml

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const repo = 'https://github.com/fabriziosalmi/caddy-waf'
-const site = 'https://fabriziosalmi.github.io/caddy-waf/'
+const site = 'https://caddy-waf.com/'
 
 // Read the version straight out of the source rather than hard-coding it here,
 // so the number shown in the nav cannot drift from the module it documents.
@@ -24,8 +24,9 @@ export default defineConfig({
     'Web Application Firewall middleware for Caddy — regex rule engine with anomaly scoring, IP/DNS/ASN/country blacklists, rate limiting, and a JSON metrics endpoint.',
   lang: 'en-US',
 
-  // Project page, served from https://fabriziosalmi.github.io/caddy-waf/
-  base: '/caddy-waf/',
+  // Served from the custom domain https://caddy-waf.com/ (CNAME in docs/public),
+  // so the site lives at the root: base must be '/', not the old project subpath.
+  base: '/',
 
   // Fail the build on a link to a page that does not exist, so the docs cannot
   // drift from the file tree unnoticed.
@@ -50,9 +51,9 @@ export default defineConfig({
   },
 
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/caddy-waf/logo.svg' }],
-    ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/caddy-waf/favicon-32.png' }],
-    ['link', { rel: 'apple-touch-icon', href: '/caddy-waf/apple-touch-icon.png' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
+    ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32.png' }],
+    ['link', { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }],
     ['meta', { name: 'theme-color', content: '#0369a1' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: 'caddy-waf' }],
