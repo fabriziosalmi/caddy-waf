@@ -17,12 +17,28 @@ def extract_rules(rule_text):
         list: List of dictionaries containing parsed rule information
     """
     rules = []
-    # Regex pattern to match ModSecurity SecRule directives
-    rule_pattern = r'SecRule\s+([^"]*)"([^"]+)"\s*(\\\s*\n\s*.*?|.*?)(?=\s*SecRule|\s*$)'
-    
-    for match in re.finditer(rule_pattern, rule_text, re.MULTILINE | re.DOTALL):
+    # Join ModSecurity line continuations first, then match `SecRule VARIABLES
+    # "OPERATOR" ACTIONS`. The operator is a quoted string that may contain escaped
+    # quotes, so `(?:\\.|[^"\\])*` avoids truncating it (same fix as issue #149).
+    rule_text = re.sub(r"\\\s*\n\s*", " ", rule_text)
+    rule_pattern = re.compile(
+        r'^\s*SecRule\s+(?P<variables>\S+)\s+"(?P<expression>(?:\\.|[^"\\])*)"\s+(?P<actions>.*?)(?=^\s*SecRule|\Z)',
+        re.MULTILINE | re.DOTALL,
+    )
+
+    for match in rule_pattern.finditer(rule_text):
         try:
-            variables, pattern, actions = match.groups()
+            variables = match.group("variables")
+            actions = match.group("actions")
+            # Keep @rx rules (strip the operator); skip non-regex operators.
+            expr = match.group("expression").strip()
+            op = re.match(r'@(\w+)\s+(.*)', expr, re.DOTALL)
+            if op:
+                if op.group(1) != 'rx':
+                    continue
+                pattern = op.group(2)
+            else:
+                pattern = expr
             
             # Extract key rule properties using regex
             rule_id = re.search(r'id:(\d+)', actions)

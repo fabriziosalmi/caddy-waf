@@ -55,12 +55,33 @@ def extract_rules(rule_text):
         list: List of dictionaries containing parsed rule information
     """
     rules = []
-    # Regex pattern to match ModSecurity SecRule directives
-    rule_pattern = r'SecRule\s+([^"]*)"([^"]+)"\s*(\\\s*\n\s*.*?|.*?)(?=\s*SecRule|\s*$)'
-    
-    for match in re.finditer(rule_pattern, rule_text, re.MULTILINE | re.DOTALL):
+    # ModSecurity wraps long rules across lines with a trailing backslash; join those
+    # continuations first, otherwise a multi-line SecRule is parsed in pieces.
+    rule_text = re.sub(r"\\\s*\n\s*", " ", rule_text)
+    # Match `SecRule VARIABLES "OPERATOR" ACTIONS`. The operator is a quoted string that
+    # may itself contain escaped quotes (e.g. @rx "...\"..."), so the old `"([^"]+)"`
+    # truncated any CRS rule with a `\"` in it into an invalid pattern (issue #149).
+    # `(?:\\.|[^"\\])*` consumes escaped chars correctly; rules are bounded at line-start.
+    rule_pattern = re.compile(
+        r'^\s*SecRule\s+(?P<variables>\S+)\s+"(?P<expression>(?:\\.|[^"\\])*)"\s+(?P<actions>.*?)(?=^\s*SecRule|\Z)',
+        re.MULTILINE | re.DOTALL,
+    )
+
+    for match in rule_pattern.finditer(rule_text):
         try:
-            variables, pattern, actions = match.groups()
+            variables = match.group("variables")
+            actions = match.group("actions")
+            # The quoted operator is `@<op> <argument>`. caddy-waf is a regex engine,
+            # so keep @rx rules (using the argument as the pattern) and skip non-regex
+            # operators (@pm, @streq, @detectSQLi, …) that cannot be expressed as a regex.
+            expr = match.group("expression").strip()
+            op = re.match(r'@(\w+)\s+(.*)', expr, re.DOTALL)
+            if op:
+                if op.group(1) != 'rx':
+                    continue
+                pattern = op.group(2)
+            else:
+                pattern = expr  # a bare pattern is an implicit @rx
             
             # Extract key rule properties using regex
             rule_id = re.search(r'id:(\d+)', actions)
