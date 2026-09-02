@@ -409,12 +409,32 @@ func (m *Middleware) logVersion() {
 	m.logger.Info("WAF middleware version", zap.String("version", wafVersion))
 }
 
+// isRuleFile reports whether path is one of the configured rule files, so the
+// watcher can pick ReloadRules vs ReloadConfig by identity rather than by a
+// "rule" substring match (which would misroute a blacklist/whitelist file whose
+// path happens to contain "rule").
+func (m *Middleware) isRuleFile(path string) bool {
+	clean := filepath.Clean(path)
+	for _, rf := range m.RuleFiles {
+		if filepath.Clean(rf) == clean {
+			return true
+		}
+	}
+	return false
+}
+
 func (m *Middleware) startFileWatcher(filePaths []string) {
 	for _, path := range filePaths {
-		// Skip watching if the file doesn't exist
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			m.logger.Warn("Skipping file watch, file does not exist",
-				zap.String("file", path),
+		if strings.TrimSpace(path) == "" {
+			continue // unset optional file (e.g. no whitelist_file configured)
+		}
+		// Watch the parent directory, so the target file need not exist yet: a
+		// file created after start (a feed that writes the whitelist/blacklist
+		// later) is picked up via its Create event. Only the directory must
+		// exist now.
+		if _, err := os.Stat(filepath.Dir(path)); err != nil {
+			m.logger.Warn("Skipping file watch, directory does not exist",
+				zap.String("file", path), zap.String("dir", filepath.Dir(path)), zap.Error(err),
 			)
 			continue
 		}
@@ -464,7 +484,7 @@ func (m *Middleware) startFileWatcher(filePaths []string) {
 					}
 					m.logger.Info("Detected configuration change. Reloading...",
 						zap.String("file", file), zap.String("op", event.Op.String()))
-					if strings.Contains(file, "rule") {
+					if m.isRuleFile(file) {
 						if err := m.ReloadRules(); err != nil {
 							m.logger.Error("Failed to reload rules after change", zap.String("file", file), zap.Error(err))
 						} else {

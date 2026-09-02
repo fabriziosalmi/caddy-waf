@@ -90,13 +90,40 @@ func TestWhitelistFileWatcherReloadsOnAtomicRename(t *testing.T) {
 	require.False(t, m.isIPWhitelisted("198.51.100.9:1"))
 
 	m.startFileWatcher([]string{path})
-	time.Sleep(150 * time.Millisecond) // let the goroutine arm its directory watch
 
-	writeAtomic(t, dir, path, "203.0.113.7\n198.51.100.9\n")
-
-	require.Eventually(t, func() bool { return m.isIPWhitelisted("198.51.100.9:1") },
-		3*time.Second, 25*time.Millisecond,
+	// Re-apply the atomic update on each poll until the reload is observed: this
+	// avoids a fixed sleep to wait for the watcher goroutine to arm, which is
+	// slow and can still race on a loaded CI runner.
+	require.Eventually(t, func() bool {
+		writeAtomic(t, dir, path, "203.0.113.7\n198.51.100.9\n")
+		return m.isIPWhitelisted("198.51.100.9:1")
+	}, 3*time.Second, 50*time.Millisecond,
 		"an atomic rename of the whitelist file must hot-reload the exemptions")
+}
+
+// TestWhitelistFileCreatedAfterStartIsPickedUp pins the documented promise that
+// whitelist_file need not exist at startup: the watcher follows the directory,
+// so a file written later (a feed populating the list) is loaded on creation.
+func TestWhitelistFileCreatedAfterStartIsPickedUp(t *testing.T) {
+	logger := zap.NewNop()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "ip_whitelist.txt") // does NOT exist yet
+
+	m := &Middleware{
+		logger:          logger,
+		blacklistLoader: NewBlacklistLoader(logger),
+		IPWhitelistFile: path,
+	}
+	require.NoError(t, m.rebuildIPWhitelist()) // missing file is skipped with a warning
+	require.False(t, m.isIPWhitelisted("203.0.113.7:1"))
+
+	m.startFileWatcher([]string{path})
+
+	require.Eventually(t, func() bool {
+		writeAtomic(t, dir, path, "203.0.113.7\n")
+		return m.isIPWhitelisted("203.0.113.7:1")
+	}, 3*time.Second, 50*time.Millisecond,
+		"a whitelist file created after start must be picked up by the watcher")
 }
 
 // TestParseWhitelistFileDirective pins the Caddyfile directive wiring.
