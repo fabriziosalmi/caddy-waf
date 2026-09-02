@@ -16,7 +16,7 @@ DOMAIN_LIST_URLS = [
     "https://raw.githubusercontent.com/StevenBlack/hosts/master/data/StevenBlack/hosts",
     "https://raw.githubusercontent.com/bigdargon/hostsVN/master/option/domain.txt",
     "https://raw.githubusercontent.com/durablenapkin/scamblocklist/master/hosts.txt",
-    "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/ultimate.txt",
+    "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/ultimate-onlydomains.txt",
     "https://raw.githubusercontent.com/stamparm/blackbook/master/blackbook.txt",
     "https://raw.githubusercontent.com/fabriziosalmi/blacklists/main/custom/streaming.txt",
 ]
