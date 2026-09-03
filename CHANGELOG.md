@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.11] - 2026-09-04
+
+### Security
+- **Path traversal in the request body is now inspected** ([#112](https://github.com/fabriziosalmi/caddy-waf/pull/183)). A new conservative `path-traversal-body` rule catches LFI delivered through a POST body (form fields, JSON) — a repeated `../` or a direct sensitive-file path (`etc/passwd`, `/proc/self/environ`, …) — while a single legitimate `../` in a body does not trip it. The previous `path-traversal` rule covered only the URI and headers.
+- **Rule hot-reload is now fail-safe** ([#113](https://github.com/fabriziosalmi/caddy-waf/pull/182)). A bad edit to a live rule file (invalid JSON, or no rules parsed) no longer wipes the in-memory rule set to empty; the reload fails and the previously loaded rules stay in effect.
+
+### Added
+- **`geoip_fail_open` Caddyfile directive** ([#113](https://github.com/fabriziosalmi/caddy-waf/pull/182)). The knob that flips a failed GeoIP lookup from block (403, the secure default) to allow was previously reachable only through raw JSON.
+- **Security posture docs** ([docs/security.md](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/security.md)): ReDoS resistance ([#111](https://github.com/fabriziosalmi/caddy-waf/pull/181)), the fail-safe behaviour matrix and secure defaults ([#113](https://github.com/fabriziosalmi/caddy-waf/pull/182)), and evasion coverage ([#112](https://github.com/fabriziosalmi/caddy-waf/pull/183)).
+- **Security regression corpora**: a ReDoS corpus over every shipped rule ([#111](https://github.com/fabriziosalmi/caddy-waf/pull/181)) and an evasion/bypass corpus through the live handler ([#112](https://github.com/fabriziosalmi/caddy-waf/pull/183)).
+
+### Fixed
+- **Modular rule bundles audited** ([#172](https://github.com/fabriziosalmi/caddy-waf/pull/179)): fixed invalid JSON (`lfi.json`, `rfi.json`), rewrote `data-validation`'s over-cap repeat, removed backreference rules (`hpp`, `sql-injection`), and removed the non-functional ModSecurity dump `rules/spiderlabs.json`. `TestBundledRulePatternsCompile` now compiles every `rules/*.json` bundle and rejects duplicate IDs. New `rules/README.md` documents the shipped set vs the opt-in bundle menu.
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.4.11`.
+
 ## [v0.4.10] - 2026-09-03
 
 ### Changed
