@@ -51,7 +51,7 @@ var (
 )
 
 // Add or update the version constant as needed
-const wafVersion = "v0.4.6" // update this value to the new release version when tagging
+const wafVersion = "v0.4.7" // update this value to the new release version when tagging
 
 // ==================== Initialization and Setup ====================
 
