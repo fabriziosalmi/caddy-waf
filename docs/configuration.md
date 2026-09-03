@@ -91,7 +91,7 @@ The full list is the `directiveHandlers` map in [`config.go`](https://github.com
 | `dns_blacklist_file` | `<file>` | unset | Path to the DNS blacklist (one host per line). The file is created empty if it does not exist. |
 | `whitelist_ip` | `<entry> [<entry> …]` | unset | IPs, CIDR ranges, or the token `private_ranges`, exempt from the **IP-reputation** checks. Repeatable. See [IP whitelist](#ip-whitelist). |
 | `whitelist_file` | `<file>` | unset | Path to a file of IPs/CIDR ranges (one per line, `#` comments allowed) exempt from the **IP-reputation** checks. Hot-reloaded on change — the whitelist counterpart to `ip_blacklist_file`. See [IP whitelist](#ip-whitelist). |
-| `trusted_proxies` | `<entry> [<entry> …]` | unset | Peers allowed to speak for their clients via `X-Forwarded-For` / `client_ip_header`: bare IPs, CIDR ranges, or `private_ranges`. Repeatable. Empty = ignore forwarding headers. See [Client IP & trusted proxies](#client-ip--trusted-proxies). |
+| `trusted_proxies` | `<entry> [<entry> …]` | unset | Peers allowed to speak for their clients via `X-Forwarded-For` / `client_ip_header`: bare IPs, CIDR ranges, or `private_ranges`. Repeatable. Empty = ignore forwarding headers. See [Client IP & trusted proxies](/client-ip). |
 | `client_ip_header` | `<name>` | unset | A single-IP header (e.g. `CF-Connecting-IP`, `True-Client-IP`, `X-Real-IP`) read for the client IP once the peer is a trusted proxy, instead of `X-Forwarded-For`. |
 | `anomaly_threshold` | `<positive int>` | `5` (Caddyfile) / `20` (Provision fallback) | Score at which a request is blocked. Lower values are stricter. |
 | `max_request_body_size` | `<bytes>` | `10485760` (10 MiB) | Upper bound for request body reads via `io.LimitReader`. `0` means "use the default". |
@@ -319,49 +319,18 @@ trusted here.
 
 ## Client IP & trusted proxies
 
-By default the WAF judges a request by its **peer address** (`r.RemoteAddr`) and
-**ignores `X-Forwarded-For`** — a client reaching the WAF directly cannot spoof a
-forwarding header to change its apparent IP.
+By default the WAF judges a request by its **peer address** and **ignores
+`X-Forwarded-For`** — a direct client cannot spoof a forwarding header. Behind a
+reverse proxy or CDN, `trusted_proxies` names the peers allowed to speak for
+their clients, and only then is the forwarded client honoured (via
+`X-Forwarded-For`, right-to-left, or a `client_ip_header` such as
+`CF-Connecting-IP`). The resolved client IP feeds the rate limiter, the GeoIP
+country/ASN filters and the `REMOTE_IP` target.
 
-When the WAF runs behind a reverse proxy or CDN, name the peers allowed to speak
-for their clients with `trusted_proxies`. Only when the immediate peer is within
-that set is a forwarding header honoured; the real client is then the first
-address in `X-Forwarded-For` — walking right-to-left — that is not itself a
-trusted proxy (so a chain of trusted proxies resolves to the client at the far
-end). Alternatively, `client_ip_header` names a single-IP header to read
-instead.
-
-Once resolved, the client IP is used by the **rate limiter**, the **GeoIP
-country and ASN** filters, and the **`REMOTE_IP`** rule target. The IP
-*blacklist* is unchanged: it checks the peer plus every forwarded hop, because
-for blocking, consulting more addresses can only block more.
-
-### Cloudflare example
-
-Cloudflare terminates the connection, so the peer is always a Cloudflare edge IP
-and the real client is in `CF-Connecting-IP`. Trust Cloudflare's ranges and read
-that header:
-
-```caddyfile
-waf {
-    rule_file rules.json
-    trusted_proxies 173.245.48.0/20 103.21.244.0/22 108.162.192.0/18   # Cloudflare's published ranges
-    client_ip_header CF-Connecting-IP
-}
-```
-
-Keep `trusted_proxies` in sync with Cloudflare's published ranges
-(<https://www.cloudflare.com/ips/>). With `whitelist_file`'s sibling pattern a
-job can even refresh the list on disk.
-
-> [!IMPORTANT]
-> **Migration.** Earlier versions trusted `X-Forwarded-For` unconditionally for
-> the GeoIP/ASN checks, which was spoofable when the WAF was reachable directly.
-> The default is now secure — forwarding headers are ignored unless the peer is a
-> configured trusted proxy. **If you run behind a CDN/proxy and filter by the real
-> client's country/ASN, set `trusted_proxies` (and optionally
-> `client_ip_header`)**, or those filters (and the rate limiter, and `REMOTE_IP`
-> rules) will judge the proxy's address instead of the client's.
+The default is secure — **behind a CDN you must configure `trusted_proxies`** or
+those controls judge the proxy's address. See
+**[Client IP & trusted proxies](/client-ip)** for the full model, the Cloudflare
+example and the migration note.
 
 ---
 
