@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.9] - 2026-09-04
+
+### Added
+- **Native Prometheus endpoint** ([#118](https://github.com/fabriziosalmi/caddy-waf/pull/176)). `prometheus_endpoint <path>` serves the WAF counters and a `caddywaf_request_duration_seconds` **latency histogram** in the Prometheus text exposition format — scrape it directly, no exporter. Latency is recorded lock-free on the hot path.
+- **Live dashboard demo** on the docs site (caddy-waf.com/demo), plus the dashboard is now **modular** (structure/style/behaviour split) with an automatic light/dark theme.
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.4.9`.
+- **Supply-chain hardening** ([#117](https://github.com/fabriziosalmi/caddy-waf/pull/174)): every GitHub Action is pinned to a commit SHA; container images carry SLSA provenance + SBOM attestations; release binaries get an SPDX SBOM asset and a build-provenance attestation.
+- **Hot-path benchmarks + CI regression gate** ([#114](https://github.com/fabriziosalmi/caddy-waf/pull/175)): per-request latency/alloc benchmarks now gate PRs against regressions.
+
+### Fixed
+- Removed the inert, RE2-incompatible `auth-session-cookie-not-http-only` rule ([#161](https://github.com/fabriziosalmi/caddy-waf/issues/161)); a broader modular-rules audit is tracked in #172.
+- Updated the hagezi DNS blocklist URL to its new path (community, thanks @mcbloch — [#150](https://github.com/fabriziosalmi/caddy-waf/pull/150)).
+
 ## [v0.4.8] - 2026-09-03
 
 ### Changed
