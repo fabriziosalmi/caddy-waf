@@ -41,7 +41,33 @@ A representative response:
   "dns_blacklist_hits":            0,
   "rate_limiter_requests":         27004,
   "rate_limiter_blocked_requests": 23640,
-  "version":                       "v0.4.5"
+  "version":                       "v0.4.5",
+
+  "schema_version":  2,
+  "server_time_ms":  1756876543210,
+  "uptime_seconds":  86400,
+  "top_rules": [
+    { "id": "block-scanners", "hits": 25 },
+    { "id": "xss-attacks",    "hits": 8 }
+  ],
+  "top_ips": {
+    "cap": 50,
+    "distinct_seen": 318,
+    "items": [ { "ip": "203.0.113.7", "blocked": 640 } ]
+  },
+  "by_country":        [ { "country": "RU", "blocked": 900 } ],
+  "blocked_by_reason": { "rule": 1826, "ip_blacklist": 1290, "rate_limit": 640 },
+  "recent": {
+    "cap": 256,
+    "items": [
+      {
+        "ts_ms": 1756876543000, "id": "aca34e69-c2ff-…",
+        "ip": "203.0.113.7", "method": "POST", "path": "/wp-login.php",
+        "reason": "rule", "rule_id": "941100", "status": 403, "score": 10,
+        "country": "RU"
+      }
+    ]
+  }
 }
 ```
 
@@ -60,6 +86,21 @@ A representative response:
 | `rate_limiter_requests` | int | `RateLimiter.totalRequests` | Total requests counted by the rate limiter (under lock). |
 | `rate_limiter_blocked_requests` | int | `RateLimiter.blockedRequests` | Requests blocked by the rate limiter for exceeding the bucket limit. |
 | `version` | string | `wafVersion` constant in [`caddywaf.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/caddywaf.go) | Build version of the WAF. |
+
+### Dashboard fields (schema 2)
+
+The built-in dashboard (#143) adds the fields below, all **back-compatible** additions — every field above is unchanged. `schema_version` lets a consumer feature-detect them. Rates are not stored server-side: a client derives them by diffing successive snapshots using `server_time_ms`.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `schema_version` | int | Payload schema version (currently `2`). |
+| `server_time_ms` | int | Server wall-clock at scrape time (Unix ms), for client-side rate math. |
+| `uptime_seconds` | int | Seconds since `Provision`; a drop signals a restart (counters reset). |
+| `top_rules` | array of `{id, hits}` | The most-hit rules, sorted, capped at 20 — a pre-sorted view of `rule_hits`. |
+| `top_ips` | `{cap, distinct_seen, items:[{ip, blocked}]}` | The top offending client IPs by block count (capped at 50). `distinct_seen` is how many distinct IPs the bounded counter has tracked. |
+| `by_country` | array of `{country, blocked}` | Blocks per ISO country, when a GeoIP database is configured. |
+| `blocked_by_reason` | object<string,int> | Block counts by category: `rule`, `ip_blacklist`, `dns_blacklist`, `rate_limit`, `country`, `asn`, `error`. |
+| `recent` | `{cap, items:[…]}` | A bounded ring (256) of the most recent **blocked** decisions, newest first. Each item: `ts_ms`, `id` (the WAF log id, correlates with access logs), `ip`, `method`, `path` (≤256 chars), `reason`, `rule_id` (for rule blocks), `status`, `score`, `country`. |
 
 ## Counter semantics
 

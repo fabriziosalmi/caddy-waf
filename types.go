@@ -104,6 +104,21 @@ type WAFState struct {
 	ResponseWritten bool
 }
 
+// blockRecord is one entry in the recent-blocks ring the metrics endpoint
+// exposes for the dashboard (#143). Blocked requests only.
+type blockRecord struct {
+	TS      int64  `json:"ts_ms"`
+	ID      string `json:"id"`
+	IP      string `json:"ip"`
+	Method  string `json:"method"`
+	Path    string `json:"path"`
+	Reason  string `json:"reason"`
+	RuleID  string `json:"rule_id,omitempty"`
+	Status  int    `json:"status"`
+	Score   int    `json:"score"`
+	Country string `json:"country,omitempty"`
+}
+
 // Middleware is the main WAF middleware struct that implements Caddy's
 // Module, Provisioner, Validator, and MiddlewareHandler interfaces.
 //
@@ -183,6 +198,14 @@ type Middleware struct {
 	ruleHitsByPhase map[int]int64
 	geoIPStats      map[string]int64 // Key: country code, Value: count
 	muMetrics       sync.RWMutex     // Mutex for metrics synchronization
+
+	// Observability for the built-in dashboard (#143 M1). geoIPStats above holds
+	// per-country BLOCK counts; the fields below and it are all guarded by muObs.
+	provisionTime   time.Time
+	muObs           sync.Mutex
+	recentBlocks    []blockRecord    // bounded ring, oldest first
+	topIPsBlocked   map[string]int64 // bounded
+	blockedByReason map[string]int64
 
 	rateLimiterBlockedRequests int64        // Add rate limiter blocked requests metric
 	muRateLimiterMetrics       sync.RWMutex // Mutex to protect rate limiter metrics
