@@ -24,6 +24,9 @@ func (m *Middleware) blockRequest(recorder http.ResponseWriter, r *http.Request,
 	state.StatusCode = statusCode
 	state.ResponseWritten = true
 
+	// Record the decision for the dashboard's recent-blocks tail and aggregates.
+	m.recordBlock(r, state, statusCode, reason, ruleID)
+
 	// CRITICAL FIX: Log at WARN level for visibility
 	m.logger.Warn("REQUEST BLOCKED BY WAF", append(fields,
 		zap.String("rule_id", ruleID),

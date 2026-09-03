@@ -26,6 +26,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/oschwald/maxminddb-golang"
@@ -201,6 +202,11 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 
 	// Initialize GeoIP stats
 	m.geoIPStats = make(map[string]int64)
+
+	// Observability state for the dashboard (#143 M1).
+	m.provisionTime = time.Now()
+	m.topIPsBlocked = make(map[string]int64)
+	m.blockedByReason = make(map[string]int64)
 
 	// Configure GeoIP-based country blacklisting/whitelisting
 	if m.CountryBlacklist.Enabled || m.CountryWhitelist.Enabled {
@@ -726,6 +732,9 @@ func (m *Middleware) handleMetricsRequest(w http.ResponseWriter, r *http.Request
 		"rate_limiter_requests":         rateLimiterTotalRequests,
 		"rate_limiter_blocked_requests": rateLimiterBlockedRequests,
 		"version":                       wafVersion,
+	}
+	for k, v := range m.observabilitySnapshot() {
+		metrics[k] = v
 	}
 
 	jsonMetrics, err := json.Marshal(metrics)
