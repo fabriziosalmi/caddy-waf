@@ -44,8 +44,10 @@ func TestBundledRulePatternsCompile(t *testing.T) {
 		for _, r := range rules {
 			_, err := regexp.Compile(r.Pattern)
 			require.NoErrorf(t, err, "%s: rule %q pattern must compile under RE2", path, r.ID)
-			// The loader rejects a file outright on a duplicate ID, so a
-			// duplicate makes the whole bundle unloadable, not just one rule.
+			// The loader silently drops a rule whose ID it has already seen
+			// (loadRulesFromFile records it as invalid and skips it), so a
+			// duplicate ID means one of the two rules never takes effect. Fail
+			// here so that drop can't hide in a shipped bundle.
 			require.Falsef(t, seen[r.ID], "%s: duplicate rule ID %q", path, r.ID)
 			seen[r.ID] = true
 		}
