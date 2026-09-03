@@ -100,6 +100,7 @@ The full list is the `directiveHandlers` map in [`config.go`](https://github.com
 | `block_countries` | `<mmdb> <ISO> [<ISO> …]` | disabled | Block requests whose source country (per the GeoLite2 Country MMDB) is in the list. |
 | `whitelist_countries` | `<mmdb> <ISO> [<ISO> …]` | disabled | Allow only requests whose source country is in the list. |
 | `block_asns` | `<mmdb> <ASN> [<ASN> …]` | disabled | Block requests whose source IP belongs to one of the listed ASNs. ASN values are decimal integers without a leading `AS`. |
+| `geoip_fail_open` | `[true\|false]` | `false` | When a GeoIP/ASN lookup fails (e.g. missing database), allow the request instead of blocking it with `403`. A bare directive enables it. See [Fail-safe behaviour](/security#request-time). |
 | `custom_response` | `<status> <content-type> <inline-body…>` _or_ `<status> <content-type> <file-path>` | unset | Custom block response. Repeat with different status codes. |
 | `redact_sensitive_data` | _(no args)_ | off | Redact sensitive query parameters and log fields. The redaction key list is in [`logging.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/logging.go) (`sensitiveKeys`). |
 | `tor` | block (see below) | disabled | Enable Tor exit-node blocking. |

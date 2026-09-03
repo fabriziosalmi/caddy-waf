@@ -201,14 +201,30 @@ func (m *Middleware) loadRules(paths []string) error {
 		ruleCounts += fmt.Sprintf("Phase %d: %d rules, ", phase, len(loadedRules[phase]))
 	}
 
-	m.Rules = loadedRules // Atomically update m.Rules after loading all files
-
 	if len(invalidFiles) > 0 {
 		m.logger.Error("Failed to load rule files", zap.Strings("files", invalidFiles)) // Error level for file loading failures
 	}
 	if len(allInvalidRules) > 0 {
 		m.logger.Warn("Validation errors in rules", zap.Strings("errors", allInvalidRules)) // More specific log message - "errors" field
 	}
+
+	// Fail-safe on reload: never degrade a working rule set. If a whole file
+	// failed to load (missing/invalid JSON) or nothing parsed, and we already
+	// hold rules, keep the previous set and surface the error rather than
+	// installing an empty/partial one -- a bad edit to a live rule file must
+	// not silently leave the WAF running with zero (or fewer) rules. At initial
+	// Provision m.Rules is empty, so this guard does not fire and a total
+	// failure still refuses startup (fail-closed) via the same error.
+	prevRuleCount := 0
+	for _, rs := range m.Rules {
+		prevRuleCount += len(rs)
+	}
+	loadFailed := len(invalidFiles) > 0 || (totalRules == 0 && len(paths) > 0)
+	if loadFailed && prevRuleCount > 0 {
+		return fmt.Errorf("rule reload failed (%d invalid file(s), %d rules parsed); keeping %d previously loaded rules", len(invalidFiles), totalRules, prevRuleCount)
+	}
+
+	m.Rules = loadedRules // Atomically update m.Rules only once the load is known good
 
 	if totalRules == 0 && len(paths) > 0 { // Only return error if paths were provided
 		return fmt.Errorf("no valid rules were loaded from any file")
