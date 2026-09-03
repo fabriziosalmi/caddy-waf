@@ -116,7 +116,7 @@ func (rve *RequestValueExtractor) extractSingleValue(target string, r *http.Requ
 			if v, ok := r.Context().Value(clientIPKey{}).(string); ok && v != "" {
 				return v, nil
 			}
-			return r.RemoteAddr, nil
+			return extractIP(r.RemoteAddr), nil // bare IP, consistent with the resolved value
 		},
 		TargetProtocol: func() (string, error) { return r.Proto, nil },
 		TargetHost:     func() (string, error) { return r.Host, nil },
