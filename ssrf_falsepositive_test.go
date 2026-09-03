@@ -19,8 +19,11 @@ func loadRuleFile(t *testing.T, path string) []Rule {
 	return rules
 }
 
-// TestBundledRulePatternsCompile guards every shipped pattern against RE2
-// breakage -- in particular the SSRF pattern edits below.
+// TestBundledRulePatternsCompile guards the patterns in the rule files this
+// change touches against RE2 breakage -- in particular the SSRF pattern edits
+// below. (It is deliberately not run over every rules/*.json bundle: some of
+// those carry patterns that already fail RE2, e.g. the lookbehind in
+// rules/authentication.json, which is a separate pre-existing issue.)
 func TestBundledRulePatternsCompile(t *testing.T) {
 	for _, path := range []string{"rules.json", "rules-browser-friendly.json", "rules/ssrf.json"} {
 		for _, r := range loadRuleFile(t, path) {
