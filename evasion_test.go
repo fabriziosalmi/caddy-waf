@@ -73,10 +73,11 @@ func corpusBlockedBody(m *Middleware, body string) bool {
 }
 
 // TestEvasionCorpusQuery asserts the shipped rules block a malicious payload in
-// the query string regardless of the evasion wrapping. The curated rules.json
-// carries meta-rules for suspicious encoding, so double-percent-encoding and
-// %uXXXX escapes are caught too -- pinned here so a future edit cannot regress
-// that coverage.
+// the query string regardless of the evasion wrapping. Double-percent-encoding
+// is caught by an encoding meta-rule (a %XX survives one decode). The
+// %uXXXX case here is caught because a plaintext token (alert() leaks through --
+// %uXXXX itself is not decoded (see docs/security.md); a fully %uXXXX-encoded
+// payload is a known gap. Pinned so a future edit cannot regress this coverage.
 func TestEvasionCorpusQuery(t *testing.T) {
 	m := corpusMiddleware(t)
 	enc := url.QueryEscape
@@ -102,7 +103,7 @@ func TestEvasionCorpusQuery(t *testing.T) {
 		{"xss double-encoded", dbl("<script>alert(1)</script>")},
 		{"xss img onerror", enc("<img src=x onerror=alert(1)>")},
 		{"xss svg onload", enc("<svg/onload=alert(1)>")},
-		{"xss unicode-escape", "%u003cscript%u003ealert(1)%u003c/script%u003e"},
+		{"xss unicode-escape (alert() leaks)", "%u003cscript%u003ealert(1)%u003c/script%u003e"},
 		// RCE / command injection
 		{"rce semicolon", enc(";cat /etc/passwd")},
 		{"rce pipe", enc("|cat /etc/passwd")},
@@ -116,8 +117,10 @@ func TestEvasionCorpusQuery(t *testing.T) {
 	}
 }
 
-// TestEvasionCorpusBody asserts the request body is inspected for the same
-// attack classes. It also pins the #112 fix that added a conservative
+// TestEvasionCorpusBody asserts the request body is inspected for SQLi, XSS and
+// path traversal (command-injection rules target the query/args and headers, not
+// the body, so they are exercised in TestEvasionCorpusQuery). It also pins the
+// #112 fix that added a conservative
 // body-targeted path-traversal rule: LFI delivered through a POST form field is
 // now caught, while a single benign "../" in a body is NOT blocked (the rule
 // requires repeated "../" or a sensitive-file path, to avoid false positives).

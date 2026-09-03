@@ -169,7 +169,7 @@
   {
     "id": "path-traversal-body",
     "phase": 2,
-    "pattern": "(?i)(?:(?:\\.\\.[/\\\\]){2,}|(?:\\.\\.(?:%2f|%5c)){2,}|(?:%2e%2e(?:%2f|%5c)){2,}|(?:%252e%252e(?:%2f|%5c)){2,}|etc(?:/|%2f)(?:passwd|shadow|hosts)|(?:proc|sys)(?:/|%2f)(?:self(?:/|%2f))?(?:environ|cmdline)|boot(?:/|%2f)grub(?:/|%2f)grub\\.cfg)",
+    "pattern": "(?i)(?:(?:\\.\\.(?:[/\\\\]|%2f|%5c|%252f|%255c)){2,}|(?:%2e%2e(?:%2f|%5c|%252f|%255c)){2,}|(?:%252e%252e(?:%2f|%5c|%252f|%255c)){2,}|etc(?:/|%2f|%252f)(?:passwd|shadow|hosts)|(?:proc|sys)(?:/|%2f|%252f)(?:self(?:/|%2f|%252f))?(?:environ|cmdline)|boot(?:/|%2f)grub(?:/|%2f)grub\\.cfg)",
     "targets": [
       "BODY"
     ],

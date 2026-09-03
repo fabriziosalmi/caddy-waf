@@ -130,16 +130,27 @@ payloads through the WAF wrapped in bypass techniques and asserts they are still
 blocked. It doubles as a regression guard — a rule change that lets one through
 fails CI. What the shipped `rules.json` handles:
 
-- **Percent-encoding** — decoded one layer before matching, and rules also match
-  common encoded forms directly.
-- **Double percent-encoding** (`%252e`) and **`%uXXXX` unicode escapes** — caught
-  by meta-rules that treat those encodings as suspicious in their own right.
+- **Percent-encoding** — one layer is decoded before matching, and rules also
+  match common encoded forms directly. Note the matcher keeps the result of the
+  transformation chain when it changes the value, so a benign single-encoded
+  value (`name=John%20Doe`) is judged decoded, not on its raw `%20`.
+- **Double percent-encoding** (`%252e`) — after one decode a `%XX` sequence
+  survives, and an encoding meta-rule matches that residual encoding, so a
+  doubly-encoded payload does not slip through as plaintext.
 - **Case folding** — patterns are case-insensitive (`sCrIpT`, `uNiOn`).
 - **SQL comment / whitespace insertion** (`UNION/**/SELECT`, padded spaces) —
   whitespace is compressed and comment sequences are covered.
 - **Null-byte truncation** (`%00`) — nulls are stripped before matching.
-- **Delivery channel** — SQLi, XSS and command-injection payloads are inspected
-  in both the query string and the request body.
+- **Delivery channel** — SQLi and XSS are inspected in both the query string and
+  the request body; command-injection rules cover the query/args and headers.
+
+> [!NOTE]
+> **`%uXXXX` (non-standard unicode escapes) are not decoded.** The default
+> transformation chain decodes standard `%XX` only. A payload wrapped entirely in
+> `%uXXXX` is caught today only when a plaintext token still leaks through
+> (e.g. `alert(` in `%u003cscript%u003ealert(1)…`); a fully `%uXXXX`-encoded
+> payload with no plaintext can bypass the shipped rules. Decoding `%uXXXX` in the
+> default chain is a tracked follow-up.
 
 **Path traversal in the body**: `path-traversal` covers the URI and headers;
 `path-traversal-body` adds the request body but fires **only** on high-confidence
