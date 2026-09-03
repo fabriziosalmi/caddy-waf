@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.10] - 2026-09-03
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.4.10`.
+
+### Fixed
+- **Modular rule-bundle audit** ([#172](https://github.com/fabriziosalmi/caddy-waf/pull/179)). The opt-in `rules/*.json` bundles (pointed at with `rule_file`, not loaded by the default `rules.json`) are now all valid and RE2-compatible:
+  - Fixed invalid JSON in `rules/lfi.json` and `rules/rfi.json` (single-backslash regex escapes JSON rejected).
+  - Rewrote `data-validation`'s `^.{5000,}$` (over RE2's 1000 repeat cap) as concatenated `.{1000}` runs.
+  - Removed backreference rules that never loaded under RE2 (`hpp-parameter-combining`, `sqli-quoted-injection`).
+  - Removed `rules/spiderlabs.json` — a raw ModSecurity CRS export whose `@rx`/`@eq`/`@pmFromFile` operator syntax this engine does not interpret, so its rules never matched. Generate an RE2-compatible bundle with `get_spiderlabs_rules.py` instead.
+
+### Added
+- `TestBundledRulePatternsCompile` now compiles **every** `rules/*.json` bundle under RE2 and rejects duplicate IDs, so a broken bundle fails CI instead of shipping inert.
+- `rules/README.md` documenting the shipped set vs. the opt-in bundle menu and the RE2 pattern constraints.
+
 ## [v0.4.9] - 2026-09-04
 
 ### Added
