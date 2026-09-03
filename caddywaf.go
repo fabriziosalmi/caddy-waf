@@ -94,6 +94,12 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 	m.Rules = make(map[int][]Rule) // Initialize Rules map to prevent nil pointer panic
 	m.ipBlacklist = iptrie.NewTrie()
 
+	// Normalise the dashboard path so a configured trailing slash ("/waf/") does
+	// not desync the injected base path from request matching (#170).
+	if m.DashboardEndpoint != "" {
+		m.DashboardEndpoint = "/" + strings.Trim(m.DashboardEndpoint, "/")
+	}
+
 	// Set default log severity if not provided
 	if m.LogSeverity == "" {
 		m.LogSeverity = "info"

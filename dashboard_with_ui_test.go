@@ -5,7 +5,6 @@ package caddywaf
 import (
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
@@ -58,7 +57,22 @@ func TestDashboardServesPageWithUI(t *testing.T) {
 	assert.Contains(t, js.Header().Get("Content-Type"), "javascript")
 	assert.Contains(t, js.Body.String(), "wafDashboard")
 
-	// unknown asset under the endpoint is a 404, not the page
-	assert.Equal(t, http.StatusNotFound, serveDash(t, m, "/waf/nope.png").Code)
-	assert.False(t, strings.Contains(js.Body.String(), "__BASE__"))
+	assert.NotContains(t, js.Body.String(), "__BASE__", "JS is served verbatim, no template placeholders")
+
+	// an unknown asset under the endpoint is a 404, and not the dashboard HTML
+	nf := serveDash(t, m, "/waf/nope.png")
+	assert.Equal(t, http.StatusNotFound, nf.Code)
+	assert.NotContains(t, nf.Body.String(), "<title>caddy-waf", "a 404 must not return the dashboard page")
+}
+
+// TestDashboardTrailingSlashConfig pins that a dashboard path configured with a
+// trailing slash still matches and serves its assets (the base is trimmed).
+func TestDashboardTrailingSlashConfig(t *testing.T) {
+	m := dashMiddleware(t)
+	m.DashboardEndpoint = "/waf/"
+	assert.Equal(t, http.StatusOK, serveDash(t, m, "/waf").Code)
+	assert.Equal(t, http.StatusOK, serveDash(t, m, "/waf/").Code)
+	css := serveDash(t, m, "/waf/dashboard.css")
+	assert.Equal(t, http.StatusOK, css.Code)
+	assert.Contains(t, css.Body.String(), ":root")
 }

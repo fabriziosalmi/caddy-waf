@@ -24,12 +24,20 @@ var dashboardAssets = map[string]struct {
 
 // isDashboardRequest reports whether r targets the dashboard path or one of its
 // assets served beneath it.
+// dashboardBase is the dashboard path with any trailing slash removed, so
+// request matching, asset suffixes and the injected base path all agree even
+// when the directive is configured with a trailing slash.
+func (m *Middleware) dashboardBase() string {
+	return strings.TrimRight(m.DashboardEndpoint, "/")
+}
+
 func (m *Middleware) isDashboardRequest(r *http.Request) bool {
 	if m.DashboardEndpoint == "" {
 		return false
 	}
+	base := m.dashboardBase()
 	p := r.URL.Path
-	return p == m.DashboardEndpoint || strings.HasPrefix(p, m.DashboardEndpoint+"/")
+	return p == base || p == base+"/" || strings.HasPrefix(p, base+"/")
 }
 
 // serveDashboard serves the built-in read-only dashboard and its assets.
@@ -40,7 +48,8 @@ func (m *Middleware) isDashboardRequest(r *http.Request) bool {
 // dashboard's own base path -- is injected so the browser fetches everything
 // with relative URLs (no CORS, no hardcoded host).
 func (m *Middleware) serveDashboard(w http.ResponseWriter, r *http.Request) error {
-	suffix := strings.TrimPrefix(r.URL.Path, m.DashboardEndpoint)
+	base := m.dashboardBase()
+	suffix := strings.TrimPrefix(r.URL.Path, base)
 	asset, ok := dashboardAssets[suffix]
 	if !ok {
 		http.NotFound(w, r)
@@ -58,7 +67,7 @@ func (m *Middleware) serveDashboard(w http.ResponseWriter, r *http.Request) erro
 
 	out := string(body)
 	if asset.template {
-		out = strings.ReplaceAll(out, "__BASE__", strings.TrimRight(m.DashboardEndpoint, "/"))
+		out = strings.ReplaceAll(out, "__BASE__", base)
 		out = strings.ReplaceAll(out, "__WAF_METRICS_PATH__", m.MetricsEndpoint)
 	}
 

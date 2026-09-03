@@ -59,7 +59,7 @@
   const charts = {
     spark(id, key) {
       const svg = $(id), vals = store.series(key); svg.innerHTML = "";
-      if (vals.length < 2) return;
+      if (vals.length < 1) return;
       const W = 100, H = 34, pad = 2, n = vals.length, max = Math.max(1, ...vals);
       let d = "";
       for (let i = 0; i < n; i++) { const x = pad + (W - 2 * pad) * (n === 1 ? 0 : i / (n - 1)); const y = H - pad - (H - 2 * pad) * (vals[i] / max); d += (i ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1) + " "; }
