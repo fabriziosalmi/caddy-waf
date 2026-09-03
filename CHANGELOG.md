@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.8] - 2026-09-03
+
+### Changed
+- **Dashboard UI is now modular and decoupled.** The page is split into separate embedded files — `ui/index.html` (structure), `ui/dashboard.css` (presentation), `ui/dashboard.js` (behaviour, in decoupled config/store/view/api modules) — served beneath the dashboard path. The theme follows the viewer's system light/dark preference automatically, with an explicit override honoured. No behaviour change for operators; the directive and opt-in are unchanged. ([#170](https://github.com/fabriziosalmi/caddy-waf/pull/170), [#143](https://github.com/fabriziosalmi/caddy-waf/issues/143))
+- Bumped version constant `wafVersion` to `v0.4.8`.
+
+### Fixed
+- A `dashboard` path configured with a trailing slash now matches and serves its assets correctly.
+
 ## [v0.4.7] - 2026-09-03
 
 ### Added
