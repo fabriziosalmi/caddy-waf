@@ -179,6 +179,7 @@ func (cl *ConfigLoader) UnmarshalCaddyfile(d *caddyfile.Dispenser, m *Middleware
 		"block_countries":        cl.parseCountryBlockDirective(true),  // Use directive-specific helper
 		"whitelist_countries":    cl.parseCountryBlockDirective(false), // Use directive-specific helper
 		"block_asns":             cl.parseBlockASNsDirective,           // Add ASN block directive
+		"geoip_fail_open":        cl.parseGeoIPFailOpen,
 		"log_severity":           cl.parseLogSeverity,
 		"log_json":               cl.parseLogJSON,
 		"rule_file":              cl.parseRuleFile,
@@ -486,6 +487,30 @@ func (cl *ConfigLoader) parseLogJSON(d *caddyfile.Dispenser, m *Middleware) erro
 func (cl *ConfigLoader) parseRedactSensitiveData(d *caddyfile.Dispenser, m *Middleware) error {
 	m.RedactSensitiveData = true
 	cl.logger.Debug("Redact sensitive data enabled", zap.String("file", d.File()), zap.Int("line", d.Line()))
+	return nil
+}
+
+// parseGeoIPFailOpen enables fail-open GeoIP behaviour. By default a GeoIP
+// lookup error (e.g. a missing database with an enabled country/ASN filter)
+// blocks the request with 403 (fail-closed); with this directive such a request
+// is allowed through instead. It accepts an optional boolean argument
+// (`geoip_fail_open` or `geoip_fail_open true|false|on|off`); a bare directive
+// enables it. Exposed here because the safety knob was previously reachable
+// only through raw JSON (`geoip_fail_open`).
+func (cl *ConfigLoader) parseGeoIPFailOpen(d *caddyfile.Dispenser, m *Middleware) error {
+	value := true
+	if d.NextArg() {
+		switch strings.ToLower(d.Val()) {
+		case "true", "on", "yes", "1":
+			value = true
+		case "false", "off", "no", "0":
+			value = false
+		default:
+			return d.Errf("invalid geoip_fail_open value '%s': expected true/false", d.Val())
+		}
+	}
+	m.GeoIPFailOpen = value
+	cl.logger.Debug("GeoIP fail-open set", zap.Bool("fail_open", value), zap.String("file", d.File()), zap.Int("line", d.Line()))
 	return nil
 }
 

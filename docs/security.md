@@ -51,6 +51,78 @@ would add goroutine and cancellation machinery (Go's `regexp` has no native
 deadline) to guard against a blowup that cannot happen. Bounding request size is
 the simpler, sufficient control.
 
+## Fail-safe behaviour & secure defaults
+
+What the WAF does when something goes wrong, per feature. "Fail-closed" = the
+request is blocked or the server refuses to start; "fail-open" = the request is
+allowed through.
+
+### Startup (Provision)
+
+Startup is **fail-closed** for anything that would leave the WAF misconfigured:
+
+- **No rule file, or the only rule file is missing / unreadable / invalid JSON /
+  has no valid rules** → Provision returns an error and **Caddy refuses to
+  start**.
+- **A malformed Caddyfile** (unknown directive, bad argument) → startup error.
+- **An unreadable IP-blacklist or DNS-blacklist file**, or **invalid rate-limit
+  config** → startup error.
+
+Two things are tolerated at startup so a single typo doesn't take the server
+down: a **single rule with an uncompilable regex** or an invalid field is
+skipped (logged) and the rest of the file loads; a **malformed line in a
+blacklist file** is skipped. Across *multiple* rule files, a file that fails
+while another still yields rules lets startup proceed with the good ones (logged
+at Error) — so review the logs after a deploy.
+
+A **missing GeoIP database does not block startup**: the country/ASN filter is
+left active but with no reader, which matters at request time — see below.
+
+### Rule hot-reload
+
+Hot-reload is **fail-safe**: if an edited rule file becomes invalid (bad JSON,
+missing, or produces no rules), the reload **fails and the previously loaded
+rules stay in effect** — the WAF is never left running with zero rules by a bad
+edit. The failure is logged; fix the file and save again to reload. (Earlier
+versions replaced the rule set before validating and could drop to zero rules on
+a bad reload; fixed in the #113 audit.)
+
+### Request time
+
+| Feature | On failure | Direction |
+|---|---|---|
+| **Panic** anywhere in request handling | recovered → **500**, request not forwarded upstream | **fail-closed** |
+| **GeoIP / ASN lookup error** (incl. missing DB with the filter enabled) | **403 by default**; allowed only if `geoip_fail_open` is set | **fail-closed by default** |
+| **IP blacklist** — unparseable client IP or uninitialised trie | request allowed | fail-open |
+| **DNS blacklist** — host not in the (static) set | request allowed | fail-open |
+| **Rate limiter** — any non-match / edge | request allowed | fail-open |
+| **Value-extraction error** for one target (non-panic) | that target is skipped, other rules still run | fail-open |
+
+The fail-open cases are inherent to how those checks work — they block only on a
+positive match, so an error or absence means "no match", i.e. allow. The
+fail-closed cases are where an internal error could otherwise let traffic bypass
+a control: a panic yields a 500 rather than a silent pass-through, and a GeoIP
+error blocks by default.
+
+> [!IMPORTANT]
+> If you enable `block_countries` / `whitelist_countries` / `block_asns` but the
+> GeoIP database is missing or unreadable, **every request is blocked with 403**
+> by default (fail-closed). That is deliberate — a country filter that silently
+> stopped filtering would be worse — but if you would rather allow traffic when
+> GeoIP is unavailable, set **`geoip_fail_open`**. Make sure the database path is
+> correct in the first place.
+
+### Secure defaults
+
+| Setting | Default | Notes |
+|---|---|---|
+| Blocking | **on** | The WAF blocks when a request's score reaches `anomaly_threshold` or a matched rule has `mode: block`. There is no global detection-only switch; use per-rule `mode: log` to observe without blocking. |
+| `anomaly_threshold` | **5** (Caddyfile) | Lower = stricter. Raw-JSON configs with the value unset fall back to 20. |
+| `max_request_body_size` | **10 MB** | Caps the body scanned by matchers (see [ReDoS residual cost](#residual-cost-is-linear-and-bounded-by-request-size)). |
+| `max_response_body_size` | **10 MB** | Same, for response-phase rules. |
+| `geoip_fail_open` | **false** (fail-closed) | A GeoIP lookup error blocks unless this is set. |
+| `X-Forwarded-For` trust | **not trusted** | Header-derived client IP is honoured only from configured `trusted_proxies` — see [Client IP](/client-ip). |
+
 ## Related
 
 - [Attack coverage](/attacks) — what the shipped rules detect.
