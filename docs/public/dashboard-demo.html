@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>caddy-waf dashboard — demo</title>
+<style>
+/* caddy-waf dashboard — presentation only. Decoupled from markup and logic.
+   Theme is automatic: the bare :root is the dark palette, prefers-color-scheme
+   selects light, and an explicit data-theme on <html> overrides either way. */
+:root {
+  --bg: #0f1419; --panel: #161c24; --panel-2: #1b232d; --line: #26313d;
+  --fg: #e6edf3; --muted: #8b98a5; --faint: #5b6875;
+  --accent: #39d3bb; --ok: #3fb950; --warn: #d29922; --bad: #f85149;
+  --c-rule: #f85149; --c-ip: #d29922; --c-rate: #a371f7; --c-country: #58a6ff;
+  --c-asn: #39d3bb; --c-dns: #db61a2; --c-other: #6e7681;
+  --radius: 10px;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:#f5f7fa; --panel:#fff; --panel-2:#f0f3f7; --line:#dde3ea;
+    --fg:#1c2430; --muted:#5b6875; --faint:#93a1af;
+  }
+}
+:root[data-theme="light"] {
+  --bg:#f5f7fa; --panel:#fff; --panel-2:#f0f3f7; --line:#dde3ea;
+  --fg:#1c2430; --muted:#5b6875; --faint:#93a1af;
+}
+:root[data-theme="dark"] {
+  --bg:#0f1419; --panel:#161c24; --panel-2:#1b232d; --line:#26313d;
+  --fg:#e6edf3; --muted:#8b98a5; --faint:#5b6875;
+}
+
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--sans);
+  font-size:14px; line-height:1.45; -webkit-font-smoothing:antialiased; }
+.wrap { max-width:1240px; margin:0 auto; padding:20px 20px 60px; }
+
+header { display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding-bottom:16px; border-bottom:1px solid var(--line); margin-bottom:20px; }
+.brand { display:flex; align-items:baseline; gap:10px; }
+.brand h1 { font-size:18px; margin:0; letter-spacing:.2px; font-weight:650; }
+.brand .shield { color:var(--accent); font-size:20px; }
+.ver { font-family:var(--mono); font-size:12px; color:var(--muted);
+  background:var(--panel-2); padding:2px 8px; border-radius:6px; border:1px solid var(--line); }
+.spacer { flex:1; }
+.meta { display:flex; align-items:center; gap:16px; color:var(--muted); font-size:12.5px; }
+.live { display:inline-flex; align-items:center; gap:7px; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--faint); transition:background .2s; }
+.live.on .dot { background:var(--ok); box-shadow:0 0 0 3px rgba(63,185,80,.18); }
+.live.err .dot { background:var(--bad); box-shadow:0 0 0 3px rgba(248,81,73,.18); }
+select, button { font:inherit; color:var(--fg); background:var(--panel-2);
+  border:1px solid var(--line); border-radius:7px; padding:5px 9px; cursor:pointer; }
+button:hover, select:hover { border-color:var(--faint); }
+button:focus-visible, select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+.grid { display:grid; gap:14px; }
+.kpis { grid-template-columns:repeat(4,1fr); margin-bottom:14px; }
+.cards { grid-template-columns:repeat(2,1fr); }
+@media (max-width:860px){ .kpis{ grid-template-columns:repeat(2,1fr);} .cards{ grid-template-columns:1fr;} }
+
+.card { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; min-width:0; }
+.card h2 { font-size:12px; text-transform:uppercase; letter-spacing:.7px; color:var(--muted);
+  margin:0 0 12px; font-weight:600; }
+
+.kpi .n { font-size:30px; font-weight:680; font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
+.kpi .sub { color:var(--muted); font-size:12px; margin-top:2px; display:flex; align-items:center; gap:6px; }
+.kpi .rate { color:var(--accent); font-family:var(--mono); font-size:11.5px; }
+.kpi.bad .n { color:var(--bad); } .kpi.ok .n { color:var(--ok); }
+.spark { display:block; width:100%; height:34px; margin-top:8px; }
+
+.bars .row { display:grid; grid-template-columns:120px 1fr 52px; align-items:center; gap:10px; margin:7px 0; }
+.bars .lbl { font-size:12.5px; color:var(--fg); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:var(--mono); }
+.bars .track { background:var(--panel-2); border-radius:5px; height:16px; overflow:hidden; }
+.bars .fill { display:block; height:100%; border-radius:5px; background:var(--accent); transition:width .4s ease; }
+.bars .val { text-align:right; font-variant-numeric:tabular-nums; color:var(--muted); font-size:12.5px; }
+.fill.rule{background:var(--c-rule)} .fill.ip_blacklist{background:var(--c-ip)} .fill.rate_limit{background:var(--c-rate)}
+.fill.country{background:var(--c-country)} .fill.asn{background:var(--c-asn)} .fill.dns_blacklist{background:var(--c-dns)}
+.fill.error,.fill.other{background:var(--c-other)}
+
+table { width:100%; border-collapse:collapse; font-size:12.5px; }
+th { text-align:left; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase;
+  letter-spacing:.5px; padding:6px 8px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--panel); }
+td { padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+tr:last-child td { border-bottom:0; }
+td.mono, .ip { font-family:var(--mono); }
+.path { max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); }
+.pill { display:inline-block; padding:1px 7px; border-radius:20px; font-size:11px; font-weight:600;
+  background:var(--panel-2); border:1px solid var(--line); }
+.pill.rule{color:var(--c-rule)} .pill.ip_blacklist{color:var(--c-ip)} .pill.rate_limit{color:var(--c-rate)}
+.pill.country{color:var(--c-country)} .pill.asn{color:var(--c-asn)} .pill.dns_blacklist{color:var(--c-dns)}
+.pill.error,.pill.other{color:var(--muted)}
+.status { font-variant-numeric:tabular-nums; color:var(--warn); }
+.recent-wrap { max-height:420px; overflow:auto; }
+.full { grid-column:1 / -1; }
+
+.empty { color:var(--faint); font-size:13px; padding:14px 2px; text-align:center; }
+.banner { display:none; background:rgba(248,81,73,.12); border:1px solid var(--bad); color:var(--fg);
+  padding:10px 14px; border-radius:8px; margin-bottom:16px; font-size:13px; }
+.banner.show { display:block; }
+footer { margin-top:26px; color:var(--faint); font-size:11.5px; display:flex; gap:14px; flex-wrap:wrap; }
+.flag { font-family:var(--mono); }
+@media (prefers-reduced-motion: reduce){ * { transition:none !important; } }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <span class="shield">&#9679;</span>
+      <h1>caddy-waf</h1>
+      <span class="ver" id="ver">&mdash;</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="meta">
+      <span id="uptime">uptime &mdash;</span>
+      <label>every
+        <select id="interval">
+          <option value="2">2s</option>
+          <option value="5" selected>5s</option>
+          <option value="10">10s</option>
+          <option value="30">30s</option>
+        </select>
+      </label>
+      <button type="button" id="pause">Pause</button>
+      <span class="live" id="live"><span class="dot"></span><span id="livetext">connecting</span></span>
+    </div>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <div class="grid kpis">
+    <div class="card kpi"><h2>Requests</h2><div class="n" id="k-total">0</div>
+      <div class="sub"><span class="rate" id="r-total">&mdash;</span> req/min</div>
+      <svg class="spark" id="sp-total" preserveAspectRatio="none"></svg></div>
+    <div class="card kpi bad"><h2>Blocked</h2><div class="n" id="k-blocked">0</div>
+      <div class="sub"><span class="rate" id="r-blocked">&mdash;</span> blk/min</div>
+      <svg class="spark" id="sp-blocked" preserveAspectRatio="none"></svg></div>
+    <div class="card kpi ok"><h2>Allowed</h2><div class="n" id="k-allowed">0</div>
+      <div class="sub" id="s-allowed">&mdash;</div>
+      <svg class="spark" id="sp-allowed" preserveAspectRatio="none"></svg></div>
+    <div class="card kpi"><h2>Block ratio</h2><div class="n" id="k-ratio">0%</div>
+      <div class="sub">of all requests</div>
+      <svg class="spark" id="sp-ratio" preserveAspectRatio="none"></svg></div>
+  </div>
+
+  <div class="grid cards">
+    <div class="card"><h2>Blocked by reason</h2><div class="bars" id="reasons"></div></div>
+    <div class="card"><h2>Hits by phase</h2><div class="bars" id="phases"></div></div>
+    <div class="card"><h2>Top rules</h2><div class="bars" id="rules"></div></div>
+    <div class="card"><h2>Top source IPs (blocked)</h2><div class="bars" id="ips"></div></div>
+    <div class="card full"><h2>Blocks by country</h2><div class="bars" id="countries"></div></div>
+    <div class="card full">
+      <h2>Recent blocks</h2>
+      <div class="recent-wrap">
+        <table>
+          <thead><tr><th>Time</th><th>Source</th><th>Method</th><th>Path</th><th>Reason</th><th>Rule</th><th>Score</th><th>Status</th></tr></thead>
+          <tbody id="recent"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Read-only. Served same-origin by the WAF.</span>
+    <span class="flag" id="f-schema">schema &mdash;</span>
+    <span class="flag" id="f-endpoint"></span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var meta=document.createElement('meta'); meta.name='waf-metrics-path'; meta.content='demo'; document.head.appendChild(meta);
+  var total=184213, blocked=4021;
+  var rules=[["941100",812],["930110",402],["913100",221],["942100",88],["950010",5]];
+  var ips=[["203.0.113.7",640],["198.51.100.4",221],["192.0.2.55",97],["203.0.113.99",40],["185.220.101.5",22]];
+  var countries=[["RU",900],["CN",560],["BR",120],["US",40],["IN",31]];
+  var reasons={rule:1826,ip_blacklist:1290,rate_limit:640,country:233,asn:20,dns_blacklist:12};
+  var paths=[["/wp-login.php","rule","941100",15,403],["/etc/passwd%00","rule","930110",22,403],
+    ["/admin","ip_blacklist","",0,403],["/api/v1/login","rate_limit","",0,429],
+    ["/?q=%3Cscript%3E","rule","941100",18,403],["/.env","rule","930110",12,403],
+    ["/xmlrpc.php","country","",0,403],["/cgi-bin/.%2e/bin/sh","rule","913100",26,403]];
+  var cc=["RU","CN","BR","US","IN","DE","NL"], pool=["203.0.113.7","198.51.100.4","192.0.2.55","203.0.113.99","10.9.9.9","185.220.101.5","45.83.64.1"];
+  var recent=[]; function rnd(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+  function push(){ var p=paths[rnd(0,paths.length-1)];
+    recent.unshift({ts_ms:Date.now(),id:Math.random().toString(16).slice(2,10),ip:pool[rnd(0,pool.length-1)],
+      method:Math.random()<.5?"GET":"POST",path:p[0],reason:p[1],rule_id:p[2],score:p[3],status:p[4],country:cc[rnd(0,cc.length-1)]});
+    if(recent.length>256) recent.pop(); }
+  for(var i=0;i<6;i++) push();
+  window.__wafMetricsSource=function(){ var dq=rnd(6,34), db=rnd(0,4); total+=dq; blocked+=db;
+    if(db){ reasons.rule+=db; push(); }
+    return Promise.resolve({total_requests:total,blocked_requests:blocked,allowed_requests:total-blocked,
+      rule_hits:{},rule_hits_by_phase:{"1":3100,"2":900,"3":15,"4":6},geoip_blocked:233,
+      ip_blacklist_hits:1290,dns_blacklist_hits:12,rate_limiter_requests:total,rate_limiter_blocked_requests:640,version:"v0.4.8",
+      schema_version:2,server_time_ms:Date.now(),uptime_seconds:90000+Math.floor(performance.now()/1000),
+      top_rules:rules.map(function(r){return {id:r[0],hits:r[1]};}),
+      top_ips:{cap:50,distinct_seen:318,items:ips.map(function(r){return {ip:r[0],blocked:r[1]};})},
+      by_country:countries.map(function(r){return {country:r[0],blocked:r[1]};}),
+      blocked_by_reason:Object.assign({},reasons),recent:{cap:256,items:recent.slice(0,40)}}); };
+})();
+</script>
+<script>
+/* caddy-waf dashboard — behaviour only, decoupled from markup and styling.
+ *
+ * Modules (no build step, no dependencies):
+ *   config  — runtime config, read from the page (not hard-coded)
+ *   store   — client state: counter history + derived per-minute rates
+ *   fmt     — pure formatting helpers
+ *   charts  — hand-rolled SVG sparklines and CSS bars
+ *   view    — DOM rendering, one function per section
+ *   api     — the metrics source (swappable; the demo replaces just this)
+ *   app     — wiring: poll loop, controls, lifecycle
+ * The data source (api) is isolated so the same view renders live metrics or,
+ * in the docs demo, a generated sample — nothing else changes.
+ */
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+
+  const config = {
+    metricsPath: (document.querySelector('meta[name="waf-metrics-path"]') || {}).content || "",
+    histCap: 180,
+  };
+
+  const store = {
+    hist: [], lastUptime: null,
+    push(m) {
+      if (this.lastUptime != null && m.uptime_seconds != null && m.uptime_seconds < this.lastUptime) this.hist = [];
+      this.lastUptime = m.uptime_seconds;
+      this.hist.push({ t: m.server_time_ms || Date.now(), total: m.total_requests || 0, blocked: m.blocked_requests || 0, allowed: m.allowed_requests || 0 });
+      if (this.hist.length > config.histCap) this.hist.shift();
+    },
+    ratePerMin(key) {
+      const h = this.hist; if (h.length < 2) return null;
+      const dv = h[h.length - 1][key] - h[0][key], dt = (h[h.length - 1].t - h[0].t) / 1000;
+      return dt > 0 && dv >= 0 ? dv / dt * 60 : null;
+    },
+    series(key) {
+      const h = this.hist, out = [];
+      for (let i = 1; i < h.length; i++) { const dv = h[i][key] - h[i - 1][key], dt = (h[i].t - h[i - 1].t) / 1000; out.push(dt > 0 && dv >= 0 ? dv / dt : 0); }
+      return out;
+    },
+  };
+
+  const fmt = {
+    num(n) {
+      if (n == null) return "—"; n = Number(n);
+      if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
+      if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
+      if (n >= 1e3) return (n / 1e3).toFixed(1) + "k";
+      return n.toLocaleString();
+    },
+    esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); },
+    flag(cc) {
+      if (!cc || cc.length !== 2) return ""; const A = 0x1F1E6, up = cc.toUpperCase();
+      return String.fromCodePoint(A + up.charCodeAt(0) - 65) + String.fromCodePoint(A + up.charCodeAt(1) - 65);
+    },
+    uptime(u) { if (u == null) return "uptime —"; const d = Math.floor(u / 86400), h = Math.floor(u % 86400 / 3600), mi = Math.floor(u % 3600 / 60); return "uptime " + (d ? d + "d " : "") + (h || d ? h + "h " : "") + mi + "m"; },
+  };
+
+  const charts = {
+    spark(id, key) {
+      const svg = $(id), vals = store.series(key); svg.innerHTML = "";
+      if (vals.length < 1) return;
+      const W = 100, H = 34, pad = 2, n = vals.length, max = Math.max(1, ...vals);
+      let d = "";
+      for (let i = 0; i < n; i++) { const x = pad + (W - 2 * pad) * (n === 1 ? 0 : i / (n - 1)); const y = H - pad - (H - 2 * pad) * (vals[i] / max); d += (i ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1) + " "; }
+      const col = getComputedStyle(document.documentElement).getPropertyValue(id.includes("blocked") ? "--bad" : id.includes("allowed") ? "--ok" : "--accent").trim();
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.innerHTML = `<path d="${d}L${(W - pad).toFixed(1)},${H - pad} L${pad},${H - pad} Z" fill="${col}" opacity="0.12"/><path d="${d}" fill="none" stroke="${col}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`;
+    },
+    bars(id, items, { label, value, cls } = {}) {
+      const el = $(id);
+      if (!items || !items.length) { el.innerHTML = '<div class="empty">no data yet</div>'; return; }
+      const max = Math.max(1, ...items.map(value));
+      el.innerHTML = items.map((it) => {
+        const v = value(it), w = Math.max(2, (v / max) * 100), c = cls ? cls(it) : "";
+        return `<div class="row"><span class="lbl" title="${fmt.esc(label(it))}">${fmt.esc(label(it))}</span>` +
+          `<span class="track"><span class="fill ${c}" style="width:${w}%"></span></span>` +
+          `<span class="val">${fmt.num(v)}</span></div>`;
+      }).join("");
+    },
+  };
+
+  const view = {
+    header(m) {
+      $("ver").textContent = m.version || "—";
+      $("uptime").textContent = fmt.uptime(m.uptime_seconds);
+      $("f-schema").textContent = "schema " + (m.schema_version != null ? m.schema_version : "—");
+      $("f-endpoint").textContent = config.metricsPath ? "source " + config.metricsPath : "";
+    },
+    kpis(m) {
+      const total = m.total_requests || 0, blocked = m.blocked_requests || 0;
+      $("k-total").textContent = fmt.num(total);
+      $("k-blocked").textContent = fmt.num(blocked);
+      $("k-allowed").textContent = fmt.num(m.allowed_requests || 0);
+      $("k-ratio").textContent = total ? (blocked / total * 100).toFixed(blocked / total < 0.1 ? 1 : 0) + "%" : "0%";
+      const rt = store.ratePerMin("total"), rb = store.ratePerMin("blocked");
+      $("r-total").textContent = rt == null ? "—" : Math.round(rt);
+      $("r-blocked").textContent = rb == null ? "—" : Math.round(rb);
+      $("s-allowed").textContent = total ? fmt.num(total - blocked) + " passed" : "—";
+      charts.spark("sp-total", "total"); charts.spark("sp-blocked", "blocked"); charts.spark("sp-allowed", "allowed");
+    },
+    breakdowns(m) {
+      const reasons = Object.entries(m.blocked_by_reason || {}).map(([k, v]) => ({ k, v })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v);
+      charts.bars("reasons", reasons, { label: (x) => x.k, value: (x) => x.v, cls: (x) => x.k });
+      const ph = Object.entries(m.rule_hits_by_phase || {}).map(([k, v]) => ({ k: "phase " + k, v })).sort((a, b) => b.v - a.v);
+      charts.bars("phases", ph, { label: (x) => x.k, value: (x) => x.v });
+      charts.bars("rules", (m.top_rules || []).slice(0, 12), { label: (x) => x.id, value: (x) => x.hits });
+      charts.bars("ips", (((m.top_ips || {}).items) || []).slice(0, 12), { label: (x) => x.ip, value: (x) => x.blocked, cls: () => "ip_blacklist" });
+      charts.bars("countries", (m.by_country || []).slice(0, 16), { label: (x) => fmt.flag(x.country) + " " + x.country, value: (x) => x.blocked, cls: () => "country" });
+    },
+    recent(m) {
+      const items = (((m.recent || {}).items) || []), tb = $("recent");
+      if (!items.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">no blocks recorded yet</td></tr>'; return; }
+      tb.innerHTML = items.map((it) => {
+        const t = new Date(it.ts_ms || 0).toLocaleTimeString();
+        const src = `<span class="ip">${fmt.esc(it.ip)}</span>` + (it.country ? ` <span title="${fmt.esc(it.country)}">${fmt.flag(it.country)}</span>` : "");
+        return `<tr><td class="mono">${fmt.esc(t)}</td><td>${src}</td><td class="mono">${fmt.esc(it.method)}</td>` +
+          `<td class="path" title="${fmt.esc(it.path)}">${fmt.esc(it.path)}</td>` +
+          `<td><span class="pill ${fmt.esc(it.reason)}">${fmt.esc(it.reason)}</span></td>` +
+          `<td class="mono">${fmt.esc(it.rule_id || "")}</td><td class="val">${fmt.esc(it.score)}</td>` +
+          `<td class="status">${fmt.esc(it.status)}</td></tr>`;
+      }).join("");
+    },
+    render(m) { this.header(m); this.kpis(m); this.breakdowns(m); this.recent(m); },
+    live(cls, text) { const el = $("live"); el.className = "live " + cls; $("livetext").textContent = text; },
+    banner(msg) { const b = $("banner"); if (!msg) { b.className = "banner"; return; } b.textContent = msg; b.className = "banner show"; },
+  };
+
+  // The only server-coupled module. Returns a metrics object or throws.
+  const api = {
+    async fetchMetrics() {
+      const res = await fetch(config.metricsPath, { headers: { Accept: "application/json" }, cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    },
+  };
+
+  const app = {
+    timer: null, interval: 5000, paused: false,
+    async tick() {
+      if (!config.metricsPath) { view.live("err", "no endpoint"); view.banner("Metrics endpoint is not configured. Add `metrics_endpoint /waf_metrics` to the WAF block."); return; }
+      try {
+        const m = await (window.__wafMetricsSource || api.fetchMetrics)();
+        store.push(m); view.render(m); view.banner(""); view.live("on", "live");
+      } catch (e) { view.live("err", "disconnected"); view.banner("Cannot reach " + config.metricsPath + " — " + e.message + ". Showing last data."); }
+    },
+    schedule() { clearInterval(this.timer); if (!this.paused) this.timer = setInterval(() => this.tick(), this.interval); },
+    start() {
+      $("interval").addEventListener("change", (e) => { this.interval = Number(e.target.value) * 1000; this.schedule(); });
+      $("pause").addEventListener("click", (e) => {
+        this.paused = !this.paused; e.target.textContent = this.paused ? "Resume" : "Pause";
+        if (this.paused) { clearInterval(this.timer); view.live("", "paused"); } else { this.tick(); this.schedule(); }
+      });
+      this.tick(); this.schedule();
+    },
+  };
+
+  window.wafDashboard = { store, view, app }; // exposed for the demo to drive
+  app.start();
+})();
+
+</script>
+</body>
+</html>

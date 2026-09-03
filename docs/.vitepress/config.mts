@@ -133,6 +133,7 @@ export default defineConfig({
         collapsed: false,
         items: [
           { text: 'Dashboard', link: '/dashboard' },
+          { text: 'Live demo', link: '/demo' },
           { text: 'Metrics', link: '/metrics' },
           { text: 'Prometheus and Grafana', link: '/prometheus' },
           { text: 'ELK', link: '/caddy-waf-elk' },
