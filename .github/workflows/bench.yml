@@ -1,0 +1,47 @@
+name: Benchmarks
+
+# Hot-path benchmarks with a regression gate, so per-request latency and
+# allocations cannot silently drift. On a PR the current results are compared
+# against the base branch and the job fails on a large regression (#114).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bench-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.25'
+
+      - name: Benchmark this ref
+        run: go test -run='^$' -bench=. -benchmem -count=6 ./... | tee new.txt
+
+      - name: Compare against the base branch and gate
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          base="${{ github.base_ref }}"
+          git fetch --quiet origin "$base"
+          if ! git cat-file -e "origin/$base:bench_test.go" 2>/dev/null; then
+            echo "No baseline benchmarks on origin/$base yet — skipping the regression gate."
+            exit 0
+          fi
+          git worktree add --quiet /tmp/base "origin/$base"
+          ( cd /tmp/base && go test -run='^$' -bench=. -benchmem -count=6 ./... ) | tee old.txt
+          python3 .github/bench-gate.py old.txt new.txt
