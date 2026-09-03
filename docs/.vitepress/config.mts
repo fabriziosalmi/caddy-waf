@@ -124,6 +124,7 @@ export default defineConfig({
           { text: 'Blacklists', link: '/blacklists' },
           { text: 'Rate limiting', link: '/ratelimit' },
           { text: 'Country and ASN blocking', link: '/geoblocking' },
+          { text: 'Client IP & trusted proxies', link: '/client-ip' },
           { text: 'Dynamic updates', link: '/dynamicupdates' },
         ],
       },

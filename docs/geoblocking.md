@@ -27,12 +27,13 @@ If the configured MMDB file does not exist, the corresponding feature is **disab
 
 ## Source IP selection
 
-GeoIP lookups use `getClientIP` ([`helpers.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/helpers.go)):
-
-1. If `X-Forwarded-For` is present, the first comma-separated value is used **provided it parses as a valid IP**.
-2. Otherwise `r.RemoteAddr` is used.
-
-The host portion is then extracted (port stripped) and passed to the MMDB reader.
+GeoIP and ASN lookups use the **resolved client IP** under the `trusted_proxies`
+trust boundary: the connection peer by default, or the forwarded client when the
+peer is a configured trusted proxy. Behind a CDN you must set
+[`trusted_proxies`](/client-ip) (and optionally `client_ip_header`) or these
+checks will judge the proxy's address rather than the client's. See
+[Client IP & trusted proxies](/client-ip) for the full model and a Cloudflare
+example.
 
 > [!TIP]
 > **Private and unresolvable addresses.** `whitelist_countries` blocks anything it

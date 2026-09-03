@@ -40,7 +40,13 @@ The bucket key — the value used to count requests against the limit — depend
 
 ## Source IP
 
-The rate limiter uses the host portion of `r.RemoteAddr` (parsed by `net.SplitHostPort`). It does **not** consult `X-Forwarded-For`. If your deployment is behind a trusted reverse proxy that forwards the original client IP only via that header, place the WAF behind a Caddy upstream that rewrites `r.RemoteAddr`, or accept that all traffic shares the proxy's IP for rate-limit purposes.
+The bucket key's IP is the **resolved client IP** under the `trusted_proxies`
+trust boundary — the connection peer by default, or the forwarded client when
+the peer is a configured trusted proxy. Behind a CDN or reverse proxy, set
+[`trusted_proxies`](/client-ip) (and optionally `client_ip_header`) so each
+client is rate-limited on its own address; without it every request through the
+proxy shares the proxy's IP and collapses into one bucket. See
+[Client IP & trusted proxies](/client-ip).
 
 ## Behaviour
 
