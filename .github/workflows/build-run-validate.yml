@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Dependencies
         run: |
@@ -28,7 +28,7 @@ jobs:
           sudo apt install -y wget git build-essential curl python3 python3-pip
 
       - name: Install Go 1.25
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.25'
             
@@ -72,7 +72,7 @@ jobs:
 
       - name: Cache Python Dependencies
         id: cache-pip
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/pip
           key: pip-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}

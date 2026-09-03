@@ -21,10 +21,10 @@ jobs:
             goarch: arm64 # Windows on arm64 is not common, remove it.
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.25' # Use your desired go version
 
@@ -42,7 +42,7 @@ jobs:
           tar czf caddy-waf-${GOOS}-${GOARCH}.tar.gz caddy-waf-${GOOS}-${GOARCH}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: caddy-waf-${{ matrix.goos }}-${{ matrix.goarch }}
           path: caddy-waf-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
@@ -52,9 +52,11 @@ jobs:
     needs: build-and-release # Ensure all builds complete before creating release
     permissions:
       contents: write
+      id-token: write   # mint the provenance attestation
+      attestations: write
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Extract Tag Name
         id: extract_tag
@@ -62,7 +64,7 @@ jobs:
         run: echo "TAG_NAME=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_OUTPUT
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
 
       - name: Release via GH CLI
         if: startsWith(github.ref, 'refs/tags/')
@@ -78,3 +80,27 @@ jobs:
           # Try to create release with assets. If it fails (exists), upload assets.
           gh release create "$TAG_NAME" *.tar.gz --title "$TAG_NAME" --generate-notes || \
           gh release upload "$TAG_NAME" *.tar.gz --clobber
+
+      # Software Bill of Materials for the release (SPDX), attached as an asset.
+      - name: Generate SBOM
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        with:
+          format: spdx-json
+          output-file: caddy-waf-sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Attach SBOM to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ steps.extract_tag.outputs.TAG_NAME }}
+        run: gh release upload "$TAG_NAME" caddy-waf-sbom.spdx.json --clobber
+
+      # SLSA build provenance for the release binaries.
+      - name: Attest build provenance
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-path: "*.tar.gz"
