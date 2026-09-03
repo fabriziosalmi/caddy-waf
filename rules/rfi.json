@@ -134,7 +134,7 @@
   {
     "id":"rfi-open-basedir-bypass",
      "phase":2,
-    "pattern":"(?i)(?:file:\/\/|\.\.\\/){5,}",
+    "pattern":"(?i)(?:file:\/\/|\\.\\.\\/){5,}",
     "targets": ["URI","ARGS", "HEADERS"],
     "severity":"MEDIUM",
     "action":"log",
