@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.5] - 2026-09-03
+
+### Security
+- **`trusted_proxies`: `X-Forwarded-For` is no longer trusted by default.** The GeoIP country/ASN checks previously honoured `X-Forwarded-For` unconditionally, so a client reaching the WAF directly could spoof it to move its apparent IP past those filters. Client-IP resolution now has a trust boundary: forwarding headers are honoured **only when the immediate peer is a configured trusted proxy**, otherwise the peer address is used and the header is ignored. ([#163](https://github.com/fabriziosalmi/caddy-waf/pull/163), closes [#94](https://github.com/fabriziosalmi/caddy-waf/issues/94))
+
+### Added
+- **`trusted_proxies`** (bare IPs, CIDR ranges, or `private_ranges`) — the peers allowed to speak for their clients. When the peer is trusted, the real client is taken from **`client_ip_header`** (e.g. `CF-Connecting-IP`) if set, else by walking `X-Forwarded-For` right-to-left to the first non-trusted address (resolving a trusted proxy chain). The resolved client IP now feeds the **rate limiter** (so a CDN's edges no longer share one bucket), the **GeoIP country/ASN** filters and the **`REMOTE_IP`** rule target. The IP blacklist is unchanged (peer + all hops). See [Client IP & trusted proxies](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/client-ip.md).
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.4.5`.
+- `REMOTE_IP` now yields a bare IP (no port), consistent with the resolved client IP.
+- Removed the old `getClientIP` helper that trusted `X-Forwarded-For` unconditionally.
+
+### Migration
+This changes a default in the **secure** direction. **If you run behind a CDN or reverse proxy and rely on filtering by the real client's country/ASN — or on per-client rate limiting, or `REMOTE_IP` rules — set `trusted_proxies`** (and, for header-based CDNs like Cloudflare, `client_ip_header`). Without it, those controls now judge the proxy's address instead of the client's. Full guidance and a Cloudflare example: [docs/client-ip.md](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/client-ip.md).
+
 ## [v0.4.4] - 2026-09-03
 
 ### Fixed
