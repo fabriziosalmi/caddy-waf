@@ -123,6 +123,31 @@ error blocks by default.
 | `geoip_fail_open` | **false** (fail-closed) | A GeoIP lookup error blocks unless this is set. |
 | `X-Forwarded-For` trust | **not trusted** | Header-derived client IP is honoured only from configured `trusted_proxies` — see [Client IP](/client-ip). |
 
+## Evasion coverage
+
+A systematic evasion corpus (`evasion_test.go`, issue #112) fires known-malicious
+payloads through the WAF wrapped in bypass techniques and asserts they are still
+blocked. It doubles as a regression guard — a rule change that lets one through
+fails CI. What the shipped `rules.json` handles:
+
+- **Percent-encoding** — decoded one layer before matching, and rules also match
+  common encoded forms directly.
+- **Double percent-encoding** (`%252e`) and **`%uXXXX` unicode escapes** — caught
+  by meta-rules that treat those encodings as suspicious in their own right.
+- **Case folding** — patterns are case-insensitive (`sCrIpT`, `uNiOn`).
+- **SQL comment / whitespace insertion** (`UNION/**/SELECT`, padded spaces) —
+  whitespace is compressed and comment sequences are covered.
+- **Null-byte truncation** (`%00`) — nulls are stripped before matching.
+- **Delivery channel** — SQLi, XSS and command-injection payloads are inspected
+  in both the query string and the request body.
+
+**Path traversal in the body**: `path-traversal` covers the URI and headers;
+`path-traversal-body` adds the request body but fires **only** on high-confidence
+input — a repeated `../` (≥2) or a direct sensitive-file path
+(`etc/passwd`, `/proc/self/environ`, …) — so a single legitimate `../` in a body
+is not blocked. Raw-body traversal that is neither repeated nor a known sensitive
+path is intentionally out of scope, to keep false positives off large bodies.
+
 ## Related
 
 - [Attack coverage](/attacks) — what the shipped rules detect.

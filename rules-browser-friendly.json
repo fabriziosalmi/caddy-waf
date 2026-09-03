@@ -167,6 +167,18 @@
     "description": "Block path traversal attempts and direct access to sensitive files (Target: URI and Headers). Improved and more aggressive pattern matching, including more obfuscation techniques."
   },
   {
+    "id": "path-traversal-body",
+    "phase": 2,
+    "pattern": "(?i)(?:(?:\\.\\.[/\\\\]){2,}|(?:\\.\\.(?:%2f|%5c)){2,}|(?:%2e%2e(?:%2f|%5c)){2,}|(?:%252e%252e(?:%2f|%5c)){2,}|etc(?:/|%2f)(?:passwd|shadow|hosts)|(?:proc|sys)(?:/|%2f)(?:self(?:/|%2f))?(?:environ|cmdline)|boot(?:/|%2f)grub(?:/|%2f)grub\\.cfg)",
+    "targets": [
+      "BODY"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 9,
+    "description": "Block high-confidence path traversal / LFI in the request body (form fields, JSON): '../' repeated (>=2) or direct access to a sensitive file. Conservative on purpose -- a single '../' does not fire -- to avoid false positives on legitimate relative paths in bodies. Complements path-traversal, which covers URI and HEADERS."
+  },
+  {
     "id": "rce-commands-expanded",
     "phase": 2,
     "pattern": "(?i)(?:\\b(?:cat|base64|whoami|echo|curl|wget|bash|sh|python|perl|ls|id|ping|nslookup|ipconfig|ifconfig|powershell)\\b)",
