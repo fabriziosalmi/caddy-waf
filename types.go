@@ -183,6 +183,10 @@ type Middleware struct {
 
 	ruleHits        sync.Map `json:"-"`
 	MetricsEndpoint string   `json:"metrics_endpoint,omitempty"`
+	// DashboardEndpoint, when set (and the binary is built with the `with_ui`
+	// tag), serves the built-in read-only dashboard at this path, same-origin
+	// with metrics_endpoint. Opt-in at two levels: build tag + this directive.
+	DashboardEndpoint string `json:"dashboard_endpoint,omitempty"`
 
 	configLoader          *ConfigLoader
 	blacklistLoader       *BlacklistLoader

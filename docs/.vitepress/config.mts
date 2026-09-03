@@ -132,6 +132,7 @@ export default defineConfig({
         text: 'Observability',
         collapsed: false,
         items: [
+          { text: 'Dashboard', link: '/dashboard' },
           { text: 'Metrics', link: '/metrics' },
           { text: 'Prometheus and Grafana', link: '/prometheus' },
           { text: 'ELK', link: '/caddy-waf-elk' },

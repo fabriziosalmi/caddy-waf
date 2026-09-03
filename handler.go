@@ -97,6 +97,12 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	//
 	// It sits after Phase 1 and 2 on purpose: the IP blacklist, the rate limiter
 	// and the request rules still apply, so the endpoint can be protected.
+	if m.isDashboardRequest(r) {
+		m.incrementAllowedRequestsMetric()
+		m.logRequestCompletion(logID, state)
+		return m.serveDashboard(w, r)
+	}
+
 	if m.isMetricsRequest(r) {
 		m.incrementAllowedRequestsMetric()
 		m.logRequestCompletion(logID, state)

@@ -35,6 +35,18 @@ func (cl *ConfigLoader) parseMetricsEndpoint(d *caddyfile.Dispenser, m *Middlewa
 	return nil
 }
 
+// parseDashboard parses the dashboard directive: the path at which the built-in
+// read-only dashboard is served. Only effective in a binary built with the
+// `with_ui` tag; otherwise the path returns a short notice.
+func (cl *ConfigLoader) parseDashboard(d *caddyfile.Dispenser, m *Middleware) error {
+	if !d.NextArg() {
+		return d.ArgErr()
+	}
+	m.DashboardEndpoint = d.Val()
+	cl.logger.Info("Dashboard endpoint configured", zap.String("endpoint", m.DashboardEndpoint))
+	return nil
+}
+
 // parseLogPath parses the log_path directive.
 func (cl *ConfigLoader) parseLogPath(d *caddyfile.Dispenser, m *Middleware) error {
 	if !d.NextArg() {
@@ -149,6 +161,7 @@ func (cl *ConfigLoader) UnmarshalCaddyfile(d *caddyfile.Dispenser, m *Middleware
 
 	directiveHandlers := map[string]func(d *caddyfile.Dispenser, m *Middleware) error{
 		"metrics_endpoint":       cl.parseMetricsEndpoint,
+		"dashboard":              cl.parseDashboard,
 		"log_path":               cl.parseLogPath,
 		"rate_limit":             cl.parseRateLimit,
 		"block_countries":        cl.parseCountryBlockDirective(true),  // Use directive-specific helper
@@ -201,6 +214,9 @@ func (cl *ConfigLoader) parseRuleFile(d *caddyfile.Dispenser, m *Middleware) err
 	ruleFile := d.Val()
 	m.RuleFiles = append(m.RuleFiles, ruleFile)
 
+	if m.DashboardEndpoint != "" && !strings.HasPrefix(m.DashboardEndpoint, "/") {
+		return d.Err("dashboard path must start with a leading '/'")
+	}
 	if m.MetricsEndpoint != "" && !strings.HasPrefix(m.MetricsEndpoint, "/") {
 		return d.Err("metrics_endpoint must start with a leading '/'")
 	}
