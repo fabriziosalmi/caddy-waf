@@ -3,6 +3,7 @@ package caddywaf
 import (
 	"regexp"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/oschwald/maxminddb-golang"
@@ -187,6 +188,9 @@ type Middleware struct {
 	// tag), serves the built-in read-only dashboard at this path, same-origin
 	// with metrics_endpoint. Opt-in at two levels: build tag + this directive.
 	DashboardEndpoint string `json:"dashboard_endpoint,omitempty"`
+	// PrometheusEndpoint, when set, serves the WAF counters in the Prometheus
+	// text exposition format at this path (native scraping, no exporter needed).
+	PrometheusEndpoint string `json:"prometheus_endpoint,omitempty"`
 
 	configLoader          *ConfigLoader
 	blacklistLoader       *BlacklistLoader
@@ -210,6 +214,11 @@ type Middleware struct {
 	recentBlocks    []blockRecord    // bounded ring, oldest first
 	topIPsBlocked   map[string]int64 // bounded
 	blockedByReason map[string]int64
+
+	// Request-duration histogram (Prometheus), updated lock-free on the hot path.
+	latencyBuckets [numLatencyBuckets]atomic.Uint64
+	latencySumBits atomic.Uint64
+	latencyCount   atomic.Uint64
 
 	rateLimiterBlockedRequests int64        // Add rate limiter blocked requests metric
 	muRateLimiterMetrics       sync.RWMutex // Mutex to protect rate limiter metrics

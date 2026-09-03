@@ -47,6 +47,17 @@ func (cl *ConfigLoader) parseDashboard(d *caddyfile.Dispenser, m *Middleware) er
 	return nil
 }
 
+// parsePrometheusEndpoint parses the prometheus_endpoint directive: the path at
+// which the WAF counters are served in the Prometheus text exposition format.
+func (cl *ConfigLoader) parsePrometheusEndpoint(d *caddyfile.Dispenser, m *Middleware) error {
+	if !d.NextArg() {
+		return d.ArgErr()
+	}
+	m.PrometheusEndpoint = d.Val()
+	cl.logger.Info("Prometheus endpoint configured", zap.String("endpoint", m.PrometheusEndpoint))
+	return nil
+}
+
 // parseLogPath parses the log_path directive.
 func (cl *ConfigLoader) parseLogPath(d *caddyfile.Dispenser, m *Middleware) error {
 	if !d.NextArg() {
@@ -162,6 +173,7 @@ func (cl *ConfigLoader) UnmarshalCaddyfile(d *caddyfile.Dispenser, m *Middleware
 	directiveHandlers := map[string]func(d *caddyfile.Dispenser, m *Middleware) error{
 		"metrics_endpoint":       cl.parseMetricsEndpoint,
 		"dashboard":              cl.parseDashboard,
+		"prometheus_endpoint":    cl.parsePrometheusEndpoint,
 		"log_path":               cl.parseLogPath,
 		"rate_limit":             cl.parseRateLimit,
 		"block_countries":        cl.parseCountryBlockDirective(true),  // Use directive-specific helper
@@ -216,6 +228,9 @@ func (cl *ConfigLoader) parseRuleFile(d *caddyfile.Dispenser, m *Middleware) err
 
 	if m.DashboardEndpoint != "" && !strings.HasPrefix(m.DashboardEndpoint, "/") {
 		return d.Err("dashboard path must start with a leading '/'")
+	}
+	if m.PrometheusEndpoint != "" && !strings.HasPrefix(m.PrometheusEndpoint, "/") {
+		return d.Err("prometheus_endpoint must start with a leading '/'")
 	}
 	if m.MetricsEndpoint != "" && !strings.HasPrefix(m.MetricsEndpoint, "/") {
 		return d.Err("metrics_endpoint must start with a leading '/'")

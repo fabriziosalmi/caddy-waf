@@ -82,6 +82,7 @@ The full list is the `directiveHandlers` map in [`config.go`](https://github.com
 | Directive | Arguments | Default | Description |
 |---|---|---|---|
 | `metrics_endpoint` | `<path>` | unset | URL path for the JSON metrics document (must start with `/`). When unset, no metrics endpoint is exposed. |
+| `prometheus_endpoint` | `<path>` | unset | URL path serving the WAF counters and a request-duration histogram in the **Prometheus** text exposition format (must start with `/`). Scrape it directly — no exporter needed. See [Prometheus](/prometheus). |
 | `log_path` | `<file>` | `debug.json` (Caddyfile) / `log.json` (Provision fallback) | File path for the JSON log sink. The middleware always writes to stdout in addition. |
 | `log_severity` | `debug` \| `info` \| `warn` \| `error` | `info` | Minimum log level for the WAF logger. |
 | `log_json` | _(no args)_ | off | Enable JSON-formatted logs. Sets the `LogJSON` boolean to `true`. |
