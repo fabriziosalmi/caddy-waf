@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.7] - 2026-09-03
+
+### Added
+- **Built-in dashboard (opt-in).** A read-only web dashboard rendering the metrics payload — requests allowed/blocked with client-derived rates, blocked-by-reason and per-phase breakdowns, top rules, top offending IPs, blocks by country, and a live tail of recent blocked requests. Served by the WAF itself, same-origin with `metrics_endpoint`; a single self-contained page with **no vendored libraries and no third-party runtime requests**. Off unless enabled at two levels: the `with_ui` build tag **and** the `dashboard <path>` directive. Read-only — it cannot mutate WAF state — and carries no auth of its own, so protect it with Caddy (see [docs/dashboard.md](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/dashboard.md)). ([#168](https://github.com/fabriziosalmi/caddy-waf/pull/168), [#143](https://github.com/fabriziosalmi/caddy-waf/issues/143))
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.4.7`.
+- Removed the old, unwired `ui/` (a page hardcoding `localhost:8080` plus ~1 MB of vendored chart.js and font-awesome).
+
 ## [v0.4.6] - 2026-09-03
 
 ### Added
