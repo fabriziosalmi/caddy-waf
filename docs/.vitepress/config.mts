@@ -144,6 +144,7 @@ export default defineConfig({
         collapsed: false,
         items: [
           { text: 'Attack coverage', link: '/attacks' },
+          { text: 'Security posture', link: '/security' },
           { text: 'Testing', link: '/testing' },
           { text: 'Traffic generator', link: '/caddytest' },
           { text: 'Helper scripts', link: '/scripts' },
