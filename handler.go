@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -21,6 +22,8 @@ type (
 // handler.go
 func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	logID := uuid.New().String()
+	reqStart := time.Now()
+	defer func() { m.observeLatency(time.Since(reqStart).Seconds()) }()
 
 	// Add panic recovery to catch and log panics
 	defer func() {
@@ -97,6 +100,12 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	//
 	// It sits after Phase 1 and 2 on purpose: the IP blacklist, the rate limiter
 	// and the request rules still apply, so the endpoint can be protected.
+	if m.isPrometheusRequest(r) {
+		m.incrementAllowedRequestsMetric()
+		m.logRequestCompletion(logID, state)
+		return m.handlePrometheusRequest(w, r)
+	}
+
 	if m.isDashboardRequest(r) {
 		m.incrementAllowedRequestsMetric()
 		m.logRequestCompletion(logID, state)

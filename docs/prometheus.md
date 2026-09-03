@@ -1,8 +1,31 @@
 # Prometheus and Grafana
 
-The WAF exposes a JSON metrics document at the `metrics_endpoint` path (see [metrics.md](metrics.md)). It does **not** speak the Prometheus exposition format directly. To scrape the metrics with Prometheus, run a small exporter that polls the JSON endpoint and re-publishes the values as Prometheus gauges.
+The WAF speaks Prometheus **natively**. Set `prometheus_endpoint` and Prometheus can scrape it directly — the counters plus a request-duration histogram, in the text exposition format, no exporter needed.
 
-This page describes one such exporter. The same approach generalises to any pull-based metrics system.
+```caddyfile
+waf {
+    rule_file rules.json
+    prometheus_endpoint /metrics
+}
+```
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: caddy-waf
+    static_configs:
+      - targets: ["your-host:port"]
+    metrics_path: /metrics
+```
+
+The series are prefixed `caddywaf_` — `caddywaf_total_requests`, `caddywaf_blocked_requests`, `caddywaf_rule_hits{rule_id=…}`, `caddywaf_blocked_by_reason{reason=…}`, `caddywaf_blocks_by_country{country=…}`, and the `caddywaf_request_duration_seconds` histogram. The counters are **process-local** and reset on restart (use `rate()`/`increase()`, which handle a reset as a counter drop).
+
+> [!TIP]
+> Protect `prometheus_endpoint` the same way as the dashboard and metrics endpoint — it exposes operational detail. Put Caddy `basic_auth`/`forward_auth` in front, or keep it on an internal listener.
+
+## Alternative: a JSON exporter
+
+If you prefer to scrape the [JSON `/waf_metrics`](metrics.md) document instead (for a pull-based setup that already polls JSON), the exporter below polls it and re-publishes the values.
 
 ## A note on counter semantics
 
