@@ -113,9 +113,8 @@ The categories below correspond to the bundled rule sets. Each item lists the fi
 - **Patterns detect**: User-Agent strings emitted by known scanners (Nikto, sqlmap, Nmap, Nessus, OpenVAS, Burp Suite, Nuclei, …).
 
 ## SpiderLabs / Trustwave Rules
-- **Files**: [`rules/spiderlabs.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules/spiderlabs.json).
-- **Targets**: various.
-- **Patterns detect**: a curated subset of patterns derived from the SpiderLabs / OWASP-CRS sources.
+- **Not shipped as a bundle.** An earlier `rules/spiderlabs.json` was a raw ModSecurity CRS export whose `@rx`/`@eq`/`@pmFromFile` operator syntax this engine does not interpret, so its rules never matched real traffic; it was removed in the #172 rule audit.
+- **Generate your own instead**: [`get_spiderlabs_rules.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/get_spiderlabs_rules.py) keeps only CRS `@rx` (regex) rules and strips the operator, producing an RE2-compatible `spiderlabs_rules.json` you can point `rule_file` at. Non-regex CRS operators (`@detectSQLi`, `@pmFromFile`, …) are skipped because caddy-waf matches patterns with Go's RE2, not the ModSecurity operator set.
 
 ---
 

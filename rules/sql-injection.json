@@ -70,16 +70,6 @@
          "description": "Log attempts using string concatenation."
     },
     {
-        "id": "sqli-quoted-injection",
-       "phase": 2,
-        "pattern": "(?i)(['\"])(?:\\s*\\w+\\s*\\1\\s*=\\s*\\1\\s*\\w*\\s*\\1|\\s*\\d+\\s*(?:=|[<>]=?|!=)\\s*\\d+\\s*\\1|\\s*\\1)(?!\\s*\\1)",
-        "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 7,
-         "description": "Block quoted SQLi attempts with logic or comparisons."
-    },
-    {
         "id":"sqli-alternative-encodings",
        "phase":2,
        "pattern":"(?i)(?:%27|%22|%2527|%2522|%u0027|%u0022|\\x27|\\x22)",

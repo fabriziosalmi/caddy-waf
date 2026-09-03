@@ -3,6 +3,7 @@ package caddywaf
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
 
@@ -19,23 +20,34 @@ func loadRuleFile(t *testing.T, path string) []Rule {
 	return rules
 }
 
-// TestBundledRulePatternsCompile guards the rule files listed below against RE2
-// breakage: the curated bundles plus the modular files audited for RE2
-// compatibility (rules/ssrf.json, rules/authentication.json). RE2 rejects
-// lookbehind/lookahead and backreferences, so a rule that needs them -- as the
-// removed auth-session-cookie-not-http-only did (see #161) -- fails to load.
+// TestBundledRulePatternsCompile guards every shipped rule bundle against the
+// two ways a bundle silently stops loading: invalid JSON, and a pattern RE2
+// cannot compile (RE2 has no lookbehind/lookahead or backreferences, and caps
+// repeat counts at 1000). It now covers the curated top-level files AND every
+// rules/*.json bundle by glob, so a newly-added or edited bundle cannot
+// reintroduce the breakage the #172 audit cleaned up.
 //
-// It is deliberately NOT run over every rules/*.json bundle: several of the
-// other modular files carry invalid JSON or RE2-incompatible patterns, tracked
-// for a full audit in #172. Add a file here once it is clean.
+// The audit (#172) fixed invalid JSON in lfi.json/rfi.json, rewrote
+// data-validation's `^.{5000,}$` (over the RE2 repeat cap) as concatenated
+// `.{1000}` runs, removed backreference rules from hpp.json/sql-injection.json,
+// and deleted rules/spiderlabs.json -- a raw ModSecurity CRS dump whose `@rx`/
+// `@eq`/`@pmFromFile` operator syntax this engine does not interpret.
 func TestBundledRulePatternsCompile(t *testing.T) {
-	for _, path := range []string{
-		"rules.json", "rules-browser-friendly.json",
-		"rules/ssrf.json", "rules/authentication.json",
-	} {
-		for _, r := range loadRuleFile(t, path) {
+	bundles, err := filepath.Glob("rules/*.json")
+	require.NoError(t, err)
+	require.NotEmpty(t, bundles, "expected modular rule bundles under rules/")
+	paths := append([]string{"rules.json", "rules-browser-friendly.json"}, bundles...)
+
+	for _, path := range paths {
+		rules := loadRuleFile(t, path) // fails the test on invalid JSON
+		seen := map[string]bool{}
+		for _, r := range rules {
 			_, err := regexp.Compile(r.Pattern)
-			require.NoErrorf(t, err, "%s: rule %q pattern must compile", path, r.ID)
+			require.NoErrorf(t, err, "%s: rule %q pattern must compile under RE2", path, r.ID)
+			// The loader rejects a file outright on a duplicate ID, so a
+			// duplicate makes the whole bundle unloadable, not just one rule.
+			require.Falsef(t, seen[r.ID], "%s: duplicate rule ID %q", path, r.ID)
+			seen[r.ID] = true
 		}
 	}
 }

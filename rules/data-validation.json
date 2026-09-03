@@ -43,7 +43,7 @@
   {
         "id":"data-validation-long-string",
         "phase": 2,
-        "pattern":"^.{5000,}$",
+        "pattern":"^.{1000}.{1000}.{1000}.{1000}.{1000}",
          "targets":["ARGS","BODY"],
          "severity":"LOW",
          "action":"log",

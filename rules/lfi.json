@@ -22,7 +22,7 @@
   {
         "id": "lfi-absolute-paths",
         "phase": 2,
-        "pattern": "(?i)^(?:(?:/\\w+)+)(?:(?:/\\w+)?)+?\\.[\w]+$",
+        "pattern": "(?i)^(?:(?:/\\w+)+)(?:(?:/\\w+)?)+?\\.[\\w]+$",
         "targets": ["URI", "ARGS", "HEADERS"],
          "severity": "MEDIUM",
         "action": "log",

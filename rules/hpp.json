@@ -19,16 +19,6 @@
         "score": 3,
          "description": "Log multiple parameters with array like syntax which might indicate HPP"
       },
-    {
-         "id": "hpp-parameter-combining",
-        "phase": 2,
-         "pattern":"(?i)(?:(\\w+)=.*?&\\1=)",
-        "targets":["URI","ARGS"],
-        "severity": "MEDIUM",
-         "action":"log",
-        "score": 4,
-         "description":"Log same parameters with different values which might indicate HPP"
-     },
      {
        "id":"hpp-encoded-parameters",
        "phase":2,
