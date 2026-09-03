@@ -1,8 +1,8 @@
 # Built-in dashboard
 
-A read-only web dashboard for a live view of what the WAF is doing — requests allowed vs blocked, block rate, top rules, top offending IPs, per-country and per-phase breakdowns, and a tail of the most recent blocked requests. It is **served by the WAF itself**, same-origin with the metrics endpoint: no external stack, no CDN, no third-party runtime requests, one self-contained page.
+A read-only web dashboard for a live view of what the WAF is doing — requests allowed vs blocked, block rate, top rules, top offending IPs, per-country and per-phase breakdowns, and a tail of the most recent blocked requests. It is **served by the WAF itself**, same-origin with the metrics endpoint: no external stack, no CDN, no third-party runtime requests. The page is modular — structure (`ui/index.html`), style (`ui/dashboard.css`) and behaviour (`ui/dashboard.js`, split into decoupled config/store/view/api modules) are separate embedded files, served beneath the dashboard path.
 
-Implementation: [`dashboard.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/dashboard.go) and [`ui/index.html`](https://github.com/fabriziosalmi/caddy-waf/blob/main/ui/index.html).
+Implementation: [`dashboard.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/dashboard.go) and [`ui/`](https://github.com/fabriziosalmi/caddy-waf/tree/main/ui).
 
 ## Opt-in at two levels
 
@@ -72,4 +72,4 @@ Everything comes from the metrics payload ([schema 2](/metrics#dashboard-fields-
 - **Top rules**, **top offending source IPs**, **blocks by country**.
 - **Recent blocks** — a live tail of the most recent blocked requests: time, source IP + country, method, path, reason, rule id, score, status.
 
-The page auto-refreshes (2–30s, selectable) and can be paused; it degrades gracefully to the last data if the endpoint becomes unreachable.
+The theme follows the viewer's system light/dark preference automatically (and honours an explicit override). The page auto-refreshes (2–30s, selectable) and can be paused; it degrades gracefully to the last data if the endpoint becomes unreachable.
