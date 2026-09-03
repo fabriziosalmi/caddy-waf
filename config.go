@@ -506,7 +506,7 @@ func (cl *ConfigLoader) parseGeoIPFailOpen(d *caddyfile.Dispenser, m *Middleware
 		case "false", "off", "no", "0":
 			value = false
 		default:
-			return d.Errf("invalid geoip_fail_open value '%s': expected true/false", d.Val())
+			return d.Errf("invalid geoip_fail_open value '%s': expected true/false (also accepts on/off, yes/no, 1/0)", d.Val())
 		}
 	}
 	m.GeoIPFailOpen = value
