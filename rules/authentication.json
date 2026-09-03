@@ -59,15 +59,5 @@
         "action":"log",
         "score": 3,
         "description":"Log login requests that do not contain login form fields"
-     },
-  {
-     "id":"auth-session-cookie-not-http-only",
-      "phase":2,
-       "pattern":"(?i)(?:session|sid|token|auth)[^;]*?(?<!HttpOnly)(?=[;]|$)",
-      "targets": ["HEADERS:Set-Cookie"],
-      "severity": "MEDIUM",
-       "action": "log",
-      "score": 4,
-     "description": "Log session cookies that are not marked as HttpOnly"
-  }
+     }
 ]
