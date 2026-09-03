@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.6] - 2026-09-03
+
+### Added
+- **Dashboard metrics backend (M1).** `/waf_metrics` gains a `schema_version` (2) and a set of **back-compatible** fields for the planned built-in dashboard ([#143](https://github.com/fabriziosalmi/caddy-waf/issues/143)): `recent` — a bounded ring (256) of the most recent **blocked** decisions (timestamp, log id, client IP, method, path, reason, rule id, status, score, country); `top_ips` — the top offending client IPs by block count (bounded); `by_country` — blocks per ISO country (wiring up the previously unused per-country counter); `blocked_by_reason`; `top_rules`; and `server_time_ms` + `uptime_seconds` so a client can derive rates by diffing snapshots. Recorded once per block under a single mutex; all sections are bounded. Every pre-existing metrics field is unchanged. See [docs/metrics.md](https://github.com/fabriziosalmi/caddy-waf/blob/main/docs/metrics.md#dashboard-fields-schema-2).
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.4.6`.
+
 ## [v0.4.5] - 2026-09-03
 
 ### Security
