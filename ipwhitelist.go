@@ -36,6 +36,14 @@ var privateRanges = []string{
 // silently drops an entry fails in the dangerous direction for the operator
 // (their address is not exempt) and there is no reason to guess.
 func buildIPWhitelist(entries []string) (*iptrie.Trie, []string, error) {
+	return buildIPTrie(entries, "whitelist_ip")
+}
+
+// buildIPTrie compiles IP/CIDR entries (and the private_ranges token) into a
+// prefix trie, returning the expanded entry list. An unparseable entry is an
+// error, not a warning: silently dropping one fails in the dangerous direction.
+// directive names the source for the error message.
+func buildIPTrie(entries []string, directive string) (*iptrie.Trie, []string, error) {
 	trie := iptrie.NewTrie()
 	var expanded []string
 
@@ -58,7 +66,7 @@ func buildIPWhitelist(entries []string) (*iptrie.Trie, []string, error) {
 		}
 		prefix, err := netip.ParsePrefix(cidr)
 		if err != nil {
-			return nil, nil, fmt.Errorf("invalid whitelist_ip entry %q: %w", entry, err)
+			return nil, nil, fmt.Errorf("invalid %s entry %q: %w", directive, entry, err)
 		}
 		trie.Insert(prefix, nil)
 	}

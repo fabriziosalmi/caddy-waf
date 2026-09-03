@@ -130,7 +130,16 @@ type Middleware struct {
 	// IPWhitelistFile is an optional file of IP/CIDR entries exempt from the
 	// IP-reputation checks, one per line (# comments allowed). It is hot-reloaded
 	// on change, the whitelist counterpart to ip_blacklist_file. See whitelist_file.
-	IPWhitelistFile  string              `json:"ip_whitelist_file,omitempty"`
+	IPWhitelistFile string `json:"ip_whitelist_file,omitempty"`
+	// TrustedProxies is the trust boundary for X-Forwarded-For: forwarding
+	// headers are honoured only when the immediate peer is within this set (bare
+	// IPs, CIDR ranges, or the token private_ranges). Empty means the peer
+	// address is always used and forwarding headers are ignored. See #94.
+	TrustedProxies []string `json:"trusted_proxies,omitempty"`
+	// ClientIPHeader, when set (e.g. CF-Connecting-IP), is consulted for the
+	// client IP instead of X-Forwarded-For once the peer is a trusted proxy.
+	ClientIPHeader   string              `json:"client_ip_header,omitempty"`
+	trustedProxies   *iptrie.Trie        `json:"-"`
 	DNSBlacklistFile string              `json:"dns_blacklist_file"`
 	AnomalyThreshold int                 `json:"anomaly_threshold"`
 	CountryBlacklist CountryAccessFilter `json:"country_blacklist"`

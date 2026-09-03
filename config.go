@@ -160,6 +160,8 @@ func (cl *ConfigLoader) UnmarshalCaddyfile(d *caddyfile.Dispenser, m *Middleware
 		"ip_blacklist_file":      cl.parseBlacklistFileDirective(true), // Use directive-specific helper
 		"whitelist_ip":           cl.parseWhitelistIP,
 		"whitelist_file":         cl.parseWhitelistFile,
+		"trusted_proxies":        cl.parseTrustedProxies,
+		"client_ip_header":       cl.parseClientIPHeader,
 		"dns_blacklist_file":     cl.parseBlacklistFileDirective(false), // Use directive-specific helper
 		"anomaly_threshold":      cl.parseAnomalyThreshold,
 		"custom_response":        cl.parseCustomResponse,
@@ -530,6 +532,33 @@ func (cl *ConfigLoader) parseWhitelistFile(d *caddyfile.Dispenser, m *Middleware
 	}
 	m.IPWhitelistFile = d.Val()
 	cl.logger.Info("IP whitelist file configured", zap.String("path", m.IPWhitelistFile))
+	return nil
+}
+
+// parseTrustedProxies parses the trusted_proxies directive: the trust boundary
+// for X-Forwarded-For. Accepts bare IPs, CIDR ranges, or the token
+// private_ranges; repeatable. Validated at Provision time.
+//
+//	trusted_proxies private_ranges 173.245.48.0/20
+func (cl *ConfigLoader) parseTrustedProxies(d *caddyfile.Dispenser, m *Middleware) error {
+	entries := d.RemainingArgs()
+	if len(entries) == 0 {
+		return d.Err("trusted_proxies requires at least one IP, CIDR range, or the token private_ranges")
+	}
+	m.TrustedProxies = append(m.TrustedProxies, entries...)
+	cl.logger.Debug("Trusted proxies added", zap.Strings("entries", entries))
+	return nil
+}
+
+// parseClientIPHeader parses the client_ip_header directive, naming a
+// single-IP header (e.g. CF-Connecting-IP, True-Client-IP, X-Real-IP) consulted
+// for the client IP once the peer is a trusted proxy.
+func (cl *ConfigLoader) parseClientIPHeader(d *caddyfile.Dispenser, m *Middleware) error {
+	if !d.NextArg() {
+		return d.ArgErr()
+	}
+	m.ClientIPHeader = d.Val()
+	cl.logger.Debug("Client IP header set", zap.String("header", m.ClientIPHeader))
 	return nil
 }
 

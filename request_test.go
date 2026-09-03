@@ -204,7 +204,9 @@ func TestExtractValue_RemoteIP(t *testing.T) {
 
 	value, err := rve.ExtractValue("REMOTE_IP", req, w)
 	assert.NoError(t, err)
-	assert.Equal(t, localIP, value)
+	// REMOTE_IP is the resolved client IP as a bare address (no port), and
+	// without trusted_proxies configured that is the peer IP. See #94.
+	assert.Equal(t, extractIP(localIP), value)
 }
 
 func TestExtractValue_Protocol(t *testing.T) {

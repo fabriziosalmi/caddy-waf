@@ -2,7 +2,6 @@ package caddywaf
 
 import (
 	"net"
-	"net/http"
 	"os"
 	"strings"
 )
@@ -55,20 +54,4 @@ func extractIP(remoteAddr string) string {
 		return remoteAddr
 	}
 	return host
-}
-
-// getClientIP returns the real client IP, checking X-Forwarded-For header first.
-// Falls back to RemoteAddr if X-Forwarded-For is empty or contains invalid data.
-func getClientIP(r *http.Request) string {
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		ips := strings.Split(xff, ",")
-		if len(ips) > 0 {
-			clientIP := strings.TrimSpace(ips[0])
-			// Validate the IP before returning
-			if clientIP != "" && net.ParseIP(extractIP(clientIP)) != nil {
-				return clientIP
-			}
-		}
-	}
-	return r.RemoteAddr
 }
