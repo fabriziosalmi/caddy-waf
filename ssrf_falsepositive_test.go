@@ -19,15 +19,16 @@ func loadRuleFile(t *testing.T, path string) []Rule {
 	return rules
 }
 
-// TestBundledRulePatternsCompile guards every shipped rule pattern against RE2
-// breakage -- the whole rules/*.json set plus the combined bundles. RE2 rejects
-// lookbehind/lookahead, so a rule that needs them (as the removed
-// auth-session-cookie-not-http-only did, see #161) fails to load; this catches
-// that class before it ships.
+// TestBundledRulePatternsCompile guards the rule files listed below against RE2
+// breakage: the curated bundles plus the modular files audited for RE2
+// compatibility (rules/ssrf.json, rules/authentication.json). RE2 rejects
+// lookbehind/lookahead and backreferences, so a rule that needs them -- as the
+// removed auth-session-cookie-not-http-only did (see #161) -- fails to load.
+//
+// It is deliberately NOT run over every rules/*.json bundle: several of the
+// other modular files carry invalid JSON or RE2-incompatible patterns, tracked
+// for a full audit in #172. Add a file here once it is clean.
 func TestBundledRulePatternsCompile(t *testing.T) {
-	// The curated bundles plus the modular files audited for RE2 compatibility.
-	// A full rules/*.json audit (some bundles carry invalid JSON or backrefs) is
-	// tracked separately.
 	for _, path := range []string{
 		"rules.json", "rules-browser-friendly.json",
 		"rules/ssrf.json", "rules/authentication.json",
