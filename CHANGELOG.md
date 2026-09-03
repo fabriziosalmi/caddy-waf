@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.4] - 2026-09-03
+
+### Fixed
+- **SSRF rules no longer block benign query strings.** `ssrf-internal-ip` and `ssrf-reserved-ip` matched bare prefixes (`10\.`, `0\.`, `224\.`, …), so any digit-dot substring tripped them — a legitimate `/socket.io/?EIO=4&transport=polling&…` request whose Engine.IO cache-buster or sid contained something like `0.1` or `10.` accrued SSRF score until it hit a 403 at `anomaly_threshold` 20. The patterns now require full private/reserved dotted-quad IPs with word boundaries, so benign values no longer match while real SSRF still does — internal ranges (RFC1918, loopback), `0.0.0.0`, link-local `169.254.0.0/16` (the cloud metadata IP), and multicast/reserved. `ssrf-attacks`' bare cloud-keyword alternative was likewise narrowed to the actual metadata hostname. Applied across `rules.json`, `rules-browser-friendly.json` and `rules/ssrf.json`. ([#160](https://github.com/fabriziosalmi/caddy-waf/pull/160))
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.4.4`.
+
 ## [v0.4.3] - 2026-09-02
 
 ### Added
