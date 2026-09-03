@@ -291,6 +291,18 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 		}
 	}
 
+	// Build the trusted-proxy set: the trust boundary for X-Forwarded-For.
+	if len(m.TrustedProxies) > 0 {
+		trie, expanded, err := buildIPTrie(m.TrustedProxies, "trusted_proxies")
+		if err != nil {
+			return err
+		}
+		m.trustedProxies = trie
+		m.logger.Info("Trusted proxies configured",
+			zap.Int("entries", len(expanded)),
+			zap.String("client_ip_header", m.ClientIPHeader))
+	}
+
 	// Load DNS blacklist
 	if m.DNSBlacklistFile != "" {
 		m.dnsBlacklist = make(map[string]struct{})

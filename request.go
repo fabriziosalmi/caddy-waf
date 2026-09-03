@@ -109,8 +109,15 @@ func (rve *RequestValueExtractor) extractSingleValue(target string, r *http.Requ
 
 	// Optimization: Use a map for target extraction logic
 	extractionLogic := map[string]func() (string, error){
-		TargetMethod:   func() (string, error) { return r.Method, nil },
-		TargetRemoteIP: func() (string, error) { return r.RemoteAddr, nil },
+		TargetMethod: func() (string, error) { return r.Method, nil },
+		TargetRemoteIP: func() (string, error) {
+			// Resolved under the trusted_proxies boundary in ServeHTTP; falls back
+			// to the raw peer address when not set (e.g. a direct extractor call).
+			if v, ok := r.Context().Value(clientIPKey{}).(string); ok && v != "" {
+				return v, nil
+			}
+			return r.RemoteAddr, nil
+		},
 		TargetProtocol: func() (string, error) { return r.Proto, nil },
 		TargetHost:     func() (string, error) { return r.Host, nil },
 		TargetArgs: func() (string, error) {

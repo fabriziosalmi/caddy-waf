@@ -53,6 +53,11 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	// as {http.vars.waf_log_id}, allowing correlation between WAF and access logs.
 	caddyhttp.SetVar(r.Context(), "waf_log_id", logID)
 
+	// Resolve the real client IP once, under the trusted_proxies boundary, and
+	// carry it in context so the rate limiter, GeoIP/ASN checks and the
+	// REMOTE_IP rule target all agree on one value.
+	r = r.WithContext(context.WithValue(r.Context(), clientIPKey{}, m.resolveClientIP(r)))
+
 	// Buffer the request body once, up front, when a rule will read it. Rule
 	// extraction runs against per-rule request copies (handlePhase clones the
 	// request via WithContext to tag the rule id), so a body consumed and
@@ -427,8 +432,8 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		// Rate limiting
 		if m.rateLimiter != nil {
 			m.logger.Debug("Starting rate limiting phase")
-			ip := extractIP(r.RemoteAddr) // Pass the logger here
-			path := r.URL.Path            // Get the request path
+			ip := m.clientIP(r) // XFF-aware under trusted_proxies (#94)
+			path := r.URL.Path  // Get the request path
 			if m.rateLimiter.isRateLimited(ip, path) {
 				m.incrementRateLimiterBlockedRequestsMetric() // Increment the counter in the Middleware
 				m.blockRequest(w, r, state, http.StatusTooManyRequests, "rate_limit", "rate_limit_rule",
@@ -445,7 +450,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		// Whitelisting
 		if m.CountryWhitelist.Enabled && !ipExempt {
 			m.logger.Debug("Starting country whitelisting phase")
-			clientIP := getClientIP(r)
+			clientIP := m.clientIP(r)
 			allowed, err := m.isCountryInList(clientIP, m.CountryWhitelist.CountryList, m.CountryWhitelist.geoIP)
 			if err != nil {
 				m.logRequest(zapcore.ErrorLevel, "Failed to check country whitelist",
@@ -478,7 +483,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		// ASN Blocking
 		if m.BlockASNs.Enabled && !ipExempt {
 			m.logger.Debug("Starting ASN blocking phase")
-			clientIP := getClientIP(r)
+			clientIP := m.clientIP(r)
 			blocked, err := m.geoIPHandler.IsASNInList(clientIP, m.BlockASNs.BlockedASNs, m.BlockASNs.geoIP)
 			if err != nil {
 				m.logRequest(zapcore.ErrorLevel, "Failed to check ASN blocking",
@@ -513,7 +518,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		// Blacklisting
 		if m.CountryBlacklist.Enabled && !ipExempt {
 			m.logger.Debug("Starting country blacklisting phase")
-			clientIP := getClientIP(r)
+			clientIP := m.clientIP(r)
 			blocked, err := m.isCountryInList(clientIP, m.CountryBlacklist.CountryList, m.CountryBlacklist.geoIP)
 			if err != nil {
 				m.logRequest(zapcore.ErrorLevel, "Failed to check country blacklisting",
