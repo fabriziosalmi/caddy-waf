@@ -3,92 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="waf-metrics-path" content="__WAF_METRICS_PATH__">
 <title>caddy-waf</title>
-<style>
-  :root {
-    --bg: #0f1419; --panel: #161c24; --panel-2: #1b232d; --line: #26313d;
-    --fg: #e6edf3; --muted: #8b98a5; --faint: #5b6875;
-    --accent: #39d3bb; --ok: #3fb950; --warn: #d29922; --bad: #f85149;
-    --chip: #223; --radius: 10px;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
-  @media (prefers-color-scheme: light) {
-    :root {
-      --bg:#f5f7fa; --panel:#fff; --panel-2:#f0f3f7; --line:#dde3ea;
-      --fg:#1c2430; --muted:#5b6875; --faint:#93a1af;
-    }
-  }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--sans);
-    font-size:14px; line-height:1.45; -webkit-font-smoothing:antialiased; }
-  a { color:var(--accent); }
-  .wrap { max-width:1240px; margin:0 auto; padding:20px 20px 60px; }
-
-  header { display:flex; align-items:center; gap:14px; flex-wrap:wrap;
-    padding-bottom:16px; border-bottom:1px solid var(--line); margin-bottom:20px; }
-  .brand { display:flex; align-items:baseline; gap:10px; }
-  .brand h1 { font-size:18px; margin:0; letter-spacing:.2px; font-weight:650; }
-  .brand .shield { color:var(--accent); font-size:20px; }
-  .ver { font-family:var(--mono); font-size:12px; color:var(--muted);
-    background:var(--panel-2); padding:2px 8px; border-radius:6px; border:1px solid var(--line); }
-  .spacer { flex:1; }
-  .meta { display:flex; align-items:center; gap:16px; color:var(--muted); font-size:12.5px; }
-  .live { display:inline-flex; align-items:center; gap:7px; }
-  .dot { width:8px; height:8px; border-radius:50%; background:var(--faint); transition:background .2s; }
-  .live.on .dot { background:var(--ok); box-shadow:0 0 0 3px rgba(63,185,80,.18); }
-  .live.err .dot { background:var(--bad); box-shadow:0 0 0 3px rgba(248,81,73,.18); }
-  select, button { font:inherit; color:var(--fg); background:var(--panel-2);
-    border:1px solid var(--line); border-radius:7px; padding:5px 9px; cursor:pointer; }
-  button:hover, select:hover { border-color:var(--faint); }
-
-  .grid { display:grid; gap:14px; }
-  .kpis { grid-template-columns:repeat(4,1fr); margin-bottom:14px; }
-  .cards { grid-template-columns:repeat(2,1fr); }
-  @media (max-width:860px){ .kpis{ grid-template-columns:repeat(2,1fr);} .cards{ grid-template-columns:1fr;} }
-
-  .card { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; min-width:0; }
-  .card h2 { font-size:12px; text-transform:uppercase; letter-spacing:.7px; color:var(--muted);
-    margin:0 0 12px; font-weight:600; }
-
-  .kpi .n { font-size:30px; font-weight:680; font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
-  .kpi .sub { color:var(--muted); font-size:12px; margin-top:2px; display:flex; align-items:center; gap:6px; }
-  .kpi .rate { color:var(--accent); font-family:var(--mono); font-size:11.5px; }
-  .kpi.bad .n { color:var(--bad); } .kpi.ok .n { color:var(--ok); }
-  .spark { display:block; width:100%; height:34px; margin-top:8px; }
-
-  .bars .row { display:grid; grid-template-columns:120px 1fr 52px; align-items:center; gap:10px; margin:7px 0; }
-  .bars .lbl { font-size:12.5px; color:var(--fg); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:var(--mono); }
-  .bars .track { background:var(--panel-2); border-radius:5px; height:16px; overflow:hidden; }
-  .bars .fill { display:block; height:100%; border-radius:5px; background:var(--accent); transition:width .4s ease; }
-  .bars .val { text-align:right; font-variant-numeric:tabular-nums; color:var(--muted); font-size:12.5px; }
-  .fill.rule{background:#f85149} .fill.ip_blacklist{background:#d29922} .fill.rate_limit{background:#a371f7}
-  .fill.country{background:#58a6ff} .fill.asn{background:#39d3bb} .fill.dns_blacklist{background:#db61a2}
-  .fill.error{background:#8b98a5} .fill.other{background:#6e7681}
-
-  table { width:100%; border-collapse:collapse; font-size:12.5px; }
-  th { text-align:left; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase;
-    letter-spacing:.5px; padding:6px 8px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--panel); }
-  td { padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
-  tr:last-child td { border-bottom:0; }
-  td.mono, .ip { font-family:var(--mono); }
-  .path { max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); }
-  .pill { display:inline-block; padding:1px 7px; border-radius:20px; font-size:11px; font-weight:600;
-    background:var(--panel-2); border:1px solid var(--line); }
-  .pill.rule{color:#f85149} .pill.ip_blacklist{color:#d29922} .pill.rate_limit{color:#a371f7}
-  .pill.country{color:#58a6ff} .pill.asn{color:#39d3bb} .pill.dns_blacklist{color:#db61a2}
-  .pill.error,.pill.other{color:var(--muted)}
-  .status { font-variant-numeric:tabular-nums; color:var(--warn); }
-  .recent-wrap { max-height:420px; overflow:auto; }
-  .full { grid-column:1 / -1; }
-
-  .empty { color:var(--faint); font-size:13px; padding:14px 2px; text-align:center; }
-  .banner { display:none; background:rgba(248,81,73,.12); border:1px solid var(--bad); color:var(--fg);
-    padding:10px 14px; border-radius:8px; margin-bottom:16px; font-size:13px; }
-  .banner.show { display:block; }
-  footer { margin-top:26px; color:var(--faint); font-size:11.5px; display:flex; gap:14px; flex-wrap:wrap; }
-  .flag { font-family:var(--mono); }
-</style>
+<link rel="stylesheet" href="__BASE__/dashboard.css">
 </head>
 <body>
 <div class="wrap">
@@ -109,7 +26,7 @@
           <option value="30">30s</option>
         </select>
       </label>
-      <button id="pause">Pause</button>
+      <button type="button" id="pause">Pause</button>
       <span class="live" id="live"><span class="dot"></span><span id="livetext">connecting</span></span>
     </div>
   </header>
@@ -154,128 +71,6 @@
     <span class="flag" id="f-endpoint"></span>
   </footer>
 </div>
-
-<script>
-"use strict";
-const METRICS_PATH = "__WAF_METRICS_PATH__";
-const $ = (id) => document.getElementById(id);
-
-const state = { hist: [], timer: null, interval: 5000, paused: false, lastUptime: null };
-const HIST_CAP = 180;
-
-function fmt(n){ if(n==null) return "—"; n=Number(n);
-  if(n>=1e9) return (n/1e9).toFixed(2)+"B"; if(n>=1e6) return (n/1e6).toFixed(2)+"M";
-  if(n>=1e3) return (n/1e3).toFixed(1)+"k"; return n.toLocaleString(); }
-function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c=>(
-  {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
-function flag(cc){ if(!cc||cc.length!==2) return ""; const A=0x1F1E6;
-  return String.fromCodePoint(A+cc.toUpperCase().charCodeAt(0)-65)+String.fromCodePoint(A+cc.toUpperCase().charCodeAt(1)-65); }
-
-function setLive(cls, text){ const el=$("live"); el.className="live "+cls; $("livetext").textContent=text; }
-function banner(msg){ const b=$("banner"); if(!msg){ b.className="banner"; return; } b.textContent=msg; b.className="banner show"; }
-
-// per-minute rate over the recent history window, from monotonic counter deltas.
-function ratePerMin(key){
-  const h=state.hist; if(h.length<2) return null;
-  const a=h[0], b=h[h.length-1];
-  const dv=b[key]-a[key], dt=(b.t-a.t)/1000; // seconds
-  if(dt<=0||dv<0) return null; return dv/dt*60;
-}
-function sparkline(id, key){
-  const svg=$(id); const h=state.hist; svg.innerHTML="";
-  if(h.length<2) return;
-  const W=100,H=34,pad=2; const vals=[];
-  for(let i=1;i<h.length;i++){ const dv=h[i][key]-h[i-1][key], dt=(h[i].t-h[i-1].t)/1000;
-    vals.push(dt>0&&dv>=0?dv/dt:0); }
-  const max=Math.max(1,...vals); const n=vals.length;
-  let d="", area="";
-  for(let i=0;i<n;i++){ const x=pad+(W-2*pad)*(n===1?0:i/(n-1)); const y=H-pad-(H-2*pad)*(vals[i]/max);
-    d+=(i?"L":"M")+x.toFixed(1)+","+y.toFixed(1)+" "; }
-  area=d+`L${(W-pad).toFixed(1)},${H-pad} L${pad},${H-pad} Z`;
-  const col=getComputedStyle(document.documentElement).getPropertyValue(id.includes("blocked")?"--bad":id.includes("allowed")?"--ok":"--accent").trim();
-  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
-  svg.innerHTML=`<path d="${area}" fill="${col}" opacity="0.12"/><path d="${d}" fill="none" stroke="${col}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`;
-}
-
-function bars(id, items, {label, value, cls, max}={}){
-  const el=$(id);
-  if(!items||!items.length){ el.innerHTML='<div class="empty">no data yet</div>'; return; }
-  const m=max||Math.max(1,...items.map(value));
-  el.innerHTML=items.map(it=>{ const v=value(it), w=Math.max(2,(v/m)*100), c=cls?cls(it):"";
-    return `<div class="row"><span class="lbl" title="${esc(label(it))}">${esc(label(it))}</span>`+
-      `<span class="track"><span class="fill ${c}" style="width:${w}%"></span></span>`+
-      `<span class="val">${fmt(v)}</span></div>`; }).join("");
-}
-
-function render(m){
-  $("ver").textContent = m.version || "—";
-  $("f-schema").textContent = "schema "+(m.schema_version??"—");
-  $("f-endpoint").textContent = METRICS_PATH ? "source "+METRICS_PATH : "";
-  if(m.uptime_seconds!=null){ const u=m.uptime_seconds;
-    const d=Math.floor(u/86400), h=Math.floor(u%86400/3600), mi=Math.floor(u%3600/60);
-    $("uptime").textContent = "uptime "+(d?d+"d ":"")+(h||d?h+"h ":"")+mi+"m"; }
-
-  const total=m.total_requests||0, blocked=m.blocked_requests||0, allowed=m.allowed_requests||0;
-  $("k-total").textContent=fmt(total);
-  $("k-blocked").textContent=fmt(blocked);
-  $("k-allowed").textContent=fmt(allowed);
-  $("k-ratio").textContent=total?((blocked/total*100).toFixed(blocked/total<0.1?1:0)+"%"):"0%";
-  const rt=ratePerMin("total"), rb=ratePerMin("blocked");
-  $("r-total").textContent=rt==null?"—":Math.round(rt);
-  $("r-blocked").textContent=rb==null?"—":Math.round(rb);
-  $("s-allowed").textContent=total?fmt(total-blocked)+" passed":"—";
-  sparkline("sp-total","total"); sparkline("sp-blocked","blocked"); sparkline("sp-allowed","allowed");
-
-  // reasons
-  const reasons=Object.entries(m.blocked_by_reason||{}).map(([k,v])=>({k,v})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
-  bars("reasons", reasons, {label:x=>x.k, value:x=>x.v, cls:x=>x.k});
-  // phases
-  const ph=Object.entries(m.rule_hits_by_phase||{}).map(([k,v])=>({k:"phase "+k,v})).sort((a,b)=>b.v-a.v);
-  bars("phases", ph, {label:x=>x.k, value:x=>x.v});
-  // top rules
-  bars("rules",(m.top_rules||[]).slice(0,12),{label:x=>x.id,value:x=>x.hits});
-  // top ips
-  const ips=((m.top_ips||{}).items)||[];
-  bars("ips", ips.slice(0,12), {label:x=>x.ip, value:x=>x.blocked, cls:()=>"ip_blacklist"});
-  // by country
-  bars("countries",(m.by_country||[]).slice(0,16),{label:x=>flag(x.country)+" "+x.country,value:x=>x.blocked,cls:()=>"country"});
-
-  // recent
-  const items=((m.recent||{}).items)||[];
-  const tb=$("recent");
-  if(!items.length){ tb.innerHTML='<tr><td colspan="8" class="empty">no blocks recorded yet</td></tr>'; }
-  else { tb.innerHTML=items.map(it=>{ const t=new Date(it.ts_ms||0).toLocaleTimeString();
-    const src=`<span class="ip">${esc(it.ip)}</span>`+(it.country?` <span title="${esc(it.country)}">${flag(it.country)}</span>`:"");
-    return `<tr><td class="mono">${esc(t)}</td><td>${src}</td><td class="mono">${esc(it.method)}</td>`+
-      `<td class="path" title="${esc(it.path)}">${esc(it.path)}</td>`+
-      `<td><span class="pill ${esc(it.reason)}">${esc(it.reason)}</span></td>`+
-      `<td class="mono">${esc(it.rule_id||"")}</td><td class="val">${esc(it.score)}</td>`+
-      `<td class="status">${esc(it.status)}</td></tr>`; }).join(""); }
-}
-
-async function tick(){
-  if(!METRICS_PATH){ setLive("err","no endpoint"); banner("Metrics endpoint is not configured. Add `metrics_endpoint /waf_metrics` to the WAF block."); return; }
-  try{
-    const res=await fetch(METRICS_PATH,{headers:{"Accept":"application/json"},cache:"no-store"});
-    if(!res.ok) throw new Error("HTTP "+res.status);
-    const m=await res.json();
-    if(state.lastUptime!=null && m.uptime_seconds!=null && m.uptime_seconds<state.lastUptime){ state.hist=[]; }
-    state.lastUptime=m.uptime_seconds;
-    const t=m.server_time_ms||Date.now();
-    state.hist.push({t, total:m.total_requests||0, blocked:m.blocked_requests||0, allowed:m.allowed_requests||0});
-    if(state.hist.length>HIST_CAP) state.hist.shift();
-    render(m); banner(""); setLive("on","live");
-  }catch(e){ setLive("err","disconnected"); banner("Cannot reach "+METRICS_PATH+" — "+e.message+". Showing last data."); }
-}
-
-function schedule(){ clearInterval(state.timer); if(state.paused) return;
-  state.timer=setInterval(tick, state.interval); }
-
-$("interval").addEventListener("change", e=>{ state.interval=Number(e.target.value)*1000; schedule(); });
-$("pause").addEventListener("click", e=>{ state.paused=!state.paused;
-  e.target.textContent=state.paused?"Resume":"Pause"; if(state.paused){ clearInterval(state.timer); setLive("","paused"); } else { tick(); schedule(); } });
-
-tick(); schedule();
-</script>
+<script src="__BASE__/dashboard.js" defer></script>
 </body>
 </html>
