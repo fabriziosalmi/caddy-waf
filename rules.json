@@ -87,17 +87,17 @@
   {
     "id": "idor-attacks",
     "phase": 2,
-    "pattern": "(?i)(?:(?:\\b(?:id|user|account|profile|order|item|product|comment|post|blog|thread|task|note|group|file|image|report|json|api|rest|download|admin|dashboard|email|video)\\b(?:\\s*)[=:]\\s*(?:[\\-\\/]?\\d+|[\\w\\-\\.]+|[a-f0-9\\-]+))|\\b(?:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})\\b|\\/\\d+(?:\\/|$)|\\/[a-f0-9]{32}|\\/[a-f0-9]{40})",
+    "pattern": "(?i)(?:\\b[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\\b|/[a-f0-9]{32}(?:/|$)|/[a-f0-9]{40}(?:/|$))",
     "targets": [
       "URI",
       "BODY",
       "HEADERS",
       "COOKIES"
     ],
-    "severity": "MEDIUM",
+    "severity": "LOW",
     "action": "log",
-    "score": 7,
-    "description": "Detects Insecure Direct Object Reference (IDOR) attempts by identifying common ID patterns in URIs, body, headers and cookies."
+    "score": 2,
+    "description": "Log requests referencing an opaque object id (UUID, or a 32/40-hex path segment) as a weak IDOR signal for correlation. Low score and does not block on its own -- IDOR cannot be decided from the request alone, so matching on common param names (id=, user=, file=) was removed to stop false positives."
   },
   {
     "id": "insecure-deserialization-java",
@@ -181,7 +181,7 @@
   {
     "id": "rce-commands-expanded",
     "phase": 2,
-    "pattern": "(?i)(?:\\b(?:cat|base64|whoami|echo|curl|wget|bash|sh|python|perl|ls|id|ping|nslookup|ipconfig|ifconfig|powershell)\\b)",
+    "pattern": "(?i)(?:(?:[;|]|`|\\$\\()\\s*(?:cat|base64|whoami|echo|curl|wget|bash|sh|python|perl|ls|id|ping|nslookup|ipconfig|ifconfig|powershell)\\b|\\b(?:cat|head|tail|less|more|nl|tac)\\s+/(?:etc|proc|sys|var|root|home|dev|tmp)\\b|\\b(?:curl|wget)\\s+(?:-{1,2}[a-z]|https?://|ftp://|file://)|\\b(?:bash|sh|zsh|python[23]?|perl|php|ruby)\\s+-[a-z]|\\bpowershell\\s+-|\\|\\s*(?:sh|bash|zsh)\\b)",
     "targets": [
       "ARGS",
       "HEADERS"
@@ -189,7 +189,7 @@
     "severity": "HIGH",
     "action": "block",
     "score": 5,
-    "description": "Expanded rule to block more RCE related commands and utilities."
+    "description": "Block command injection: a shell command that follows an injection metacharacter (; & | ` $()), reads a sensitive path, fetches a URL, or is piped to a shell. Requires that context so bare words (a `cat=` param, an `id=` value, a curl/wget User-Agent) do not false-positive."
   },
   {
     "id": "rfi-http-url",
