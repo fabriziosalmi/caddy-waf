@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.12] - 2026-09-04
+
+### Fixed
+- **Stopped two rules from blocking ordinary traffic** ([#185](https://github.com/fabriziosalmi/caddy-waf/issues/185), [PR #186](https://github.com/fabriziosalmi/caddy-waf/pull/186)). In the shipped `rules.json`/`rules-browser-friendly.json`:
+  - `idor-attacks` matched any common parameter name (`id=`, `user=`, `file=`, `download=`, …) and any `/<digits>/` path segment, and its `score: 7` made it block on its own despite `action: log`. It now matches only opaque object references (a UUID, or a 32/40-hex path segment) as a non-blocking low-score log signal — IDOR cannot be decided from the request alone.
+  - `rce-commands-expanded` matched bare words (`cat`, `id`, `ls`, `curl`, `wget`, `python`, …), so `?cat=animals`, `?id=5` and `curl`/`wget`/`python` User-Agents were all blocked. It now requires an injection context: a command after a shell metacharacter (`;` `|` `` ` `` `$(`), a command reading a sensitive path, `curl`/`wget` fetching a URL, or a pipe to a shell.
+  - Added `fp_regression_test.go` pinning that benign params/bodies/User-Agents pass and real command injection is still blocked.
+
+### Changed
+- Bumped version constant `wafVersion` to `v0.4.12`.
+- Made the CI benchmark regression gate robust to shared-runner noise (warm-up before measuring, 2× threshold), so it no longer false-fails perf-neutral PRs ([#185](https://github.com/fabriziosalmi/caddy-waf/issues/185), [PR #186](https://github.com/fabriziosalmi/caddy-waf/pull/186)).
+
 ## [v0.4.11] - 2026-09-04
 
 ### Security
