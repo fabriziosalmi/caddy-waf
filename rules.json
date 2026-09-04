@@ -92,7 +92,7 @@
   {
     "id": "rce-commands-expanded",
     "phase": 2,
-    "pattern": "(?i)(?:(?:[;|]|`|\\$\\(|%0a|%0d)\\s*(?:cat|base64|whoami|echo|curl|wget|bash|sh|zsh|python[23]?|perl|php|ruby|ls|id|rm|mv|cp|nc|ncat|netcat|env|awk|sed|dd|chmod|chown|mkfifo|telnet|ping|nslookup|dig|ipconfig|ifconfig|powershell)\\b|\\b(?:cat|head|tail|less|more|nl|tac)\\s+/(?:etc|proc|sys|var|root|home|dev|tmp)\\b|\\b(?:curl|wget)\\s+(?:-{1,2}[a-z]|https?://|ftp://|file://)|\\b(?:bash|sh|zsh|python[23]?|perl|php|ruby)\\s+-[a-z]|\\bpowershell\\s+-|\\|\\s*(?:sh|bash|zsh)\\b)",
+    "pattern": "(?i)(?:(?:[;|]|`|\\$\\(|%0a|%0d)\\s*(?:cat|base64|whoami|uname|hostname|systeminfo|echo|curl|wget|bash|sh|zsh|python[23]?|perl|php|ruby|ls|id|rm|mv|cp|nc|ncat|netcat|env|awk|sed|dd|chmod|chown|mkfifo|telnet|ping|nslookup|dig|ipconfig|ifconfig|powershell)\\b|\\b(?:cat|head|tail|less|more|nl|tac)\\s+/(?:etc|proc|sys|var|root|home|dev|tmp)\\b|\\b(?:curl|wget)\\s+(?:-{1,2}[a-z]|https?://|ftp://|file://)|\\b(?:bash|sh|zsh|python[23]?|perl|php|ruby)\\s+-[a-z]|\\bpowershell\\s+-|\\|\\s*(?:sh|bash|zsh)\\b)",
     "targets": [
       "ARGS"
     ],

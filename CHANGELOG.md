@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Restored NoSQL coverage** as `nosql-operator-injection` in `rules.json`/`rules-browser-friendly.json` — matches a quoted `"$op":` key or `[$op]` parameter form instead of the bare words (`count`, `find`, `db`) the removed rule matched in any body.
 
 ### Added
+- **Salvaged coverage from two deleted rules that targeted real threats.** `rce-java-exec` (deleted because its trailing `\s*\(` on every branch required a double paren and never matched real `getRuntime().exec("…")`) is rewritten to catch `Runtime.getRuntime().exec(`, `Runtime.exec(`, and `ProcessBuilder(` — the last was previously uncovered by any rule. The OS-reconnaissance intent of `rce-os-info-commands` (deleted for its unanchored `ver` substring FP) is recovered by adding `uname`/`whoami`/`hostname`/`systeminfo`/`ifconfig`/`ipconfig`/`netstat` to the separator-anchored command lists in `rce-command-separators` and `rce-commands-expanded`, so they only fire after an injection metacharacter. (Deliberately not salvaged: remote-URL RFI detection — blocking any external `http(s)://` in a parameter breaks OAuth redirects, webhooks, and share links, which is why `rfi-http-url` was removed.)
 - `rules/bundle_fixes_test.go`: regex-level pins for every closed bundle bypass.
 - `all_bundles_regression_test.go`: loads `rules.json` plus every `rules/*.json` bundle together (the maximal-coverage, worst-case-for-score-stacking deployment) and pins that 12 ordinary-traffic shapes are not blocked.
 

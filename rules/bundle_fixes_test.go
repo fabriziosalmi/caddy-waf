@@ -125,3 +125,16 @@ func TestAuthJWTAlgNone(t *testing.T) {
 	mustNotMatch(t, p["auth-jwt-alg-none"], "auth-jwt-alg-none",
 		"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhbGljZSJ9.sig")
 }
+
+// Salvaged coverage: the deleted rce-java-exec (broken) and rce-os-info-commands
+// (unanchored 'ver' FP) targeted real threats. They were rewritten rather than
+// dropped; these pin the recovered coverage.
+func TestSalvagedRCECoverage(t *testing.T) {
+	p := loadPatterns(t, "rce.json")
+	mustMatch(t, p["rce-java-exec"], "rce-java-exec",
+		`Runtime.getRuntime().exec("cmd /c calc")`, `new ProcessBuilder("bash","-c","id")`)
+	mustNotMatch(t, p["rce-java-exec"], "rce-java-exec", `the ProcessBuilder pattern in Java`)
+	mustMatch(t, p["rce-command-separators"], "rce-command-separators",
+		`;uname -a`, `|systeminfo`, `;hostname`)
+	mustNotMatch(t, p["rce-command-separators"], "rce-command-separators", `username=alice`)
+}
