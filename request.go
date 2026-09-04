@@ -107,96 +107,80 @@ func (rve *RequestValueExtractor) extractSingleValue(target string, r *http.Requ
 	var unredactedValue string
 	var err error
 
-	// Optimization: Use a map for target extraction logic
-	extractionLogic := map[string]func() (string, error){
-		TargetMethod: func() (string, error) { return r.Method, nil },
-		TargetRemoteIP: func() (string, error) {
-			// Resolved under the trusted_proxies boundary in ServeHTTP; falls back
-			// to the raw peer address when not set (e.g. a direct extractor call).
-			if v, ok := r.Context().Value(clientIPKey{}).(string); ok && v != "" {
-				return v, nil
-			}
-			return extractIP(r.RemoteAddr), nil // bare IP, consistent with the resolved value
-		},
-		TargetProtocol: func() (string, error) { return r.Proto, nil },
-		TargetHost:     func() (string, error) { return r.Host, nil },
-		TargetArgs: func() (string, error) {
-			return r.URL.RawQuery, rve.checkEmpty(r.URL.RawQuery, target, "Query string is empty")
-		},
-		TargetUserAgent: func() (string, error) {
-			value := r.UserAgent()
-			rve.logIfEmpty(value, target, "User-Agent is empty")
-			return value, nil
-		},
-		TargetPath: func() (string, error) {
-			value := r.URL.Path
-			rve.logIfEmpty(value, target, "Request path is empty")
-			return value, nil
-		},
-		TargetURI: func() (string, error) {
-			value := r.URL.RequestURI()
-			rve.logIfEmpty(value, target, "Request URI is empty")
-			return value, nil
-		},
-		TargetBody:            func() (string, error) { return rve.extractBody(r, target) },                                     // Separate body extraction
-		TargetHeaders:         func() (string, error) { return rve.extractAllHeaders(r.Header, "Request headers", target) },     // Helper for headers
-		TargetResponseHeaders: func() (string, error) { return rve.extractResponseHeaders(w, target) },                          // nil-safe; see issue #144
-		TargetResponseBody:    func() (string, error) { return rve.extractResponseBody(w, target) },                             // Helper for response body
-		TargetFileName:        func() (string, error) { return rve.extractFileName(r, target) },                                 // Helper for filename
-		TargetFileMIMEType:    func() (string, error) { return rve.extractFileMIMEType(r, target) },                             // Helper for mime type
-		TargetCookies:         func() (string, error) { return rve.extractAllCookies(r.Cookies(), "No cookies found", target) }, // Helper for cookies
-		TargetContentType: func() (string, error) {
-			return r.Header.Get("Content-Type"), rve.checkEmpty(r.Header.Get("Content-Type"), target, "Content-Type header not found")
-		},
-		TargetURL: func() (string, error) {
-			return r.URL.String(), rve.checkEmpty(r.URL.String(), target, "URL could not be extracted")
-		},
-	}
-
-	if extractor, exists := extractionLogic[targetUpper]; exists {
-		unredactedValue, err = extractor()
-		if err != nil {
-			return "", err // Return error from extractor
+	// Static dispatch on the (canonicalised, upper-cased) target. This runs once
+	// per rule-target on the hot path, so it must not allocate: a previous
+	// implementation built a 16-entry map of closures on every call, which was
+	// the single largest source of per-request allocations (#115).
+	switch targetUpper {
+	case TargetMethod:
+		unredactedValue = r.Method
+	case TargetRemoteIP:
+		// Resolved under the trusted_proxies boundary in ServeHTTP; falls back
+		// to the raw peer address when not set (e.g. a direct extractor call).
+		if v, ok := r.Context().Value(clientIPKey{}).(string); ok && v != "" {
+			unredactedValue = v
+		} else {
+			unredactedValue = extractIP(r.RemoteAddr) // bare IP, consistent with the resolved value
 		}
-	} else if strings.HasPrefix(target, TargetHeadersPrefix) {
-		unredactedValue, err = rve.extractDynamicHeader(r.Header, strings.TrimPrefix(target, TargetHeadersPrefix), target)
-		if err != nil {
-			return "", err
-		}
-	} else if strings.HasPrefix(target, TargetResponseHeadersPrefix) {
-		if w == nil {
-			return "", fmt.Errorf("response headers not accessible outside Phase 3/4 for target: %s", target)
-		}
-		unredactedValue, err = rve.extractDynamicResponseHeader(w.Header(), strings.TrimPrefix(target, TargetResponseHeadersPrefix), target)
-		if err != nil {
-			return "", err
-		}
-	} else if strings.HasPrefix(target, TargetCookiesPrefix) {
-		unredactedValue, err = rve.extractDynamicCookie(r, strings.TrimPrefix(target, TargetCookiesPrefix), target)
-		if err != nil {
-			return "", err
-		}
-	} else if target == TargetCookies {
+	case TargetProtocol:
+		unredactedValue = r.Proto
+	case TargetHost:
+		unredactedValue = r.Host
+	case TargetArgs:
+		unredactedValue = r.URL.RawQuery
+		err = rve.checkEmpty(unredactedValue, target, "Query string is empty")
+	case TargetUserAgent:
+		unredactedValue = r.UserAgent()
+		rve.logIfEmpty(unredactedValue, target, "User-Agent is empty")
+	case TargetPath:
+		unredactedValue = r.URL.Path
+		rve.logIfEmpty(unredactedValue, target, "Request path is empty")
+	case TargetURI:
+		unredactedValue = r.URL.RequestURI()
+		rve.logIfEmpty(unredactedValue, target, "Request URI is empty")
+	case TargetBody:
+		unredactedValue, err = rve.extractBody(r, target)
+	case TargetHeaders:
+		unredactedValue, err = rve.extractAllHeaders(r.Header, "Request headers", target)
+	case TargetResponseHeaders:
+		unredactedValue, err = rve.extractResponseHeaders(w, target) // nil-safe; see issue #144
+	case TargetResponseBody:
+		unredactedValue, err = rve.extractResponseBody(w, target)
+	case TargetFileName:
+		unredactedValue, err = rve.extractFileName(r, target)
+	case TargetFileMIMEType:
+		unredactedValue, err = rve.extractFileMIMEType(r, target)
+	case TargetCookies:
 		unredactedValue, err = rve.extractAllCookies(r.Cookies(), "No cookies found", target)
-		if err != nil {
-			return "", err
+	case TargetContentType:
+		unredactedValue = r.Header.Get("Content-Type")
+		err = rve.checkEmpty(unredactedValue, target, "Content-Type header not found")
+	case TargetURL:
+		unredactedValue = r.URL.String()
+		err = rve.checkEmpty(unredactedValue, target, "URL could not be extracted")
+	default:
+		switch {
+		case strings.HasPrefix(target, TargetHeadersPrefix):
+			unredactedValue, err = rve.extractDynamicHeader(r.Header, strings.TrimPrefix(target, TargetHeadersPrefix), target)
+		case strings.HasPrefix(target, TargetResponseHeadersPrefix):
+			if w == nil {
+				return "", fmt.Errorf("response headers not accessible outside Phase 3/4 for target: %s", target)
+			}
+			unredactedValue, err = rve.extractDynamicResponseHeader(w.Header(), strings.TrimPrefix(target, TargetResponseHeadersPrefix), target)
+		case strings.HasPrefix(target, TargetCookiesPrefix):
+			unredactedValue, err = rve.extractDynamicCookie(r, strings.TrimPrefix(target, TargetCookiesPrefix), target)
+		case strings.HasPrefix(targetUpper, TargetURLParamPrefix):
+			// Use the original parameter name (without uppercase conversion).
+			unredactedValue, err = rve.extractURLParam(r.URL, strings.TrimPrefix(origTarget, TargetURLParamPrefix), target)
+		case strings.HasPrefix(targetUpper, TargetJSONPathPrefix):
+			unredactedValue, err = rve.extractValueForJSONPath(r, strings.TrimPrefix(origTarget, TargetJSONPathPrefix), target)
+		default:
+			rve.logger.Warn("Unknown extraction target", zap.String("target", target))
+			return "", fmt.Errorf("unknown extraction target: %s", target)
 		}
-	} else if strings.HasPrefix(targetUpper, TargetURLParamPrefix) {
-		// CRITICAL FIX: Use the original parameter name (without uppercase conversion)
-		paramName := strings.TrimPrefix(origTarget, TargetURLParamPrefix)
-		unredactedValue, err = rve.extractURLParam(r.URL, paramName, target)
-		if err != nil {
-			return "", err
-		}
-	} else if strings.HasPrefix(targetUpper, TargetJSONPathPrefix) {
-		jsonPath := strings.TrimPrefix(origTarget, TargetJSONPathPrefix)
-		unredactedValue, err = rve.extractValueForJSONPath(r, jsonPath, target)
-		if err != nil {
-			return "", err
-		}
-	} else {
-		rve.logger.Warn("Unknown extraction target", zap.String("target", target))
-		return "", fmt.Errorf("unknown extraction target: %s", target)
+	}
+	if err != nil {
+		return "", err
 	}
 
 	// Redact sensitive fields before returning the value (as before)
