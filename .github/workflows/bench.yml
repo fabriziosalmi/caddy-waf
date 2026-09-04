@@ -37,7 +37,7 @@ jobs:
           # base checkout, so without a warmup the shortest benchmark is
           # systematically penalised against the (by-then-warm) base — a false
           # regression. A discarded warmup puts both sides in the same state.
-          go test -run='^$' -bench=. -benchtime=300ms ./... >/dev/null 2>&1 || true
+          go test -run='^$' -bench=. -benchtime=2s ./... >/dev/null 2>&1 || true
           go test -run='^$' -bench=. -benchmem -count=6 ./... | tee new.txt
 
       - name: Compare against the base branch and gate
@@ -54,7 +54,7 @@ jobs:
           # Same warmup for the base side, so both are measured warm.
           (
             cd /tmp/base
-            go test -run='^$' -bench=. -benchtime=300ms ./... >/dev/null 2>&1 || true
+            go test -run='^$' -bench=. -benchtime=2s ./... >/dev/null 2>&1 || true
             go test -run='^$' -bench=. -benchmem -count=6 ./...
           ) | tee old.txt
           python3 .github/bench-gate.py old.txt new.txt
