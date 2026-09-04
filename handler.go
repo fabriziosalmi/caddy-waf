@@ -61,13 +61,12 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	// REMOTE_IP rule target all agree on one value.
 	r = r.WithContext(context.WithValue(r.Context(), clientIPKey{}, m.resolveClientIP(r)))
 
-	// Buffer the request body once, up front, when a rule will read it. Rule
-	// extraction runs against per-rule request copies (handlePhase clones the
-	// request via WithContext to tag the rule id), so a body consumed and
-	// "restored" there never reaches the request handed to next -- the upstream
-	// then saw an empty body and every POST with a body failed with a 502.
-	// Capturing it here, on the request that flows downstream, and reading it
-	// from the context during extraction keeps the body intact for the upstream.
+	// Buffer the request body once, up front, when a rule will read it. Reading
+	// r.Body during rule extraction consumes it, so the request handed to next
+	// would see an empty body and every POST with a body failed with a 502
+	// (#156). Capturing it here, on the request that flows downstream, into the
+	// context and reading it from there during extraction keeps the body intact
+	// for the upstream.
 	if m.hasRequestBodyRules() {
 		r = m.captureRequestBody(r)
 	}
@@ -576,9 +575,10 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 	for _, rule := range rules {
 		m.logger.Debug("Processing rule", zap.String("rule_id", rule.ID), zap.Int("target_count", len(rule.Targets)))
 
-		// Use the custom type as the key
-		ctx := context.WithValue(r.Context(), ContextKeyRule("rule_id"), rule.ID)
-		r = r.WithContext(ctx)
+		// The rule ID is passed explicitly to every log/block call below via
+		// rule.ID; nothing reads it back out of the request context, so we do not
+		// wrap the request per rule (that cost a Request copy + context node for
+		// every rule on the hot path).
 
 		for _, target := range rule.Targets {
 			m.logger.Debug("Extracting value for target", zap.String("target", target), zap.String("rule_id", rule.ID))
