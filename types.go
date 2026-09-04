@@ -77,7 +77,7 @@ type Rule struct {
 	Targets     []string `json:"targets"`
 	Severity    string   `json:"severity"` // Used for logging only
 	Score       int      `json:"score"`
-	Action      string   `json:"mode"` // CRITICAL FIX: This should map to the "mode" field in JSON
+	Action      string   `json:"action"` // "block" or "log"; matches the "action" key in every shipped rule file
 	Description string   `json:"description"`
 	// Transformations is an optional per-rule ModSecurity/CRS-style pipeline
 	// (e.g. ["urlDecodeUni","removeNulls","replaceComments"]) applied to the

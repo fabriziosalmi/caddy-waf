@@ -90,3 +90,37 @@ func TestSingleHighScoreBlockRuleStillBlocks(t *testing.T) {
 	assert.False(t, m.processRuleMatch(rec, req, r, "ARGS", "v", state))
 	assert.True(t, state.Blocked)
 }
+
+// TestRuleActionUnmarshalsFromJSON pins the fix for the json:"mode" tag bug:
+// the shipped rule files key the action as "action", so a rule loaded from
+// JSON must have Action populated. Before the fix every rule unmarshalled to
+// Action=="" — action:"block" never triggered an explicit block, and the
+// log-vs-block distinction the advisory scoring relies on did not exist. This
+// test loads real rules and asserts both actions are present, so the tag can
+// never silently regress.
+func TestRuleActionUnmarshalsFromJSON(t *testing.T) {
+	m := &Middleware{
+		logger:                zap.NewNop(),
+		ruleCache:             NewRuleCache(),
+		requestValueExtractor: NewRequestValueExtractor(zap.NewNop(), false, 0),
+	}
+	m.Rules = map[int][]Rule{}
+	if err := m.loadRules([]string{"rules.json"}); err != nil {
+		t.Fatalf("loadRules: %v", err)
+	}
+	var haveBlock, haveLog bool
+	for _, phaseRules := range m.Rules {
+		for _, r := range phaseRules {
+			switch r.Action {
+			case "block":
+				haveBlock = true
+			case "log":
+				haveLog = true
+			case "":
+				t.Errorf("rule %q loaded with empty Action (json tag regression?)", r.ID)
+			}
+		}
+	}
+	assert.True(t, haveBlock, "rules.json must contain at least one block-action rule")
+	assert.True(t, haveLog, "rules.json must contain at least one log-action rule")
+}
