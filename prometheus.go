@@ -73,7 +73,7 @@ func (m *Middleware) renderPrometheus() string {
 	counter("total_requests", "Total requests processed (process-local).", total)
 	counter("blocked_requests", "Total requests blocked (process-local).", blocked)
 	counter("allowed_requests", "Total requests allowed (process-local).", allowed)
-	counter("geoip_blocked", "Requests blocked by country/ASN (process-local).", int64(geo))
+	counter("geoip_blocked", "Requests blocked by country/ASN (process-local).", geo)
 	counter("ip_blacklist_hits", "IP blacklist hits (process-local).", ipHits)
 	counter("dns_blacklist_hits", "DNS blacklist hits (process-local).", dnsHits)
 	counter("rate_limiter_requests", "Requests counted by the rate limiter (process-local).", rlReq)

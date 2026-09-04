@@ -73,6 +73,7 @@ func BenchmarkServeHTTP_Benign(b *testing.B) {
 func BenchmarkServeHTTP_BenignParallel(b *testing.B) {
 	m := benchMiddleware(b)
 	b.ReportAllocs()
+	b.ResetTimer() // exclude benchMiddleware() setup, matching the other benchmarks
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			r := httptest.NewRequest(http.MethodGet, testURL+"/products?category=books&page=2", nil)

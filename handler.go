@@ -692,7 +692,8 @@ func (m *Middleware) incrementRateLimiterBlockedRequestsMetric() {
 	m.rateLimiterBlockedRequests++
 }
 
-// incrementGeoIPRequestsMetric increments the GeoIP requests metric.
+// incrementGeoIPRequestsMetric increments the geoip_blocked counter when the
+// request was blocked by the country/ASN filter (it is a no-op otherwise).
 func (m *Middleware) incrementGeoIPRequestsMetric(blocked bool) {
 	if blocked {
 		m.geoIPBlocked.Add(1)

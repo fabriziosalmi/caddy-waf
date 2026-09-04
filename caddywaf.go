@@ -695,16 +695,13 @@ func (m *Middleware) handleMetricsRequest(w http.ResponseWriter, r *http.Request
 	// Collect rule hits using getRuleHitStats
 	ruleHits := m.getRuleHitStats()
 
-	// Snapshot the shared counters under the locks that guard their writers.
-	//
-	// These used to be read straight off the struct, which raced with every
-	// in-flight request. rule_hits_by_phase made it worse than a benign race:
-	// it is a map, and it was handed to json.Marshal by reference, so the
-	// marshal iterated it while requests wrote to it. Go's runtime answers that
-	// with "concurrent map read and map write" -- a throw, not a data race the
-	// program can shrug off -- which ServeHTTP's panic recovery then turns into
-	// a 500. Scraping metrics under traffic could take out requests, which also
-	// made the endpoint unusable as the source for any dashboard.
+	// Snapshot the shared counters. The scalar counters are atomic, so each is
+	// read with a lock-free Load(). rule_hits_by_phase still needs muMetrics: it
+	// is a map, and it used to be handed to json.Marshal by reference so the
+	// marshal iterated it while requests wrote to it -- Go's runtime answers that
+	// with "concurrent map read and map write", a throw (not a shruggable race)
+	// that ServeHTTP's panic recovery turned into a 500. So the map is copied
+	// under the lock before it leaves this function.
 	totalRequests := m.totalRequests.Load()
 	blockedRequests := m.blockedRequests.Load()
 	allowedRequests := m.allowedRequests.Load()
