@@ -46,6 +46,12 @@ func TestOtherTransforms(t *testing.T) {
 	if got := compressWhitespace("  a  b  "); got != " a b " {
 		t.Errorf("compressWhitespace runs: %q", got)
 	}
+	// The fast path is the point of the change: an input that needs no folding
+	// must not allocate. Guard it so a future edit that reintroduces the builder
+	// allocation on this path is caught.
+	if allocs := testing.AllocsPerRun(100, func() { _ = compressWhitespace("no-folding-needed") }); allocs != 0 {
+		t.Errorf("compressWhitespace fast path allocated %v times, want 0", allocs)
+	}
 	if got := replaceComments("un/**/ion/*x*/sel"); got != "un ion sel" {
 		t.Errorf("replaceComments: %q", got)
 	}
