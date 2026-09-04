@@ -66,6 +66,24 @@ func BenchmarkServeHTTP_Benign(b *testing.B) {
 	})
 }
 
+// BenchmarkServeHTTP_BenignParallel runs the benign path from many goroutines at
+// once. It is the throughput-under-concurrency measure for #116: it surfaces
+// contention on shared state (the per-request metric counters) that the
+// single-goroutine benchmarks cannot show.
+func BenchmarkServeHTTP_BenignParallel(b *testing.B) {
+	m := benchMiddleware(b)
+	b.ReportAllocs()
+	b.ResetTimer() // exclude benchMiddleware() setup, matching the other benchmarks
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			r := httptest.NewRequest(http.MethodGet, testURL+"/products?category=books&page=2", nil)
+			r.RemoteAddr = "203.0.113.5:1234"
+			r.Header.Set("User-Agent", "Mozilla/5.0")
+			m.ServeHTTP(httptest.NewRecorder(), r, benchNext) //nolint:errcheck
+		}
+	})
+}
+
 // BenchmarkServeHTTP_Blocked exercises the block path: a request whose query
 // trips the SQLi rules and is refused.
 func BenchmarkServeHTTP_Blocked(b *testing.B) {
