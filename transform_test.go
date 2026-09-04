@@ -36,6 +36,16 @@ func TestOtherTransforms(t *testing.T) {
 	if got := compressWhitespace("union\t\n  select"); got != "union select" {
 		t.Errorf("compressWhitespace: %q", got)
 	}
+	// Fast path: inputs that need no folding must come back unchanged.
+	for _, s := range []string{"", "books", "a b c", "one two three"} {
+		if got := compressWhitespace(s); got != s {
+			t.Errorf("compressWhitespace(%q) fast path: got %q", s, got)
+		}
+	}
+	// Leading/trailing and run folding still work.
+	if got := compressWhitespace("  a  b  "); got != " a b " {
+		t.Errorf("compressWhitespace runs: %q", got)
+	}
 	if got := replaceComments("un/**/ion/*x*/sel"); got != "un ion sel" {
 		t.Errorf("replaceComments: %q", got)
 	}
