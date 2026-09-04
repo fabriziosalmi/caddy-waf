@@ -705,11 +705,11 @@ func (m *Middleware) handleMetricsRequest(w http.ResponseWriter, r *http.Request
 	// program can shrug off -- which ServeHTTP's panic recovery then turns into
 	// a 500. Scraping metrics under traffic could take out requests, which also
 	// made the endpoint unusable as the source for any dashboard.
+	totalRequests := m.totalRequests.Load()
+	blockedRequests := m.blockedRequests.Load()
+	allowedRequests := m.allowedRequests.Load()
+	geoIPBlocked := m.geoIPBlocked.Load()
 	m.muMetrics.RLock()
-	totalRequests := m.totalRequests
-	blockedRequests := m.blockedRequests
-	allowedRequests := m.allowedRequests
-	geoIPBlocked := m.geoIPBlocked
 	hitsByPhase := make(map[int]int64, len(m.ruleHitsByPhase))
 	for phase, hits := range m.ruleHitsByPhase {
 		hitsByPhase[phase] = hits

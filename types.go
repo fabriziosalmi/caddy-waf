@@ -200,12 +200,15 @@ type Middleware struct {
 	RateLimit   RateLimit
 	rateLimiter *RateLimiter
 
-	totalRequests   int64
-	blockedRequests int64
-	allowedRequests int64
+	// Process-local request counters, incremented on every request. Atomic so
+	// the hot path takes no lock for them (#116) -- muMetrics now guards only the
+	// ruleHitsByPhase map below.
+	totalRequests   atomic.Int64
+	blockedRequests atomic.Int64
+	allowedRequests atomic.Int64
 	ruleHitsByPhase map[int]int64
 	geoIPStats      map[string]int64 // Key: country code, Value: count
-	muMetrics       sync.RWMutex     // Mutex for metrics synchronization
+	muMetrics       sync.RWMutex     // Guards the ruleHitsByPhase map
 
 	// Observability for the built-in dashboard (#143 M1). geoIPStats above holds
 	// per-country BLOCK counts; the fields below and it are all guarded by muObs.
@@ -223,7 +226,7 @@ type Middleware struct {
 	rateLimiterBlockedRequests int64        // Add rate limiter blocked requests metric
 	muRateLimiterMetrics       sync.RWMutex // Mutex to protect rate limiter metrics
 
-	geoIPBlocked int
+	geoIPBlocked atomic.Int64
 
 	Tor TorConfig `json:"tor,omitempty"`
 

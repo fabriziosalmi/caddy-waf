@@ -192,9 +192,7 @@ func (m *Middleware) logRequestStart(r *http.Request, logID string) {
 
 // incrementTotalRequestsMetric increments the total requests metric.
 func (m *Middleware) incrementTotalRequestsMetric() {
-	m.muMetrics.Lock()
-	m.totalRequests++
-	m.muMetrics.Unlock()
+	m.totalRequests.Add(1)
 }
 
 // initializeWAFState initializes the WAF state.
@@ -305,16 +303,12 @@ func (m *Middleware) handleResponseBodyPhase(recorder *responseRecorder, r *http
 
 // incrementBlockedRequestsMetric increments the blocked requests metric.
 func (m *Middleware) incrementBlockedRequestsMetric() {
-	m.muMetrics.Lock()
-	m.blockedRequests++
-	m.muMetrics.Unlock()
+	m.blockedRequests.Add(1)
 }
 
 // incrementAllowedRequestsMetric increments the allowed requests metric.
 func (m *Middleware) incrementAllowedRequestsMetric() {
-	m.muMetrics.Lock()
-	m.allowedRequests++
-	m.muMetrics.Unlock()
+	m.allowedRequests.Add(1)
 }
 
 // isMetricsRequest checks if it's a metrics request.
@@ -700,9 +694,7 @@ func (m *Middleware) incrementRateLimiterBlockedRequestsMetric() {
 
 // incrementGeoIPRequestsMetric increments the GeoIP requests metric.
 func (m *Middleware) incrementGeoIPRequestsMetric(blocked bool) {
-	m.muMetrics.Lock()
-	defer m.muMetrics.Unlock()
 	if blocked {
-		m.geoIPBlocked++
+		m.geoIPBlocked.Add(1)
 	}
 }

@@ -53,10 +53,9 @@ func (m *Middleware) handlePrometheusRequest(w http.ResponseWriter, _ *http.Requ
 func (m *Middleware) renderPrometheus() string {
 	var b strings.Builder
 
-	// Base counters, snapshotted under the locks that guard their writers.
-	m.muMetrics.RLock()
-	total, blocked, allowed, geo := m.totalRequests, m.blockedRequests, m.allowedRequests, m.geoIPBlocked
-	m.muMetrics.RUnlock()
+	// Base counters are atomic; read each independently (metrics don't need a
+	// cross-counter-consistent snapshot).
+	total, blocked, allowed, geo := m.totalRequests.Load(), m.blockedRequests.Load(), m.allowedRequests.Load(), m.geoIPBlocked.Load()
 	m.muIPBlacklistMetrics.Lock()
 	ipHits := m.IPBlacklistBlockCount
 	m.muIPBlacklistMetrics.Unlock()
