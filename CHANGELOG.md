@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Rules audit, part 2 of 4: rewrote the surviving `rules.json` / `rules-browser-friendly.json` rules.**
+  - `sql-injection` now allows content between keyword pairs but not a `&` (real `SELECT col1, col2 FROM t` is caught; `?select=name&from=2024` is not), adds string tautologies (`' OR 'a'='b`), `OR true/false`, `waitfor delay` (the old pattern demanded a paren T-SQL never uses), `pg_sleep`, `load_file`, `INTO OUTFILE`. BODY moved to a new stricter `sql-injection-body` rule using high-confidence signals only, so prose like "select an item from the list" no longer blocks.
+  - `xss-attacks` replaces its fixed event-handler whitelist with a generic in-tag `on*=` match accepting `/` as a separator — `<svg/onload=…>`, `<details ontoggle=…>`, `<body onpointerdown=…>` are now caught — while dialog/eval calls require no space before the paren so "please confirm (by clicking)" and "retrieval(" prose do not match.
+  - `rce-commands-expanded` adds `rm`/`nc`/`ncat`/`env`/`awk`/`sed`/`dd`/`chmod`/`chown`/`mkfifo` and raw `%0a`/`%0d` encoded-newline separators.
+  - `block-scanners` is word-bounded and deduplicated (the old list matched `zap` as a substring, blocking Zapier webhooks) and adds masscan/ffuf/dirsearch/feroxbuster/zaproxy.
+  - `ssrf-attacks` drops HEADERS (a LAN Referer like `http://nas.local/` blocked intranet apps) in favor of ARGS, and adds bracketed IPv6, hex (`0x7f000001`) hosts.
+  - `ssrf-reserved-ip` no longer matches class E/broadcast, so `mask=255.255.255.0` params pass.
+  - `crlf-injection-headers` requires an encoded CRLF *pair* (a lone `%0a` appears in legitimately encoded Referer URLs), drops branches Go's server makes unreachable, and scores below the default threshold.
+  - `insecure-deserialization-java` drops the `\xac\xed` branch (Go regexp compiles `\xac` as U+00AC — it had never matched raw bytes) and matches hex in either case.
+
+### Added
+- `log4shell-jndi` rule: `${…jndi…}`, `jndi:` schemes, and the nested `${${lower:j}ndi…}` obfuscation, without matching CI template syntax like `${{ inputs.x }}`.
+- `rules_rewrite_test.go`: pins every closed false negative (11 attack shapes) and every removed prose false positive (6 benign shapes).
+
 ### Removed
 - **Rules audit, part 1 of 4: purged the rules that blocked ordinary traffic and the rules that could never fire.** An empirical audit ran real browser-shaped requests (Referer, cookies, Sec-Fetch headers, multipart bodies, percent-encoded values) through the shipped rulesets at the default `anomaly_threshold 5`: every one of them was 403'd, while classic attack payloads (`<body onpointerdown=…>`, `;rm -rf /`, `1' OR 'a'='b`) passed. This change deletes 20 of the 34 rules in `rules.json`/`rules-browser-friendly.json` and 46 rules across the `rules/` bundles (including `rules/smuggling.json` and `rules/csfr.json` wholesale), in three categories:
   - *Blocked ordinary traffic outright*: `rfi-http-url` (any Referer/Origin header is a URL), the `%XX`-anything and bare-word branches of the XSS/SSTI rules ("don't", "set", "date", any encoded byte), `sql-injection-improved-basic` (`-{2,}` matched every multipart boundary), `nosql-injection-attacks` (`count`, `find`, `update` in any JSON body), `unusual-paths` (blocked `/login`), `http-request-smuggling` (blocked `Content-Length: 0`), the Sec-Fetch scoring pair (3+2 = threshold on every cross-site subresource), and `rules/vulnerability.json` `rce-11`, whose `(?i)| id` pattern contains an empty alternation branch and therefore matched **every request**.
