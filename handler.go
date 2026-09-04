@@ -566,6 +566,36 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 
 	m.logger.Debug("Starting rule evaluation for phase", zap.Int("phase", phase), zap.Int("rule_count", len(rules)))
 
+	// Cache extracted target values for the duration of this phase. Many rules
+	// name the same target (e.g. HEADERS, URI, ARGS) and extraction is not free
+	// -- the header concatenation especially. Extraction is deterministic for a
+	// given request/recorder within a phase, so one lookup per distinct target
+	// replaces one per rule (#115).
+	type cachedValue struct {
+		value string
+		err   error
+	}
+	valueCache := make(map[string]cachedValue)
+	extract := func(target string) (string, error) {
+		if cv, ok := valueCache[target]; ok {
+			return cv.value, cv.err
+		}
+		var v string
+		var e error
+		if phase == 3 || phase == 4 {
+			if recorder, ok := w.(*responseRecorder); ok {
+				v, e = m.extractValue(target, r, recorder)
+			} else {
+				m.logger.Error("response recorder is not available in phase 3 or 4 when required")
+				v, e = m.extractValue(target, r, nil)
+			}
+		} else {
+			v, e = m.extractValue(target, r, nil)
+		}
+		valueCache[target] = cachedValue{value: v, err: e}
+		return v, e
+	}
+
 	for _, rule := range rules {
 		m.logger.Debug("Processing rule", zap.String("rule_id", rule.ID), zap.Int("target_count", len(rule.Targets)))
 
@@ -576,20 +606,7 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 
 		for _, target := range rule.Targets {
 			m.logger.Debug("Extracting value for target", zap.String("target", target), zap.String("rule_id", rule.ID))
-			var value string
-			var err error
-
-			if phase == 3 || phase == 4 {
-				if recorder, ok := w.(*responseRecorder); ok {
-					value, err = m.extractValue(target, r, recorder)
-				} else {
-					m.logger.Error("response recorder is not available in phase 3 or 4 when required")
-					value, err = m.extractValue(target, r, nil)
-				}
-			} else {
-				value, err = m.extractValue(target, r, nil)
-			}
-
+			value, err := extract(target)
 			if err != nil {
 				m.logger.Debug("Failed to extract value for target, skipping rule for this target",
 					zap.String("target", target),
