@@ -576,9 +576,10 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 	for _, rule := range rules {
 		m.logger.Debug("Processing rule", zap.String("rule_id", rule.ID), zap.Int("target_count", len(rule.Targets)))
 
-		// Use the custom type as the key
-		ctx := context.WithValue(r.Context(), ContextKeyRule("rule_id"), rule.ID)
-		r = r.WithContext(ctx)
+		// The rule ID is passed explicitly to every log/block call below via
+		// rule.ID; nothing reads it back out of the request context, so we do not
+		// wrap the request per rule (that cost a Request copy + context node for
+		// every rule on the hot path).
 
 		for _, target := range rule.Targets {
 			m.logger.Debug("Extracting value for target", zap.String("target", target), zap.String("rule_id", rule.ID))
