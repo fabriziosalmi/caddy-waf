@@ -1,29 +1,5 @@
 [
   {
-    "id": "allow-legit-browsers",
-    "phase": 1,
-    "pattern": "(?i)(caddy-waf-ui|Mozilla|Chrome|Safari|Edge|Firefox|Opera|AppleWebKit|Gecko|Trident|MSIE|Googlebot|Bingbot|Slurp|DuckDuckBot|Baiduspider|YandexBot|Sogou|Exabot|facebot|facebookexternalhit|Twitterbot|Slackbot|LinkedInBot|TelegramBot)",
-    "targets": [
-      "HEADERS:User-Agent"
-    ],
-    "severity": "LOW",
-    "action": "log",
-    "score": 1,
-    "description": "Allow and log traffic from legitimate browsers, search engine crawlers, and social media bots."
-  },
-  {
-    "id": "auth-login-form-missing",
-    "phase": 2,
-    "pattern": "^$",
-    "targets": [
-      "BODY"
-    ],
-    "severity": "LOW",
-    "action": "log",
-    "score": 3,
-    "description": "Log login requests that do not contain login form fields"
-  },
-  {
     "id": "block-scanners",
     "phase": 1,
     "pattern": "(?i)(nikto|sqlmap|nmap|acunetix|nessus|openvas|wpscan|dirbuster|burpsuite|owasp zap|netsparker|appscan|arachni|skipfish|gobuster|wfuzz|hydra|metasploit|nessus|openvas|qualys|zap|w3af|openwebspider|netsparker|appspider|rapid7|nessus|qualys|nuclei|zgrab|vega|gospider|gxspider|whatweb|xspider|joomscan|uniscan|blindelephant)",
@@ -48,18 +24,6 @@
     "description": "Log requests with potential CRLF injection characters in headers. Improved pattern matching."
   },
   {
-    "id": "csrf-missing-token-post",
-    "phase": 2,
-    "pattern": "^$",
-    "targets": [
-      "BODY"
-    ],
-    "severity": "HIGH",
-    "action": "log",
-    "score": 6,
-    "description": "Log POST requests to write operation endpoints that are missing a CSRF token in the body (use this with a condition to ensure that a write operation was done)."
-  },
-  {
     "id": "header-attacks-consolidated",
     "phase": 1,
     "pattern": "(?i)(?:1'\\s+OR\\s+'1'='1|<script[^>]*>|\\.\\.\\/\\.\\.\\/etc\\/passwd|1'\\s+UNION\\s+SELECT\\s+NULL--|\\b(?:select|insert|update|delete|drop|alter)\\b(?:\\s|\\/\\*.*?\\*\\/|--.*?)?(?:from|into|where|table)\\b|\\bunion\\b(?:\\s|\\/\\*.*?\\*\\/|--.*?)?\\bselect\\b|'\\s*(?:and|or)\\s*\\d+\\s*(?:=|[<>!]+\\s*)\\d+|\\)\\s*(?:and|or)\\s*\\(\\d+\\s*(?:=|[<>!]+\\s*)\\d+\\)|\\b(?:sleep|benchmark|waitfor\\s+delay)\\s*\\()",
@@ -70,19 +34,6 @@
     "action": "block",
     "score": 9,
     "description": "Block SQL injection, XSS, and path traversal attempts in headers. Improved pattern matching."
-  },
-  {
-    "id": "http-request-smuggling",
-    "phase": 1,
-    "pattern": "(?i)(?:Transfer-Encoding.*?(?:chunked|identity)|Content-Length:\\s*0|(?:Content-Length:\\s*\\d+)(?:\\n.*){2,}|(?:Content-Length:\\s*\\d+)(?:\\n\\w+:\\s*.*?\\n+)|(?:TE:\\s*chunked)(?:\\n.*){2,}|(?:TE:\\s*identity)(?:\\n.*){2,})",
-    "targets": [
-      "HEADERS",
-      "BODY"
-    ],
-    "severity": "HIGH",
-    "action": "block",
-    "score": 9,
-    "description": "Detects HTTP request smuggling patterns. Targets Transfer-Encoding and Content-Length headers."
   },
   {
     "id": "idor-attacks",
@@ -114,49 +65,9 @@
     "description": "Block requests containing potential Java serialized objects, including magic bytes for serialized objects."
   },
   {
-    "id": "jwt-tampering",
-    "phase": 1,
-    "pattern": "^(eyJ[A-Za-z0-9_-]{0,}\\.eyJ[A-Za-z0-9_-]{0,}\\.[A-Za-z0-9_-]{0,})",
-    "targets": [
-      "HEADERS:Authorization",
-      "COOKIES"
-    ],
-    "severity": "HIGH",
-    "action": "block",
-    "score": 8,
-    "description": "Block potential JWT tampering attempts in Authorization headers or cookies."
-  },
-  {
-    "id": "nosql-injection-attacks",
-    "phase": 2,
-    "pattern": "(?i)(?:\\$(?:gt|gte|lt|lte|ne|eq|regex|where|or|and|in|nin|exists|type|jsonSchema|not|mod|elemMatch|all|size|nor|comment|slice|expr|meta|text|search|near|nearSphere|geoWithin|geoIntersects|geoNear)\\b|\\b(?:db|collection|aggregate|mapReduce|count|group|distinct|findOne|find|remove|update|insert)\\b)",
-    "targets": [
-      "BODY",
-      "HEADERS",
-      "COOKIES"
-    ],
-    "severity": "HIGH",
-    "action": "block",
-    "score": 9,
-    "description": "Block NoSQL injection attempts in request body, headers, and cookies. Targets MongoDB operators and keywords."
-  },
-  {
-    "id": "open-redirect-attempt",
-    "phase": 2,
-    "pattern": "(?i)(?:https?://(?:[^/]+@)?[^/]+\\.[^/]+/|\\b(?:redirect|url|next|return|r|u)\\b\\s*=\\s*(?:https?://|//))",
-    "targets": [
-      "HEADERS",
-      "BODY"
-    ],
-    "severity": "MEDIUM",
-    "action": "block",
-    "score": 6,
-    "description": "Block potential open redirect attempts in request body and headers."
-  },
-  {
     "id": "path-traversal",
     "phase": 1,
-    "pattern": "(?:\\.\\.[/\\\\]|\\.\\./|\\.\\.\\\\/|%2e%2e[/\\\\]|%2e%2e/|%2e%2e%5c|%252e%252e|\\b(?:etc(?:\\/|%2F)(?:passwd|shadow|hosts)|(?:proc|sys)(?:\\/|%2F)(?:self(?:\\/|%2F)environ|cmdline)|boot(?:\\/|%2F)grub(?:\\/|%2F)grub\\.cfg|\\/\\.\\.(?:\\/|%2F)|(?:\\/|%5c)(\\.\\.){2,}(?:\\/|%5c)|(?:\\.\\.){2,}(?:\\/|%5c)|(?:\\.\\.){2,}|(?:%2e%2e){2,}(?:%2f|%5c)|(?:%2e%2e%2f|%2e%2e%5c){2,}|(?:\\.\\.%2f|\\.\\.%5c){2,}|(?:%252e%252e%2f|%252e%252e%5c){2,}|%252e%252e|%252f%2e%2e|%255c%2e%2e|\\/\\.(?:\\/|%2F)|\\%2e(?:%2f|%5c))\\b)",
+    "pattern": "(?i)(?:(?:\\.\\.(?:%252f|%255c)){2,}|\\.\\.[/\\\\]|\\.\\./|\\.\\.\\\\/|%2e%2e[/\\\\]|%2e%2e/|%2e%2e%5c|%252e%252e|\\b(?:etc(?:\\/|%2F)(?:passwd|shadow|hosts)|(?:proc|sys)(?:\\/|%2F)(?:self(?:\\/|%2F)environ|cmdline)|boot(?:\\/|%2F)grub(?:\\/|%2F)grub\\.cfg|\\/\\.\\.(?:\\/|%2F)|(?:\\/|%5c)(\\.\\.){2,}(?:\\/|%5c)|(?:\\.\\.){2,}(?:\\/|%5c)|(?:\\.\\.){2,}|(?:%2e%2e){2,}(?:%2f|%5c)|(?:%2e%2e%2f|%2e%2e%5c){2,}|(?:\\.\\.%2f|\\.\\.%5c){2,}|(?:%252e%252e%2f|%252e%252e%5c){2,}|%252e%252e|%252f%2e%2e|%255c%2e%2e|\\/\\.(?:\\/|%2F)|\\%2e(?:%2f|%5c))\\b)",
     "targets": [
       "URI",
       "HEADERS"
@@ -164,7 +75,7 @@
     "severity": "HIGH",
     "action": "block",
     "score": 9,
-    "description": "Block path traversal attempts and direct access to sensitive files (Target: URI and Headers). Improved and more aggressive pattern matching, including more obfuscation techniques."
+    "description": "Block path traversal attempts and direct access to sensitive files (Target: URI and Headers). Case-insensitive (percent-encoding is emitted in both cases on the wire) and includes a '..%252F' branch for traversal whose slashes are double-encoded."
   },
   {
     "id": "path-traversal-body",
@@ -183,51 +94,24 @@
     "phase": 2,
     "pattern": "(?i)(?:(?:[;|]|`|\\$\\()\\s*(?:cat|base64|whoami|echo|curl|wget|bash|sh|python|perl|ls|id|ping|nslookup|ipconfig|ifconfig|powershell)\\b|\\b(?:cat|head|tail|less|more|nl|tac)\\s+/(?:etc|proc|sys|var|root|home|dev|tmp)\\b|\\b(?:curl|wget)\\s+(?:-{1,2}[a-z]|https?://|ftp://|file://)|\\b(?:bash|sh|zsh|python[23]?|perl|php|ruby)\\s+-[a-z]|\\bpowershell\\s+-|\\|\\s*(?:sh|bash|zsh)\\b)",
     "targets": [
-      "ARGS",
-      "HEADERS"
+      "ARGS"
     ],
     "severity": "HIGH",
     "action": "block",
     "score": 5,
-    "description": "Block command injection: a shell command that follows an injection metacharacter (; | ` $()), reads a sensitive path, fetches a URL, or is piped to a shell. Requires that context so bare words (a `cat=` param, an `id=` value, a curl/wget User-Agent) do not false-positive. `&` is not treated as a metacharacter here because it is the query-string separator; `&&`-chained commands are still caught by the URL and pipe-to-shell branches."
-  },
-  {
-    "id": "rfi-http-url",
-    "phase": 2,
-    "pattern": "(?i)https?:\\/\\/[^\\s]+",
-    "targets": [
-      "URI",
-      "ARGS",
-      "HEADERS"
-    ],
-    "severity": "HIGH",
-    "action": "block",
-    "score": 8,
-    "description": "Block direct use of HTTP or HTTPS URLs for inclusion."
+    "description": "Block command injection in query arguments: a shell command that follows an injection metacharacter (; | ` $()), reads a sensitive path, fetches a URL, or is piped to a shell. Requires that context so bare words (a `cat=` param, an `id=` value) do not false-positive. HEADERS was removed as a target: the evaluated header string joins all headers (including Cookie) with semicolons, so any cookie named after a short command word (id=...) matched the metacharacter branch and blocked the request."
   },
   {
     "id": "sensitive-files",
     "phase": 1,
-    "pattern": "(?i)(?:/\\.git/(?:HEAD|index|config|refs|objects)|/\\.env(?:\\.local|\\.dev|\\.prod)?$|/\\.htaccess$|/\\.htpasswd$|/\\.svn/|/\\.DS_Store$|\\/WEB-INF\\/|\\/WEB-INF\\/web\\.xml|\\/META-INF\\/|\\.git/\\s*(?:H\\.E\\.A\\.D|HEAD)|\\.dockerenv|server-status|\\b(?:config|database|credentials|secrets|private|local|development|staging|production|backup|default)\\b(?:[\\-_\\.]?)(?:[a-z0-9]+)?\\.(?:json|yaml|yml|ini|properties|txt|conf|toml|lock|log|bak|swp|orig|dist|sample|example|template|env|sql))",
+    "pattern": "(?i)(?:/\\.git/(?:HEAD|index|config|refs|objects)|/\\.env(?:\\.local|\\.dev|\\.prod)?$|/\\.htaccess$|/\\.htpasswd$|/\\.svn/|/\\.DS_Store$|\\/WEB-INF\\/|\\/META-INF\\/|\\.dockerenv|server-status)",
     "targets": [
       "URI"
     ],
     "severity": "HIGH",
     "action": "block",
     "score": 9,
-    "description": "Block access to sensitive files and directories (Target: URI). Expanded rule to include more config and backup file names."
-  },
-  {
-    "id": "sensitive-files-expanded",
-    "phase": 1,
-    "pattern": "(?i)(?:/\\.git/(?:HEAD|index|config|refs|objects)|/\\.env(?:\\.local|\\.dev|\\.prod)?$|/\\.htaccess$|/\\.htpasswd$|/\\.svn/|/\\.DS_Store$|\\/WEB-INF\\/|\\/WEB-INF\\/web.xml|\\/META-INF\\/|\\.git/\\s*(?:H\\.E\\.A\\.D|HEAD)|\\.dockerenv|server-status)",
-    "targets": [
-      "URI"
-    ],
-    "severity": "HIGH",
-    "action": "block",
-    "score": 9,
-    "description": "Expanded rule to block access to more sensitive files and account for obfuscation."
+    "description": "Block access to sensitive dotfiles and server internals (.git, .env, .htaccess/.htpasswd, .svn, WEB-INF/META-INF, .dockerenv, server-status). The former generic branch (config|database|backup|...).(json|yaml|...) was removed: it blocked /config.json and similar files that frontends legitimately fetch."
   },
   {
     "id": "sql-injection",
@@ -242,19 +126,6 @@
     "action": "block",
     "score": 7,
     "description": "Block SQL injection attempts in request arguments, body, and headers."
-  },
-  {
-    "id": "sql-injection-improved-basic",
-    "phase": 2,
-    "pattern": "(?i)(?:'\\s*(?:and|or)\\s*\\d+\\s*[=<>!]+\\s*\\d+|['\"]\\s*\\d+\\s*[=<>!]+\\s*['\"]|'\\s*\\+\\s*'|--\\s*-|-{2,})",
-    "targets": [
-      "ARGS",
-      "BODY"
-    ],
-    "severity": "HIGH",
-    "action": "block",
-    "score": 8,
-    "description": "Improved rule to catch basic SQL injection including quotes and boolean logic. Removed HEADERS and COOKIES targets and removed double quote pattern to prevent false positives."
   },
   {
     "id": "ssrf-attacks",
@@ -297,35 +168,9 @@
     "description": "Block SSRF to Reserved/Multicast IPs."
   },
   {
-    "id": "ssti-attacks",
-    "phase": 2,
-    "pattern": "(?i)(?:\\{\\{.*?\\}\\}|\\{\\%.*?\\%\\}|\\$\\{.*?\\}|\\#\\{.*?\\}|\\$\\(.*?\\)|\\{\\*.*?\\*\\}|\\#\\*.*?\\*\\#|<%[=]?.*?%>|@\\{.*?\\}|\\b(?:Runtime|Process|exec|System|getClass|ClassLoader|loadLibrary|forName|newInstance|getMethod|invoke|getConstructor|getDeclaredMethod|getDeclaredField|setAccessible|getDeclaredConstructor|getInputStream|getOutputStream|get|put|setAttribute|getProperty|setProperty|setSecurityManager|load|defineClass|new|clone|readObject|writeObject|call|apply|bind|super)\\b\\s*\\(|\\b(?:T|Math|Object|String|Boolean|Number|BigInteger|BigDecimal|Date|List|Map|Set|Queue|Array|Tuple|Pattern|Locale|Class|ClassLoader|Proxy|SecurityManager|Thread|ThreadGroup)\\b)",
-    "targets": [
-      "BODY",
-      "HEADERS",
-      "COOKIES"
-    ],
-    "severity": "HIGH",
-    "action": "block",
-    "score": 9,
-    "description": "Block Server-Side Template Injection (SSTI) attacks in request body, headers, and cookies. Targets common template syntax and dangerous keywords for various frameworks."
-  },
-  {
-    "id": "unusual-paths",
-    "phase": 1,
-    "pattern": "(?i)(?:/wp-admin|/phpmyadmin|/admin|/login|/cgi-bin|/shell|/backdoor|/cmd|/exec|/bin/(?:sh|bash|zsh)|/console|/setup|/test|\\.php$|\\.asp$|\\.aspx$|\\.jsp$|\\.do$|\\.action$|\\.pl$|\\.py$|\\.cgi$|\\.cfm$|\\.rb$|\\.php[0-9]?$|\\.phtml$|\\.htaccess$|\\.htpasswd$|\\.ini$|\\.config$|\\.lock$|\\.log$|\\.bak$|\\.swp$|\\.orig$|\\.dist$|\\.sample$|\\.example$|\\.template$|\\.env$)",
-    "targets": [
-      "URI"
-    ],
-    "severity": "MEDIUM",
-    "action": "block",
-    "score": 7,
-    "description": "Block requests to unusual or suspicious paths and common scripting extensions (Target: URI). Expanded rule for more file types and endpoints."
-  },
-  {
     "id": "xss-attacks",
     "phase": 2,
-    "pattern": "(?i)(?:<script[^>]*>|<img[^>]*\\s+onerror=|javascript:|data:|vbscript:|<svg[^>]*\\s+onload=|alert\\(|document\\.(?:cookie|location)|eval\\(|base64_(?:encode|decode)|expression\\(|\\b(?:on(?:mouse(?:over|out|down|up|move)|focus|blur|click|key(?:press|down|up)|load|error|submit|reset|change))\\s*=|\\bstyle\\s*=|(?:&#[xX]?[0-9a-fA-F]+;)+|%[0-9a-fA-F]{2,}|\\biframe[^>]*srcdoc\\s*=)",
+    "pattern": "(?i)(?:<script[^>]*>|<img[^>]*\\s+onerror=|javascript:|vbscript:|<svg[^>]*\\s+onload=|alert\\(|document\\.(?:cookie|location)|eval\\(|base64_(?:encode|decode)|expression\\(|\\b(?:on(?:mouse(?:over|out|down|up|move)|focus|blur|click|key(?:press|down|up)|load|error|submit|reset|change))\\s*=|\\biframe[^>]*srcdoc\\s*=)",
     "targets": [
       "BODY",
       "ARGS"
@@ -333,104 +178,20 @@
     "severity": "HIGH",
     "action": "block",
     "score": 9,
-    "description": "Block XSS attempts using HTML tags, event handlers, javascript: protocol, encoded characters, iframe srcdoc, etc. Removed HEADERS and COOKIES targets and simplified pattern to prevent false positives."
+    "description": "Block XSS attempts using HTML tags, event handlers, javascript:/vbscript: protocols, and iframe srcdoc. The former data:, style=, HTML-entity and %XX branches were removed: each matched ordinary traffic (YAML bodies, ?style= params, WYSIWYG entities, and any percent-encoded byte)."
   },
   {
-    "id": "xss-improved-encoding",
+    "id": "double-encoded-injection-chars",
     "phase": 2,
-    "pattern": "(?i)(?:<script[^>]*>|<img[^>]*\\s+onerror=|javascript:|data:|vbscript:|<svg[^>]*\\s+onload=|alert\\(|document\\.(?:cookie|location)|eval\\(|base64_(?:encode|decode)|expression\\(|\\b(?:on(?:mouse(?:over|out|down|up|move)|focus|blur|click|key(?:press|down|up)|load|error|submit|reset|change))\\s*=|\\bstyle\\s*=|(?:&#[xX]?[0-9a-fA-F]+;)+|%[0-9a-fA-F]{2,}|\\biframe[^>]*srcdoc\\s*=)",
+    "pattern": "(?i)%25(?:27|22|3c|3e|00)",
     "targets": [
+      "URI",
       "ARGS",
-      "BODY",
-      "HEADERS"
+      "BODY"
     ],
     "severity": "HIGH",
     "action": "block",
-    "score": 8,
-    "description": "Improved XSS rule to catch encoded payloads and iframe srcdoc."
-  },
-  {
-    "id": "browser-integrity-sec-fetch-dest-missing-block",
-    "phase": 1,
-    "pattern": "^$",
-    "targets": [
-      "HEADERS:Sec-Fetch-Dest-Presence-Check"
-    ],
-    "severity": "CRITICAL",
-    "action": "block",
-    "score": 10,
-    "description": "BLOCK: Requests missing Sec-Fetch-Dest header. Very strong indicator of non-browser traffic. High confidence, low false positive risk in modern browsers."
-  },
-  {
-    "id": "browser-integrity-sec-fetch-mode-missing-log-score",
-    "phase": 1,
-    "pattern": "^$",
-    "targets": [
-      "HEADERS:Sec-Fetch-Mode-Presence-Check"
-    ],
-    "severity": "MEDIUM",
-    "action": "log",
-    "score": 5,
-    "description": "LOG+SCORE: Requests missing Sec-Fetch-Mode header. Suspicious, might be non-browser. Moderate confidence, low to moderate false positive risk. Assigns score."
-  },
-  {
-    "id": "browser-integrity-sec-fetch-site-missing-log-score",
-    "phase": 1,
-    "pattern": "^$",
-    "targets": [
-      "HEADERS:Sec-Fetch-Site-Presence-Check"
-    ],
-    "severity": "LOW",
-    "action": "log",
-    "score": 3,
-    "description": "LOG+SCORE: Requests missing Sec-Fetch-Site header. Less critical but still worth monitoring. Lower confidence, slightly higher false positive risk. Assigns score."
-  },
-  {
-    "id": "browser-integrity-sec-fetch-user-missing-log-score",
-    "phase": 1,
-    "pattern": "^$",
-    "targets": [
-      "HEADERS:Sec-Fetch-User-Presence-Check"
-    ],
-    "severity": "LOW",
-    "action": "log",
-    "score": 2,
-    "description": "LOG+SCORE: Requests missing Sec-Fetch-User header. Might indicate non-user-initiated actions or bots. Lowest confidence, moderate to higher false positive risk. Assigns score, mainly for correlation."
-  },
-  {
-    "id": "browser-integrity-sec-fetch-dest-not-document-ua-suspicious-log-score",
-    "phase": 1,
-    "pattern": "(?i)^(?:script|style|image|font|fetch|xhr|audio|video|manifest|object|embed|report|worker|sharedworker|serviceworker|empty|unknown)$",
-    "targets": [
-      "HEADERS:Sec-Fetch-Dest-Not"
-    ],
-    "severity": "MEDIUM",
-    "action": "log",
     "score": 6,
-    "description": "LOG+SCORE: Sec-Fetch-Dest not 'document' AND Suspicious User-Agent. More suspicious combination. Moderate confidence, reduced false positive risk by combining checks. Assigns score."
-  },
-  {
-    "id": "browser-integrity-sec-fetch-mode-no-cors-document-log-score",
-    "phase": 1,
-    "pattern": "(?i)^(?:no-cors)$",
-    "targets": [
-      "HEADERS:Sec-Fetch-Mode"
-    ],
-    "severity": "LOW",
-    "action": "log",
-    "score": 3,
-    "description": "LOG+SCORE: 'document' requests with Sec-Fetch-Mode: 'no-cors'. Less common for initial page loads. Lower confidence, low false positive risk. Assigns score."
-  },
-  {
-    "id": "browser-integrity-sec-fetch-site-cross-site-document-log-score",
-    "phase": 1,
-    "pattern": "(?i)^(?:cross-site)$",
-    "targets": [
-      "HEADERS:Sec-Fetch-Site"
-    ],
-    "severity": "LOW",
-    "action": "log",
-    "score": 2,
-    "description": "LOG+SCORE: 'document' requests with Sec-Fetch-Site: 'cross-site'. Common for external links, primarily for monitoring cross-site traffic patterns. Lowest confidence, very low false positive risk. Assigns score for traffic analysis."
+    "description": "Block double-percent-encoded injection metacharacters: %2527 ('), %2522 (\"), %253C (<), %253E (>), %2500 (NUL). A legitimate client never needs to double-encode a quote, angle bracket, or null byte -- these survive one decode as %XX and target backends that decode twice. Deliberately excludes %252F (double-encoded slash), which appears in legitimate nested/re-encoded URL parameters; traversal with double-encoded slashes is handled by the path-traversal rule's '..%252F' branch instead."
   }
 ]

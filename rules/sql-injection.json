@@ -1,225 +1,242 @@
 [
-    {
-        "id": "sqli-basic-keywords",
-        "phase": 2,
-        "pattern": "(?i)\\b(?:select|insert|update|delete|drop|alter|truncate|create|grant|revoke)\\b(?:\\s|\\/\\*.*?\\*\\/|--.*?)?(?:from|into|where|table|index|user|procedure|function|database)\\b",
-        "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 8,
-        "description": "Block SQLi attempts using basic SQL keywords."
-    },
-    {
-        "id": "sqli-union-select",
-        "phase": 2,
-        "pattern": "(?i)\\bunion\\b(?:\\s|\\/\\*.*?\\*\\/|--.*?)?(?:all|distinct)?(?:\\s|\\/\\*.*?\\*\\/|--.*?)?\\bselect\\b",
-        "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 8,
-         "description": "Block SQLi attempts using UNION SELECT."
-    },
-   {
-        "id": "sqli-boolean-logic",
-        "phase": 2,
-         "pattern": "(?i)'\\s*(?:and|or)\\s*['\\d]+\\s*(?:=|[<>]=?|!=)\\s*['\\d]+|\\)\\s*(?:and|or)\\s*\\([\\d]+\\s*(?:=|[<>]=?|!=)\\s*[\\d]+\\)",
-       "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-         "severity": "HIGH",
-         "action": "block",
-         "score": 7,
-         "description": "Block SQLi using boolean logic for exploitation."
-    },
-   {
-        "id": "sqli-time-based-functions",
-        "phase": 2,
-        "pattern": "(?i)\\b(?:sleep|benchmark|waitfor\\s+delay)\\s*\\(",
-       "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-         "severity": "HIGH",
-         "action": "block",
-       "score": 7,
-         "description": "Block SQLi using time-based functions."
-    },
-   {
-        "id": "sqli-exec-commands",
-        "phase": 2,
-        "pattern": "(?i)(?:\\bexec\\b|xp_cmdshell)",
-        "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "HIGH",
-         "action": "block",
-         "score": 9,
-        "description":"Block SQLi using extended stored procedure for command execution"
-    },
-    {
-       "id": "sqli-comment-syntax",
-       "phase": 2,
-        "pattern": "(?i)/\\*.*?\\*/|--\\s*(\\r\\n?|$)",
-        "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-        "action": "log",
-        "score": 4,
-        "description": "Log potential SQLi comment bypass attempts."
-   },
-   {
-        "id": "sqli-string-concat",
-        "phase": 2,
-       "pattern": "(?i)(?:\\|\\||\\+)\\s*['\"](?:.*?['\"](?:\\|\\||\\+))?",
-       "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-        "action": "log",
-        "score": 5,
-         "description": "Log attempts using string concatenation."
-    },
-    {
-        "id":"sqli-alternative-encodings",
-       "phase":2,
-       "pattern":"(?i)(?:%27|%22|%2527|%2522|%u0027|%u0022|\\x27|\\x22)",
-        "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-        "action":"log",
-        "score": 3,
-        "description":"Log SQLi attempts using alternative encoding of quotes"
-   },
-   {
-      "id": "sqli-order-by-injection",
-      "phase": 2,
-      "pattern": "(?i)\\border\\s+by\\s+(?:\\w+|\\d+)(?:\\s*(?:asc|desc))?(?:\\s*,\\s*(?:\\w+|\\d+)(?:\\s*(?:asc|desc))?)*",
-     "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-      "severity": "MEDIUM",
-     "action": "log",
-      "score": 4,
-      "description": "Log SQLi attempts using ORDER BY for injection."
-
-    },
-    {
-      "id": "sqli-group-by-injection",
-      "phase": 2,
-       "pattern": "(?i)\\bgroup\\s+by\\s+(?:\\w+|\\d+)(?:\\s*,\\s*(?:\\w+|\\d+))?",
-      "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-      "severity": "MEDIUM",
-      "action": "log",
-      "score": 4,
-      "description": "Log SQLi attempts using GROUP BY for injection"
-    },
-      {
-        "id": "sqli-limit-injection",
-      "phase": 2,
-         "pattern": "(?i)\\blimit\\s+(?:\\d+|\\s*\\d+\\s*,\\s*\\d+)",
-      "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-        "action": "log",
-        "score": 4,
-        "description": "Log SQLi attempts using LIMIT for injection"
-      },
   {
-        "id": "sqli-subquery-injection",
-        "phase": 2,
-        "pattern": "(?i)\\((?:\\s*select.*?)\\)",
-        "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-        "action": "log",
-        "score": 4,
-        "description":"Log SQLi attempts using subqueries"
-   },
-   {
-        "id": "sqli-information-schema-keywords",
-         "phase": 2,
-        "pattern": "(?i)\\b(?:information_schema|mysql\\.user|pg_catalog|sysobjects|syscolumns)\\b",
-       "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-         "action": "log",
-         "score": 5,
-        "description": "Log SQLi attempts using information schema keywords."
-    },
-  {
-        "id": "sqli-function-injection",
-       "phase": 2,
-       "pattern":"(?i)\\b(?:version|database|user|load_file|benchmark|sleep|extractvalue|updatexml|geometrycollection|polygon|multipoint|multilinestring|multipolygon|linestring)\\s*\\(",
-        "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-         "severity": "MEDIUM",
-        "action": "log",
-        "score": 5,
-        "description":"Log SQLi attempts using SQL functions for injection."
-
-    },
-    {
-        "id": "sqli-if-statement",
-        "phase": 2,
-         "pattern": "(?i)\\b(?:if\\s*\\(.*?\\s*\\,\\s*.*?\\s*\\,\\s*.*?\\))",
-         "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-         "action": "log",
-        "score": 4,
-        "description": "Log SQLi attempts using IF statements."
-    },
-    {
-       "id": "sqli-case-statement",
-       "phase": 2,
-        "pattern": "(?i)\\bcase\\s+when.*?then.*?else.*?end",
-        "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-        "action":"log",
-        "score":4,
-        "description":"Log SQLi attempts using CASE statements"
-    },
-    {
-      "id": "sqli-hex-encoded-injection",
-      "phase": 2,
-      "pattern":"(?i)0x[0-9a-fA-F]+",
-        "targets":["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity":"MEDIUM",
-        "action":"log",
-        "score": 4,
-        "description":"Log hex encoded values used in potential SQLi attempts"
+    "id": "sqli-union-select",
+    "phase": 2,
+    "pattern": "(?i)\\bunion\\b(?:\\s|\\/\\*.*?\\*\\/|--.*?)?(?:all|distinct)?(?:\\s|\\/\\*.*?\\*\\/|--.*?)?\\bselect\\b",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block SQLi attempts using UNION SELECT."
   },
   {
-      "id":"sqli-null-byte",
-      "phase": 2,
-      "pattern": "(?i)\\x00",
-      "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-        "action":"log",
-        "score": 4,
-        "description":"Log SQLi attempts using Null Byte"
-  },
- {
-       "id": "sqli-xpath-injection",
-        "phase": 2,
-        "pattern": "(?i)/(?:\\/\\w+)+(\\[|\\|)(?i)\\s*(?:\\@(?:\\w+)|\\.)*\\s*(?:=|!=|<|>)[\"']?.*[\"']?\\s*(\\]|\\|)",
-        "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-        "action": "log",
-         "score": 4,
-        "description": "Log potential xpath injection"
-    },
-{
-     "id": "sqli-database-specific-keywords",
-        "phase": 2,
-        "pattern": "(?i)(?:pg_sleep|sleep|delay|benchmark|sp_password|sys_execsql|xp_regread|xp_dirtree|xp_cmdshell|sys.fn_varbintohexstr|load_file|outfile|dumpfile|bulk)",
-         "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-        "action": "log",
-        "score": 4,
-        "description": "Log database specific functions for injection."
-    },
-    {
-     "id": "sqli-advanced-blind-injection",
-       "phase": 2,
-       "pattern": "(?i)(?:\\b(?:select|insert|update|delete|drop|alter)\\b.*?\\b(?:from|where|into|table)\\b.*?\\s*(?:and|or)\\s*(?:1=1|1=0))",
-       "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "HIGH",
-        "action":"block",
-        "score": 8,
-        "description":"Block advanced blind SQLi attempts"
-
+    "id": "sqli-boolean-logic",
+    "phase": 2,
+    "pattern": "(?i)'\\s*(?:and|or)\\s*['\\d]+\\s*(?:=|[<>]=?|!=)\\s*['\\d]+|\\)\\s*(?:and|or)\\s*\\([\\d]+\\s*(?:=|[<>]=?|!=)\\s*[\\d]+\\)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "Block SQLi using boolean logic for exploitation."
   },
   {
-       "id": "sqli-mysql-specific-comments",
-       "phase": 2,
-       "pattern": "(?i)(?:#.*?(?:\n|\r|$)|--\\s*-{0,})(?:\\s*(?:'|\"))?",
-       "targets":["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-        "action": "log",
-        "score": 3,
-        "description": "Log SQLi with MySQL specific comments variations"
+    "id": "sqli-time-based-functions",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:sleep|benchmark|waitfor\\s+delay)\\s*\\(",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "Block SQLi using time-based functions."
+  },
+  {
+    "id": "sqli-comment-syntax",
+    "phase": 2,
+    "pattern": "(?i)/\\*.*?\\*/|--\\s*(\\r\\n?|$)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 4,
+    "description": "Log potential SQLi comment bypass attempts."
+  },
+  {
+    "id": "sqli-string-concat",
+    "phase": 2,
+    "pattern": "(?i)(?:\\|\\||\\+)\\s*['\"](?:.*?['\"](?:\\|\\||\\+))?",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 5,
+    "description": "Log attempts using string concatenation."
+  },
+  {
+    "id": "sqli-order-by-injection",
+    "phase": 2,
+    "pattern": "(?i)\\border\\s+by\\s+(?:\\w+|\\d+)(?:\\s*(?:asc|desc))?(?:\\s*,\\s*(?:\\w+|\\d+)(?:\\s*(?:asc|desc))?)*",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 4,
+    "description": "Log SQLi attempts using ORDER BY for injection."
+  },
+  {
+    "id": "sqli-group-by-injection",
+    "phase": 2,
+    "pattern": "(?i)\\bgroup\\s+by\\s+(?:\\w+|\\d+)(?:\\s*,\\s*(?:\\w+|\\d+))?",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 4,
+    "description": "Log SQLi attempts using GROUP BY for injection"
+  },
+  {
+    "id": "sqli-limit-injection",
+    "phase": 2,
+    "pattern": "(?i)\\blimit\\s+(?:\\d+|\\s*\\d+\\s*,\\s*\\d+)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 4,
+    "description": "Log SQLi attempts using LIMIT for injection"
+  },
+  {
+    "id": "sqli-subquery-injection",
+    "phase": 2,
+    "pattern": "(?i)\\((?:\\s*select.*?)\\)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 4,
+    "description": "Log SQLi attempts using subqueries"
+  },
+  {
+    "id": "sqli-information-schema-keywords",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:information_schema|mysql\\.user|pg_catalog|sysobjects|syscolumns)\\b",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 5,
+    "description": "Log SQLi attempts using information schema keywords."
+  },
+  {
+    "id": "sqli-function-injection",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:version|database|user|load_file|benchmark|sleep|extractvalue|updatexml|geometrycollection|polygon|multipoint|multilinestring|multipolygon|linestring)\\s*\\(",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 5,
+    "description": "Log SQLi attempts using SQL functions for injection."
+  },
+  {
+    "id": "sqli-if-statement",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:if\\s*\\(.*?\\s*\\,\\s*.*?\\s*\\,\\s*.*?\\))",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 4,
+    "description": "Log SQLi attempts using IF statements."
+  },
+  {
+    "id": "sqli-case-statement",
+    "phase": 2,
+    "pattern": "(?i)\\bcase\\s+when.*?then.*?else.*?end",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 4,
+    "description": "Log SQLi attempts using CASE statements"
+  },
+  {
+    "id": "sqli-null-byte",
+    "phase": 2,
+    "pattern": "(?i)\\x00",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 4,
+    "description": "Log SQLi attempts using Null Byte"
+  },
+  {
+    "id": "sqli-xpath-injection",
+    "phase": 2,
+    "pattern": "(?i)/(?:\\/\\w+)+(\\[|\\|)(?i)\\s*(?:\\@(?:\\w+)|\\.)*\\s*(?:=|!=|<|>)[\"']?.*[\"']?\\s*(\\]|\\|)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 4,
+    "description": "Log potential xpath injection"
+  },
+  {
+    "id": "sqli-advanced-blind-injection",
+    "phase": 2,
+    "pattern": "(?i)(?:\\b(?:select|insert|update|delete|drop|alter)\\b.*?\\b(?:from|where|into|table)\\b.*?\\s*(?:and|or)\\s*(?:1=1|1=0))",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block advanced blind SQLi attempts"
   }
 ]

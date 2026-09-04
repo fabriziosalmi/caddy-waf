@@ -1,53 +1,58 @@
 [
-    {
-      "id":"deserial-java-serialized",
-        "phase": 2,
-        "pattern": "(?:rO0AB)",
-      "targets": ["BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "CRITICAL",
-       "action": "block",
-       "score": 9,
-        "description": "Block requests containing potential Java serialized objects."
-    },
-    {
-         "id": "deserial-php-serialized",
-         "phase": 2,
-         "pattern": "(?i)O:\\d+:\\\"\\w+\\\":",
-        "targets": ["BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "HIGH",
-        "action": "log",
-        "score": 7,
-        "description": "Log requests containing potential PHP serialized objects."
-     },
   {
-     "id":"deserial-python-pickle",
-      "phase": 2,
-     "pattern":"(?i)g[\\x00-\\xff]{4}",
-      "targets":["BODY", "HEADERS", "REQUEST_COOKIES"],
-       "severity":"HIGH",
-       "action":"log",
-      "score": 7,
-      "description":"Log requests containing potential python pickle objects"
-  },
-   {
-       "id": "deserial-yaml-payload",
-        "phase": 2,
-        "pattern": "(?i)^\\s*!\\w+",
-        "targets": ["BODY", "HEADERS", "REQUEST_COOKIES"],
-       "severity":"MEDIUM",
-      "action":"log",
-       "score": 6,
-        "description":"Log potential YAML deserialization payloads."
+    "id": "deserial-java-serialized",
+    "phase": 2,
+    "pattern": "(?:rO0AB)",
+    "targets": [
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "CRITICAL",
+    "action": "block",
+    "score": 9,
+    "description": "Block requests containing potential Java serialized objects."
   },
   {
-    "id":"deserial-json-custom",
-    "phase":2,
-    "pattern":"(?i)\"__proto__\":|\\\"constructor\\\":|\\\"prototype\\\":",
-     "targets": ["BODY","HEADERS", "REQUEST_COOKIES"],
+    "id": "deserial-php-serialized",
+    "phase": 2,
+    "pattern": "(?i)O:\\d+:\\\"\\w+\\\":",
+    "targets": [
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "HIGH",
+    "action": "log",
+    "score": 7,
+    "description": "Log requests containing potential PHP serialized objects."
+  },
+  {
+    "id": "deserial-yaml-payload",
+    "phase": 2,
+    "pattern": "(?i)^\\s*!\\w+",
+    "targets": [
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
     "severity": "MEDIUM",
-     "action":"log",
-     "score": 5,
-      "description":"Log requests containing potentially malicious keys when deserializing JSON"
+    "action": "log",
+    "score": 6,
+    "description": "Log potential YAML deserialization payloads."
+  },
+  {
+    "id": "deserial-json-custom",
+    "phase": 2,
+    "pattern": "(?i)\"__proto__\":|\\\"constructor\\\":|\\\"prototype\\\":",
+    "targets": [
+      "BODY",
+      "HEADERS",
+      "REQUEST_COOKIES"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 5,
+    "description": "Log requests containing potentially malicious keys when deserializing JSON"
   }
-
 ]

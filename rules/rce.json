@@ -1,183 +1,158 @@
 [
-    {
-        "id": "rce-common-commands",
-        "phase": 2,
-        "pattern": "(?i)\\b(?:cat|base64|whoami|echo|curl|wget|bash|sh|python|perl|ls|id|ping|nslookup|ipconfig|ifconfig|powershell|net)\\b",
-        "targets": ["ARGS", "HEADERS"],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 8,
-        "description": "Block common commands used in RCE attempts."
-    },
-   {
-        "id": "rce-command-separators",
-        "phase": 2,
-        "pattern": "(?i)(?:`[^`]+`|\\b(?:;|\\|\\||&&|\\n|%0a|%0d)\\s*(?:rm|cat|echo|curl|wget|python|php|jsp|cmd|exec|system|passthru|shell_exec|popen|pcntl_exec))",
-        "targets": ["ARGS", "HEADERS"],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 8,
-        "description": "Block command separators followed by specific commands."
-    },
- {
-        "id": "rce-direct-commands",
-        "phase": 2,
-        "pattern": "(?i)\\b(?:system|exec|shell_exec|passthru|popen|proc_open|pcntl_exec)\\s*\\([^\\)]*\\)",
-        "targets": ["ARGS", "HEADERS"],
-        "severity": "HIGH",
-         "action": "block",
-         "score": 9,
-        "description": "Block direct use of RCE execution functions."
-    },
-     {
-        "id": "rce-file-access-patterns",
-        "phase": 2,
-        "pattern": "(?i)(?:(?:cat|more|less|head|tail|find|grep)\\s+[^\\s]+(?:/etc/(?:passwd|shadow|hosts)|/proc/self/environ|/var/log/|/boot/grub))",
-        "targets": ["ARGS", "HEADERS"],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 7,
-        "description": "Block attempts to access sensitive files via command-like patterns."
-    },
-    {
-       "id": "rce-os-info-commands",
-       "phase": 2,
-       "pattern": "(?i)(?:systeminfo|ver|uname\\s+-a|whoami)",
-       "targets": ["ARGS", "HEADERS"],
-        "severity": "MEDIUM",
-        "action": "block",
-        "score": 6,
-        "description": "Block keywords related to system information gathering."
-  },
- {
-        "id": "rce-process-manipulation",
-        "phase": 2,
-        "pattern": "(?i)\\b(?:kill|pkill|ps|top|tasklist|taskkill)\\b",
-        "targets": ["ARGS", "HEADERS"],
-        "severity": "MEDIUM",
-        "action": "log",
-        "score": 5,
-        "description": "Log keywords related to process manipulation."
-    },
   {
-        "id": "rce-network-commands",
-        "phase": 2,
-        "pattern": "(?i)\\b(?:netstat|route|arp|nmap|traceroute)\\b",
-        "targets": ["ARGS", "HEADERS"],
-        "severity": "MEDIUM",
-        "action": "log",
-        "score": 5,
-        "description": "Log keywords related to network exploration."
-    },
-{
-       "id": "rce-special-chars-command",
-       "phase": 2,
-       "pattern": "(?i)(?:\\b(?:;|\\|\\||&|&&|`|\\)|\\(|>|<|\\n|%0a|%0d)\\b.*?\\b(?:cmd|exec|system|passthru|shell_exec|popen|proc_open|pcntl_exec)\\b)",
-        "targets": ["ARGS", "HEADERS"],
-       "severity": "HIGH",
-        "action":"block",
-       "score": 9,
-        "description":"Block RCE commands using special characters and functions"
- },
- {
-     "id": "rce-encoded-separators",
-     "phase": 2,
-      "pattern": "(?i)(?:%20(?:%3B|%7C|%26|%0A|%0D)|%3B|%7C|%26|%0A|%0D)",
-     "targets": ["ARGS", "HEADERS"],
-       "severity": "MEDIUM",
-       "action":"log",
-       "score": 5,
-       "description":"Log RCE attempts with encoded command separators"
- },
-  {
-       "id":"rce-obfuscated-commands",
-       "phase": 2,
-       "pattern":"(?i)(?:[a-zA-Z]+?=\\s*(?:\\`|\\$\\(|\\$\\{).*?(?:\\`|\\)|\\}))",
-       "targets": ["ARGS", "HEADERS"],
-       "severity": "MEDIUM",
-       "action":"log",
-       "score": 5,
-       "description":"Log RCE attempts with obfuscated commands using variable assignment and backticks or $() or ${}"
- },
-    {
-       "id":"rce-powershell-commands",
-        "phase": 2,
-        "pattern": "(?i)(?:powershell|-EncodedCommand|Invoke-WebRequest|Invoke-Expression|New-Object System.Net.WebClient)",
-        "targets": ["ARGS", "HEADERS"],
-        "severity":"HIGH",
-        "action":"block",
-       "score": 8,
-        "description":"Block RCE attempts using powershell"
-  },
-  {
-      "id":"rce-php-file-operations",
-      "phase": 2,
-      "pattern":"(?i)(?:file_get_contents|file_put_contents|fopen|fclose|fwrite|fread|unlink|rename|copy|move_uploaded_file|scandir|glob|readfile|include|require|eval|assert)\\s*\\(",
-      "targets": ["ARGS", "HEADERS"],
-      "severity":"HIGH",
-      "action":"block",
-      "score": 8,
-      "description": "Block PHP file operation functions in potential RCE."
-
-  },
- {
-       "id": "rce-java-exec",
-       "phase": 2,
-       "pattern": "(?i)(?:java\\s+-jar|java\\.lang\\.Runtime\\.getRuntime\\(\\)\\.exec\\(|java\\.lang\\.ProcessBuilder\\(|\\bProcess\\b)\\s*\\(",
-       "targets": ["ARGS", "HEADERS"],
-        "severity": "HIGH",
-       "action": "block",
-       "score": 8,
-       "description": "Block Java commands for remote execution."
-    },
-    {
-       "id": "rce-perl-exec",
-       "phase": 2,
-       "pattern": "(?i)\\b(?:system|exec|qx|backticks|open)\\s*\\(",
-        "targets": ["ARGS", "HEADERS"],
-         "severity": "HIGH",
-        "action": "block",
-       "score": 8,
-       "description": "Block Perl execution commands."
-    },
-    {
-      "id":"rce-python-exec",
-      "phase": 2,
-      "pattern":"(?i)(?:os\\.system\\(|os\\.popen\\(|subprocess\\.call\\(|subprocess\\.Popen\\(|eval\\(|exec\\()",
-      "targets": ["ARGS", "HEADERS"],
-       "severity":"HIGH",
-      "action":"block",
-       "score":8,
-      "description":"Block python commands for remote execution"
- },
-{
-       "id":"rce-csharp-exec",
-        "phase":2,
-        "pattern":"(?i)(?:System.Diagnostics.Process.Start\\(|System.Diagnostics.Process.GetProcessesByName\\()",
-        "targets": ["ARGS", "HEADERS"],
-        "severity":"HIGH",
-        "action":"block",
-        "score": 8,
-         "description":"Block C# commands for remote code execution"
- },
-{
-    "id": "rce-environment-variables",
+    "id": "rce-command-separators",
     "phase": 2,
-    "pattern": "(?i)(?:%\\w+%|\\$\\w+)",
-    "targets": ["ARGS", "HEADERS"],
-     "severity": "MEDIUM",
+    "pattern": "(?i)(?:`[^`]+`|\\b(?:;|\\|\\||&&|\\n|%0a|%0d)\\s*(?:rm|cat|echo|curl|wget|python|php|jsp|cmd|exec|system|passthru|shell_exec|popen|pcntl_exec))",
+    "targets": [
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block command separators followed by specific commands."
+  },
+  {
+    "id": "rce-direct-commands",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:system|exec|shell_exec|passthru|popen|proc_open|pcntl_exec)\\s*\\([^\\)]*\\)",
+    "targets": [
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 9,
+    "description": "Block direct use of RCE execution functions."
+  },
+  {
+    "id": "rce-file-access-patterns",
+    "phase": 2,
+    "pattern": "(?i)(?:(?:cat|more|less|head|tail|find|grep)\\s+[^\\s]+(?:/etc/(?:passwd|shadow|hosts)|/proc/self/environ|/var/log/|/boot/grub))",
+    "targets": [
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "Block attempts to access sensitive files via command-like patterns."
+  },
+  {
+    "id": "rce-network-commands",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:netstat|route|arp|nmap|traceroute)\\b",
+    "targets": [
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "MEDIUM",
     "action": "log",
-     "score": 4,
-    "description": "Log attempts to access environment variables"
-},
- {
-   "id": "rce-cron-like-scheduling",
+    "score": 5,
+    "description": "Log keywords related to network exploration."
+  },
+  {
+    "id": "rce-special-chars-command",
+    "phase": 2,
+    "pattern": "(?i)(?:\\b(?:;|\\|\\||&|&&|`|\\)|\\(|>|<|\\n|%0a|%0d)\\b.*?\\b(?:cmd|exec|system|passthru|shell_exec|popen|proc_open|pcntl_exec)\\b)",
+    "targets": [
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 9,
+    "description": "Block RCE commands using special characters and functions"
+  },
+  {
+    "id": "rce-obfuscated-commands",
+    "phase": 2,
+    "pattern": "(?i)(?:[a-zA-Z]+?=\\s*(?:\\`|\\$\\(|\\$\\{).*?(?:\\`|\\)|\\}))",
+    "targets": [
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 5,
+    "description": "Log RCE attempts with obfuscated commands using variable assignment and backticks or $() or ${}"
+  },
+  {
+    "id": "rce-powershell-commands",
+    "phase": 2,
+    "pattern": "(?i)(?:powershell|-EncodedCommand|Invoke-WebRequest|Invoke-Expression|New-Object System.Net.WebClient)",
+    "targets": [
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block RCE attempts using powershell"
+  },
+  {
+    "id": "rce-php-file-operations",
+    "phase": 2,
+    "pattern": "(?i)(?:file_get_contents|file_put_contents|fopen|fclose|fwrite|fread|unlink|rename|copy|move_uploaded_file|scandir|glob|readfile|include|require|eval|assert)\\s*\\(",
+    "targets": [
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block PHP file operation functions in potential RCE."
+  },
+  {
+    "id": "rce-perl-exec",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:system|exec|qx|backticks|open)\\s*\\(",
+    "targets": [
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block Perl execution commands."
+  },
+  {
+    "id": "rce-python-exec",
+    "phase": 2,
+    "pattern": "(?i)(?:os\\.system\\(|os\\.popen\\(|subprocess\\.call\\(|subprocess\\.Popen\\(|eval\\(|exec\\()",
+    "targets": [
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block python commands for remote execution"
+  },
+  {
+    "id": "rce-csharp-exec",
+    "phase": 2,
+    "pattern": "(?i)(?:System.Diagnostics.Process.Start\\(|System.Diagnostics.Process.GetProcessesByName\\()",
+    "targets": [
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block C# commands for remote code execution"
+  },
+  {
+    "id": "rce-cron-like-scheduling",
     "phase": 2,
     "pattern": "(?i)(?:\\*\\s+\\*\\s+\\*\\s+\\*\\s+.*)|(?:\\d+\\s+\\d+\\s+\\*\\s+\\*\\s+.*)",
-    "targets": ["ARGS", "HEADERS"],
+    "targets": [
+      "ARGS",
+      "HEADERS"
+    ],
     "severity": "MEDIUM",
-    "action":"log",
+    "action": "log",
     "score": 4,
-    "description":"Log cron like scheduling patterns for RCE attempts"
- }
+    "description": "Log cron like scheduling patterns for RCE attempts"
+  }
 ]

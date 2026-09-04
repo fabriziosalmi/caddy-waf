@@ -1,62 +1,54 @@
 [
-    {
-        "id": "xxe-doctype-declaration",
-        "phase": 2,
-       "pattern": "(?i)<!DOCTYPE\\s+\\w+\\s+\\[",
-        "targets": ["BODY","HEADERS"],
-        "severity": "HIGH",
-        "action": "block",
-       "score": 8,
-        "description": "Block XML documents with a DOCTYPE declaration (potential for XXE)."
-    },
-    {
-        "id": "xxe-system-entity",
-        "phase": 2,
-       "pattern": "(?i)SYSTEM\\s+\"file:\\/\\/|SYSTEM\\s+\"http:\\/\\/|SYSTEM\\s+\"https:\\/\\/|SYSTEM\\s+\"ftp:\\/\\/|SYSTEM\\s+\"gopher:\\/\\/",
-        "targets": ["BODY","HEADERS"],
-        "severity": "HIGH",
-        "action": "block",
-       "score": 9,
-        "description": "Block XML documents using a SYSTEM entity with file/URL schemes."
-    },
-    {
-        "id":"xxe-parameter-entity",
-       "phase": 2,
-        "pattern":"(?i)%\\w+;",
-        "targets":["BODY","HEADERS"],
-       "severity":"MEDIUM",
-       "action":"log",
-       "score": 4,
-       "description": "Log XML with parameter entity declaration."
-    },
-    {
-      "id":"xxe-external-dtd",
-      "phase": 2,
-       "pattern": "(?i)<!ENTITY\\s+\\w+\\s+SYSTEM\\s+\"\\s*(?:file|http|https|ftp|gopher):\\/\\/[^>]*\">",
-        "targets":["BODY","HEADERS"],
-      "severity":"HIGH",
-       "action":"block",
-      "score": 9,
-     "description":"Block external DTD with file or url schemas"
+  {
+    "id": "xxe-doctype-declaration",
+    "phase": 2,
+    "pattern": "(?i)<!DOCTYPE\\s+\\w+\\s+\\[",
+    "targets": [
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block XML documents with a DOCTYPE declaration (potential for XXE)."
   },
   {
-      "id":"xxe-inclusion-paths",
-      "phase":2,
-      "pattern": "(?i)(?:\\/etc\\/(?:passwd|shadow|hosts)|\\/proc\\/self\\/environ)",
-       "targets":["BODY","HEADERS"],
-        "severity":"MEDIUM",
-        "action":"log",
-        "score": 6,
-       "description":"Log attempts to use XXE to include sensitive paths."
+    "id": "xxe-system-entity",
+    "phase": 2,
+    "pattern": "(?i)SYSTEM\\s+\"file:\\/\\/|SYSTEM\\s+\"http:\\/\\/|SYSTEM\\s+\"https:\\/\\/|SYSTEM\\s+\"ftp:\\/\\/|SYSTEM\\s+\"gopher:\\/\\/",
+    "targets": [
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 9,
+    "description": "Block XML documents using a SYSTEM entity with file/URL schemes."
   },
-    {
-    "id":"xxe-internal-ip",
-    "phase":2,
-      "pattern":"(?:127\\.0\\.0\\.1|10\\.|172\\.(?:1[6-9]|2\\d|3[01])\\.|192\\.168\\.)",
-    "targets": ["BODY","HEADERS"],
-     "severity":"MEDIUM",
-     "action":"log",
-     "score": 4,
-    "description":"Log attempts to use XXE to internal ips"
-}
+  {
+    "id": "xxe-external-dtd",
+    "phase": 2,
+    "pattern": "(?i)<!ENTITY\\s+\\w+\\s+SYSTEM\\s+\"\\s*(?:file|http|https|ftp|gopher):\\/\\/[^>]*\">",
+    "targets": [
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 9,
+    "description": "Block external DTD with file or url schemas"
+  },
+  {
+    "id": "xxe-inclusion-paths",
+    "phase": 2,
+    "pattern": "(?i)(?:\\/etc\\/(?:passwd|shadow|hosts)|\\/proc\\/self\\/environ)",
+    "targets": [
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 6,
+    "description": "Log attempts to use XXE to include sensitive paths."
+  }
 ]

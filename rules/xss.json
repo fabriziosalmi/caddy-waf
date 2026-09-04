@@ -1,214 +1,226 @@
 [
-   {
-        "id": "xss-basic",
-        "phase": 2,
-        "pattern": "(?i)<script[^>]*>.*?</script>",
-        "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 8,
-         "description": "Basic XSS using <script> tags"
-    },
-    {
-        "id": "xss-img-onerror",
-        "phase": 2,
-        "pattern": "(?i)<img[^>]*\\s+onerror\\s*=\\s*['\"]?(.*?)['\"]?[^>]*>",
-         "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 8,
-        "description": "XSS using <img> tag with onerror"
-    },
-     {
-        "id": "xss-iframe-srcdoc",
-        "phase": 2,
-       "pattern": "(?i)<iframe[^>]*\\s+srcdoc\\s*=\\s*['\"]?(.*?)['\"]?[^>]*>",
-        "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 7,
-        "description": "XSS using <iframe> with srcdoc attribute"
-    },
-    {
-      "id": "xss-svg-onload",
-      "phase": 2,
-      "pattern": "(?i)<svg[^>]*\\s+onload\\s*=\\s*['\"]?(.*?)['\"]?[^>]*>",
-      "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 8,
-        "description": "XSS using <svg> tag with onload"
-    },
-        {
-        "id": "xss-javascript-href",
-        "phase": 2,
-        "pattern": "(?i)javascript\\s*:\\s*(.*?)(?:\r|\n|;)?",
-        "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 7,
-       "description": "XSS using javascript: protocol"
-    },
-    {
-        "id": "xss-vbscript-href",
-        "phase": 2,
-        "pattern": "(?i)vbscript\\s*:\\s*(.*?)(?:\r|\n|;)?",
-         "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 7,
-        "description": "XSS using vbscript: protocol"
-    },
-    {
-        "id": "xss-data-href",
-         "phase": 2,
-        "pattern": "(?i)data\\s*:\\s*(.*?)(?:\r|\n|;)?",
-        "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity": "HIGH",
-         "action": "block",
-        "score": 7,
-        "description": "XSS using data: protocol"
-    },
-     {
-        "id": "xss-event-handlers-on",
-        "phase": 2,
-        "pattern": "(?i)\\b(?:on(?:mouse(?:over|out|down|up|move)|focus|blur|click|key(?:press|down|up)|load|error|submit|reset|change))\\s*=\\s*['\"]?(.*?)['\"]?",
-       "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 7,
-       "description":"XSS using various HTML event handlers"
-    },
-   {
-      "id": "xss-style-attribute",
-       "phase": 2,
-       "pattern": "(?i)\\bstyle\\s*=\\s*['\"]?(.*?)['\"]?",
-      "targets": [ "ARGS", "BODY", "HEADERS" ],
-      "severity": "HIGH",
-       "action": "block",
-       "score": 7,
-       "description": "XSS using style attribute"
-    },
-    {
-        "id": "xss-encoded-html-entities",
-        "phase": 2,
-         "pattern": "(?i)(?:&#[xX]?[0-9a-fA-F]+;)+",
-        "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 8,
-         "description": "XSS using HTML entities"
-    },
-   {
-       "id":"xss-url-encoded",
-       "phase":2,
-        "pattern": "(?i)(?:%[0-9a-fA-F]{2,})+",
-        "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity": "HIGH",
-        "action":"block",
-        "score": 7,
-        "description": "XSS using URL encoded payloads"
-   },
-    {
-      "id": "xss-expression-attribute",
-       "phase": 2,
-       "pattern": "(?i)expression\\s*\\((.*?)\\)",
-        "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 7,
-         "description": "XSS using expression attribute"
-    },
-    {
-        "id": "xss-alert-function",
-         "phase": 2,
-        "pattern":"(?i)alert\\s*\\((.*?)\\)",
-        "targets": [ "ARGS", "BODY", "HEADERS" ],
-         "severity": "HIGH",
-        "action": "block",
-        "score": 7,
-        "description": "XSS with alert() function call"
-    },
-    {
-        "id": "xss-document-cookie",
-        "phase": 2,
-         "pattern": "(?i)document\\s*\\.\\s*cookie",
-         "targets": [ "ARGS", "BODY", "HEADERS" ],
-         "severity": "HIGH",
-         "action": "block",
-         "score": 7,
-        "description":"XSS with document.cookie"
-    },
-    {
-       "id":"xss-document-location",
-        "phase":2,
-        "pattern":"(?i)document\\s*\\.\\s*location",
-        "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity":"HIGH",
-        "action":"block",
-        "score": 7,
-        "description": "XSS with document.location"
-   },
-   {
-      "id": "xss-eval-function",
-      "phase": 2,
-      "pattern": "(?i)eval\\s*\\((.*?)\\)",
-      "targets": [ "ARGS", "BODY", "HEADERS" ],
-      "severity": "HIGH",
-      "action": "block",
-       "score": 7,
-       "description": "XSS with eval() function"
-   },
-   {
-       "id": "xss-base64-encode",
-       "phase": 2,
-       "pattern":"(?i)base64_encode\\s*\\((.*?)\\)",
-       "targets": [ "ARGS", "BODY", "HEADERS" ],
-       "severity":"HIGH",
-       "action":"block",
-        "score": 7,
-       "description":"XSS using base64_encode function"
-    },
-   {
-       "id":"xss-base64-decode",
-        "phase":2,
-        "pattern":"(?i)base64_decode\\s*\\((.*?)\\)",
-        "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity":"HIGH",
-        "action":"block",
-        "score":7,
-        "description":"XSS using base64_decode function"
-   },
-   {
-       "id": "xss-comment-bypass",
-       "phase":2,
-        "pattern": "(?i)<!--.*?-->",
-        "targets": ["ARGS","BODY", "HEADERS"],
-        "severity": "MEDIUM",
-        "action": "log",
-        "score": 3,
-        "description":"Log HTML comment bypass attempts which can contain XSS payloads."
-
-   },
+  {
+    "id": "xss-basic",
+    "phase": 2,
+    "pattern": "(?i)<script[^>]*>.*?</script>",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Basic XSS using <script> tags"
+  },
+  {
+    "id": "xss-img-onerror",
+    "phase": 2,
+    "pattern": "(?i)<img[^>]*\\s+onerror\\s*=\\s*['\"]?(.*?)['\"]?[^>]*>",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "XSS using <img> tag with onerror"
+  },
+  {
+    "id": "xss-iframe-srcdoc",
+    "phase": 2,
+    "pattern": "(?i)<iframe[^>]*\\s+srcdoc\\s*=\\s*['\"]?(.*?)['\"]?[^>]*>",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "XSS using <iframe> with srcdoc attribute"
+  },
+  {
+    "id": "xss-svg-onload",
+    "phase": 2,
+    "pattern": "(?i)<svg[^>]*\\s+onload\\s*=\\s*['\"]?(.*?)['\"]?[^>]*>",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "XSS using <svg> tag with onload"
+  },
+  {
+    "id": "xss-javascript-href",
+    "phase": 2,
+    "pattern": "(?i)javascript\\s*:\\s*(.*?)(?:\r|\n|;)?",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "XSS using javascript: protocol"
+  },
+  {
+    "id": "xss-vbscript-href",
+    "phase": 2,
+    "pattern": "(?i)vbscript\\s*:\\s*(.*?)(?:\r|\n|;)?",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "XSS using vbscript: protocol"
+  },
+  {
+    "id": "xss-event-handlers-on",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:on(?:mouse(?:over|out|down|up|move)|focus|blur|click|key(?:press|down|up)|load|error|submit|reset|change))\\s*=\\s*['\"]?(.*?)['\"]?",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "XSS using various HTML event handlers"
+  },
+  {
+    "id": "xss-alert-function",
+    "phase": 2,
+    "pattern": "(?i)alert\\s*\\((.*?)\\)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "XSS with alert() function call"
+  },
+  {
+    "id": "xss-document-cookie",
+    "phase": 2,
+    "pattern": "(?i)document\\s*\\.\\s*cookie",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "XSS with document.cookie"
+  },
+  {
+    "id": "xss-document-location",
+    "phase": 2,
+    "pattern": "(?i)document\\s*\\.\\s*location",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "XSS with document.location"
+  },
+  {
+    "id": "xss-eval-function",
+    "phase": 2,
+    "pattern": "(?i)eval\\s*\\((.*?)\\)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "XSS with eval() function"
+  },
+  {
+    "id": "xss-base64-encode",
+    "phase": 2,
+    "pattern": "(?i)base64_encode\\s*\\((.*?)\\)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "XSS using base64_encode function"
+  },
+  {
+    "id": "xss-base64-decode",
+    "phase": 2,
+    "pattern": "(?i)base64_decode\\s*\\((.*?)\\)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "XSS using base64_decode function"
+  },
+  {
+    "id": "xss-comment-bypass",
+    "phase": 2,
+    "pattern": "(?i)<!--.*?-->",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 3,
+    "description": "Log HTML comment bypass attempts which can contain XSS payloads."
+  },
   {
     "id": "xss-unescaped-quotes",
     "phase": 2,
     "pattern": "(?i)[`'\"][^'\"]*[<>/](?:[^'\"]*[<>/])?[`'\"]",
-    "targets": [ "ARGS", "BODY", "HEADERS" ],
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
     "severity": "MEDIUM",
     "action": "log",
     "score": 3,
     "description": "Log XSS attempts that use unescaped quotes"
   },
   {
-        "id": "xss-javascript-tags",
-        "phase": 2,
-         "pattern": "(?i)<(?:j|J)(?:a|A)(?:v|V)(?:a|A)(?:s|S)(?:c|C)(?:r|R)(?:i|I)(?:p|P)(?:t|T)[^>]*>",
-        "targets": [ "ARGS", "BODY", "HEADERS" ],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 7,
-         "description": "XSS attempt with Javascript tag variations"
-    }
-
+    "id": "xss-javascript-tags",
+    "phase": 2,
+    "pattern": "(?i)<(?:j|J)(?:a|A)(?:v|V)(?:a|A)(?:s|S)(?:c|C)(?:r|R)(?:i|I)(?:p|P)(?:t|T)[^>]*>",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "XSS attempt with Javascript tag variations"
+  }
 ]

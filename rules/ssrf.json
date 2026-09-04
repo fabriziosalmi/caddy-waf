@@ -1,83 +1,80 @@
 [
-    {
-        "id": "ssrf-internal-ip",
-        "phase": 2,
-        "pattern": "(?i)\\b(?:127\\.0\\.0\\.1|10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.(?:1[6-9]|2\\d|3[01])\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3})\\b",
-        "targets": ["URI","ARGS"],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 7,
-        "description": "Block SSRF to Internal IPs."
-    },
-    {
-         "id": "ssrf-reserved-ip",
-        "phase": 2,
-        "pattern": "(?i)\\b(?:0\\.0\\.0\\.0|169\\.254\\.\\d{1,3}\\.\\d{1,3}|(?:22[4-9]|23\\d|24\\d|25[0-5])\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\b",
-         "targets": ["URI","ARGS"],
-        "severity": "MEDIUM",
-        "action": "block",
-         "score": 5,
-        "description": "Block SSRF to Reserved/Multicast IPs."
-    },
-    {
-        "id": "ssrf-protocol-whitelist",
-        "phase": 2,
-        "pattern": "^(?i)(?:http|https)://.*$",
-         "targets": ["URI", "ARGS"],
-        "severity": "MEDIUM",
-        "action": "log",
-        "score": 3,
-        "description": "Log URLs that do not follow the protocol whitelist (http/https)."
-    },
-      {
-         "id":"ssrf-file-protocol",
-         "phase": 2,
-         "pattern":"(?i)file:\\/\\/",
-         "targets": ["URI","ARGS"],
-        "severity": "HIGH",
-         "action":"block",
-       "score": 7,
-        "description": "Block file:// protocol to avoid LFI/RFI based SSRF"
-      },
-     {
-         "id":"ssrf-ftp-protocol",
-         "phase": 2,
-         "pattern":"(?i)ftp:\\/\\/",
-          "targets": ["URI","ARGS"],
-          "severity": "HIGH",
-           "action":"block",
-           "score": 7,
-          "description": "Block ftp:// protocol to avoid RFI based SSRF"
-     },
-     {
-        "id":"ssrf-gopher-protocol",
-        "phase": 2,
-        "pattern": "(?i)gopher:\\/\\/",
-        "targets": ["URI","ARGS"],
-        "severity":"HIGH",
-        "action":"block",
-         "score": 7,
-        "description":"Block gopher:// protocol to avoid SSRF"
-     },
-      {
-         "id":"ssrf-data-protocol",
-         "phase":2,
-         "pattern":"(?i)data:\\/\\/",
-         "targets": ["URI","ARGS"],
-         "severity":"HIGH",
-          "action":"block",
-         "score": 7,
-         "description":"Block data:// protocol to avoid SSRF"
-    },
-    {
-          "id": "ssrf-redirects",
-           "phase": 2,
-          "pattern": "(?i)(?:\\s*(?:Location|Redirect)\\s*:\\s*https?:\\/\\/[^\\s]+)",
-          "targets": ["HEADERS"],
-          "severity":"MEDIUM",
-         "action":"log",
-           "score": 4,
-          "description":"Log headers containing redirections to other websites, can be used for SSRF via headers."
-    }
-
+  {
+    "id": "ssrf-internal-ip",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:127\\.0\\.0\\.1|10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.(?:1[6-9]|2\\d|3[01])\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3})\\b",
+    "targets": [
+      "URI",
+      "ARGS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "Block SSRF to Internal IPs."
+  },
+  {
+    "id": "ssrf-reserved-ip",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:0\\.0\\.0\\.0|169\\.254\\.\\d{1,3}\\.\\d{1,3}|(?:22[4-9]|23\\d|24\\d|25[0-5])\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\b",
+    "targets": [
+      "URI",
+      "ARGS"
+    ],
+    "severity": "MEDIUM",
+    "action": "block",
+    "score": 5,
+    "description": "Block SSRF to Reserved/Multicast IPs."
+  },
+  {
+    "id": "ssrf-file-protocol",
+    "phase": 2,
+    "pattern": "(?i)file:\\/\\/",
+    "targets": [
+      "URI",
+      "ARGS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "Block file:// protocol to avoid LFI/RFI based SSRF"
+  },
+  {
+    "id": "ssrf-ftp-protocol",
+    "phase": 2,
+    "pattern": "(?i)ftp:\\/\\/",
+    "targets": [
+      "URI",
+      "ARGS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "Block ftp:// protocol to avoid RFI based SSRF"
+  },
+  {
+    "id": "ssrf-gopher-protocol",
+    "phase": 2,
+    "pattern": "(?i)gopher:\\/\\/",
+    "targets": [
+      "URI",
+      "ARGS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "Block gopher:// protocol to avoid SSRF"
+  },
+  {
+    "id": "ssrf-data-protocol",
+    "phase": 2,
+    "pattern": "(?i)data:\\/\\/",
+    "targets": [
+      "URI",
+      "ARGS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "Block data:// protocol to avoid SSRF"
+  }
 ]

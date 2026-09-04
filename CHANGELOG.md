@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+- **Rules audit, part 1 of 4: purged the rules that blocked ordinary traffic and the rules that could never fire.** An empirical audit ran real browser-shaped requests (Referer, cookies, Sec-Fetch headers, multipart bodies, percent-encoded values) through the shipped rulesets at the default `anomaly_threshold 5`: every one of them was 403'd, while classic attack payloads (`<body onpointerdown=…>`, `;rm -rf /`, `1' OR 'a'='b`) passed. This change deletes 20 of the 34 rules in `rules.json`/`rules-browser-friendly.json` and 46 rules across the `rules/` bundles (including `rules/smuggling.json` and `rules/csfr.json` wholesale), in three categories:
+  - *Blocked ordinary traffic outright*: `rfi-http-url` (any Referer/Origin header is a URL), the `%XX`-anything and bare-word branches of the XSS/SSTI rules ("don't", "set", "date", any encoded byte), `sql-injection-improved-basic` (`-{2,}` matched every multipart boundary), `nosql-injection-attacks` (`count`, `find`, `update` in any JSON body), `unusual-paths` (blocked `/login`), `http-request-smuggling` (blocked `Content-Length: 0`), the Sec-Fetch scoring pair (3+2 = threshold on every cross-site subresource), and `rules/vulnerability.json` `rce-11`, whose `(?i)| id` pattern contains an empty alternation branch and therefore matched **every request**.
+  - *Provably dead*: every `^$` "missing header/token" rule (a missing target skips the rule, so `^$` can never match), the Log4Shell rules (`$` is an end-anchor mid-pattern, unmatchable), `jwt-tampering` (defeated by its own `^` anchor against `Bearer `), the smuggling rules (Go's net/http strips/rejects the primitives before the WAF runs), and a dozen rules whose regexes cannot match their own advertised payloads (`alert(1)` written with `(1)` as a capture group, over-escaped UNC paths, `data://` with slashes, etc.).
+  - *Log-flood*: rules matching any `#`, any `--`, any quote, any `0x` literal, any `$word`, `10.` (every Windows User-Agent), or `g` + any 4 bytes (`deserial-python-pickle`) — noise that buries real findings, and at score ≥ 5 blocks on its own.
+- Trimmed (not deleted): `xss-attacks` lost its `data:`/`style=`/HTML-entity/`%XX` branches, `rce-commands-expanded` no longer targets HEADERS (the joined Cookie header made `; id=…` match its metacharacter branch), and `sensitive-files` lost the generic branch that blocked `/config.json`.
+
+### Added
+- `fp_browser_regression_test.go`: a browser-traffic false-positive corpus (14 request shapes real clients send, each a 403 before this change) plus pins that the surviving rules still block script-tag XSS, UNION SELECT, path traversal, cloud-metadata SSRF, Java deserialization, and header-borne SQLi.
+- `double-encoded-injection-chars` rule: blocks `%2527`/`%2522`/`%253C`/`%253E`/`%2500` (double-encoded quote, angle bracket, NUL) — the honest replacement for the removed block-anything-encoded branch. Deliberately excludes `%252F`, which legitimate nested-URL parameters carry; double-encoded traversal is instead caught by a new `..%252F` branch in `path-traversal`, which is now also case-insensitive (the old pattern missed uppercase `%2F`).
+
 ## [v0.4.13] - 2026-09-04
 
 ### Changed

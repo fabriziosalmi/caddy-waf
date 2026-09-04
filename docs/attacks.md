@@ -67,9 +67,7 @@ The categories below correspond to the bundled rule sets. Each item lists the fi
 - **Example**: `?user=*)(uid=*)`
 
 ## HTTP Request Smuggling
-- **Files**: [`rules/smuggling.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules/smuggling.json).
-- **Targets**: `HEADERS`.
-- **Patterns detect**: conflicting `Transfer-Encoding`/`Content-Length` combinations, `Transfer-Encoding: chunked` permutations, suspicious whitespace.
+- **Files**: none — the former `rules/smuggling.json` was removed in the rules audit. Go's `net/http` server (which Caddy uses) already rejects conflicting `Transfer-Encoding`/`Content-Length` combinations and strips `Transfer-Encoding` before the WAF runs, so regex rules at this layer could never see the smuggling primitives they targeted; the remaining branches only false-positived on legitimate `Content-Length: 0` requests.
 
 ## CRLF Injection / Response Splitting
 - **Files**: entries in [`rules.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules.json) (`crlf-injection-headers`).
@@ -87,9 +85,7 @@ The categories below correspond to the bundled rule sets. Each item lists the fi
 - **Patterns detect**: Java serialised object magic (`AC ED`), PHP serialised tags (`O:` / `s:`), Python pickle markers.
 
 ## CSRF / Origin Tampering
-- **Files**: [`rules/csfr.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules/csfr.json).
-- **Targets**: `HEADERS`.
-- **Patterns detect**: missing or mismatched `Origin` / `Referer`, inconsistent CSRF tokens. (CSRF defense in depth still requires a server-side token check; the WAF rules add a second line of inspection.)
+- **Files**: none — the former `rules/csfr.json` was removed in the rules audit. Its "missing token" rules matched the empty pattern `^$`, which this engine can never satisfy (a missing target skips the rule), and its remaining rules logged precisely the well-protected traffic (every request carrying a `csrf`/`nonce` token). CSRF defense requires a server-side token check in the application; a per-request regex cannot decide it.
 
 ## GraphQL Introspection / Abuse
 - **Files**: [`rules/graphql.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules/graphql.json).

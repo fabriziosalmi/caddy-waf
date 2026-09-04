@@ -1,63 +1,14 @@
 [
-    {
-        "id": "auth-basic-header-suspicious",
-        "phase": 2,
-        "pattern": "(?i)Authorization: Basic\\s+[a-zA-Z0-9+/=]{0,}",
-        "targets": ["HEADERS"],
-        "severity": "LOW",
-        "action": "log",
-        "score": 2,
-        "description": "Log requests with potentially incomplete or suspicious Basic Authentication headers."
-    },
-    {
-        "id": "auth-jwt-no-signature",
-        "phase": 2,
-        "pattern": "^(?:[a-zA-Z0-9_-]+\\.){2}[a-zA-Z0-9_-]*$",
-        "targets": ["HEADERS:Authorization", "COOKIES"],
-        "severity": "HIGH",
-        "action": "log",
-        "score": 7,
-        "description": "Log JWT tokens without a signature (can be vulnerable to tampering)."
-    },
-   {
-      "id": "auth-jwt-algorithm-none",
-      "phase": 2,
-        "pattern": "(?i)\"alg\":\\s*\"none\"",
-       "targets": ["HEADERS:Authorization", "COOKIES"],
-       "severity": "HIGH",
-        "action": "block",
-       "score": 9,
-        "description": "Block JWT tokens using algorithm 'none' for signature, can be tampered with"
-
-    },
-    {
-       "id":"auth-weak-password-indicators",
-        "phase": 2,
-       "pattern": "(?i)(?:\\b(?:password|pwd|pass)\\b.*?(?:invalid|incorrect|not\\s+found))",
-        "targets": ["BODY"],
-        "severity": "LOW",
-        "action": "log",
-        "score": 2,
-       "description": "Log login responses that might indicate weak password handling."
-    },
-    {
-        "id":"auth-no-cookies-set",
-       "phase": 2,
-       "pattern":"^$",
-       "targets": ["HEADERS:Set-Cookie"],
-      "severity": "MEDIUM",
-        "action":"log",
-        "score": 4,
-        "description":"Log requests that should be setting a cookie but they are not"
-    },
-    {
-      "id":"auth-login-form-missing",
-       "phase": 2,
-      "pattern":"^$",
-        "targets": ["BODY"],
-      "severity":"LOW",
-        "action":"log",
-        "score": 3,
-        "description":"Log login requests that do not contain login form fields"
-     }
+  {
+    "id": "auth-weak-password-indicators",
+    "phase": 2,
+    "pattern": "(?i)(?:\\b(?:password|pwd|pass)\\b.*?(?:invalid|incorrect|not\\s+found))",
+    "targets": [
+      "BODY"
+    ],
+    "severity": "LOW",
+    "action": "log",
+    "score": 2,
+    "description": "Log login responses that might indicate weak password handling."
+  }
 ]

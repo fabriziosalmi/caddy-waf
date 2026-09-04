@@ -1,194 +1,212 @@
 [
-    {
-        "id": "lfi-basic-path-traversal",
-        "phase": 2,
-        "pattern": "(?i)(?:\\.\\.[/\\\\]|\\.\\./|\\.\\.\\\\/)",
-        "targets": ["URI", "ARGS", "HEADERS"],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 8,
-        "description": "Block basic path traversal patterns using ../ and similar."
-    },
-    {
-        "id": "lfi-url-encoded-path-traversal",
-       "phase": 2,
-       "pattern": "(?i)(?:%2e%2e[/\\\\]|%2e%2e/|%2e%2e%5c|%252e%252e)",
-       "targets": ["URI", "ARGS", "HEADERS"],
-         "severity": "HIGH",
-       "action": "block",
-       "score": 8,
-         "description": "Block URL encoded path traversal patterns."
-    },
   {
-        "id": "lfi-absolute-paths",
-        "phase": 2,
-        "pattern": "(?i)^(?:(?:/\\w+)+)(?:(?:/\\w+)?)+?\\.[\\w]+$",
-        "targets": ["URI", "ARGS", "HEADERS"],
-         "severity": "MEDIUM",
-        "action": "log",
-        "score": 4,
-         "description":"Log requests that attempt to load arbitrary absolute paths"
-    },
-    {
-        "id":"lfi-windows-path-traversal",
-        "phase":2,
-        "pattern": "(?i)(?:\\.\\.\\\\|\\.\\.%5c)",
-        "targets": ["URI","ARGS", "HEADERS"],
-        "severity":"HIGH",
-        "action": "block",
-        "score": 7,
-        "description":"Block Windows style path traversal using ..\\ and ..%5c"
-
-    },
-    {
-        "id": "lfi-common-sensitive-files",
-        "phase": 2,
-         "pattern": "(?i)\\b(?:etc(?:\\/|%2F)(?:passwd|shadow|hosts)|(?:proc|sys)(?:\\/|%2F)(?:self(?:\\/|%2F)environ|cmdline)|boot(?:\\/|%2F)grub(?:\\/|%2F)grub.cfg)\\b",
-        "targets": ["URI", "ARGS", "HEADERS"],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 9,
-        "description": "Block direct access to common sensitive files."
-    },
-     {
-        "id": "lfi-log-files",
-        "phase": 2,
-         "pattern": "(?i)(?:\\/var\\/log\\/.*?\\.log)",
-         "targets": ["URI", "ARGS", "HEADERS"],
-         "severity": "MEDIUM",
-         "action": "log",
-        "score": 5,
-         "description": "Log access to system log files."
-    },
-   {
-      "id": "lfi-apache-config",
-      "phase": 2,
-      "pattern": "(?i)(?:\\/etc\\/apache(?:2)?\\/(?:httpd|apache2)\\.conf)",
-        "targets": ["URI", "ARGS", "HEADERS"],
-        "severity": "MEDIUM",
-        "action": "log",
-        "score": 5,
-        "description":"Log attempts to access Apache configuration files"
-   },
-    {
-       "id":"lfi-nginx-config",
-       "phase":2,
-       "pattern": "(?i)(?:\\/etc\\/nginx\\/nginx\\.conf)",
-      "targets": ["URI", "ARGS", "HEADERS"],
-       "severity":"MEDIUM",
-       "action":"log",
-       "score": 5,
-       "description": "Log attempts to access Nginx configuration file"
-   },
-    {
-       "id":"lfi-ssh-config",
-       "phase":2,
-      "pattern":"(?i)(?:\\/etc\\/ssh\\/sshd_config)",
-      "targets": ["URI", "ARGS", "HEADERS"],
-      "severity": "MEDIUM",
-      "action":"log",
-      "score": 5,
-      "description":"Log attempts to access SSH configuration file"
-    },
-    {
-      "id": "lfi-windows-sensitive-files",
-      "phase": 2,
-      "pattern": "(?i)\\b(?:c:\\\\(?:boot\\.ini|windows\\/win\\.ini|windows\\/system32\\/config\\/sam|windows\\/system32\\/config\\/system|windows\\/system32\\/drivers\\/etc\\/hosts))\\b",
-     "targets": ["URI", "ARGS", "HEADERS"],
-      "severity": "HIGH",
-     "action": "block",
-      "score": 8,
-      "description": "Block attempts to access Windows sensitive system files"
-  },
-  {
-       "id": "lfi-php-wrapper",
-      "phase": 2,
-      "pattern": "(?i)php:\\/\\/(?:filter|input|stdin|stdout|memory|data|resource)",
-        "targets": ["URI", "ARGS", "HEADERS"],
-       "severity":"HIGH",
-      "action":"block",
-        "score": 7,
-       "description": "Block use of PHP wrappers for LFI"
-  },
-  {
-       "id":"lfi-data-wrapper",
-        "phase": 2,
-       "pattern":"(?i)data:\\/\\/(?:text|plain|application)\\/(?:base64,)?.*",
-       "targets": ["URI", "ARGS", "HEADERS"],
-        "severity": "HIGH",
-      "action":"block",
-      "score": 7,
-       "description": "Block use of data wrappers for LFI"
-  },
-  {
-     "id": "lfi-windows-cifs",
-     "phase": 2,
-      "pattern": "(?i)(?:\\\\\\\\\\\\\\\\\\w+)",
-      "targets": ["URI", "ARGS", "HEADERS"],
-       "severity": "MEDIUM",
-       "action": "log",
-      "score": 5,
-        "description": "Log attempts to use Windows CIFS path which might indicate a server-side LFI"
-
-  },
-  {
-        "id": "lfi-directory-enumeration",
-        "phase": 2,
-         "pattern": "(?i)\\b(?:dir|ls|ls -l|dir /b|tree)\\b(?:.*\\b(?:etc|proc|boot|var|log)\\b)",
-         "targets": ["URI", "ARGS", "HEADERS"],
-         "severity": "MEDIUM",
-         "action": "log",
-         "score": 5,
-         "description": "Log directory enumeration attempts."
-    },
-   {
-       "id":"lfi-double-encoded-paths",
-       "phase": 2,
-      "pattern":"(?i)(?:%252e%252e[/\\\\]|%252e%252e%252f|%252e%252e%255c)",
-     "targets": ["URI", "ARGS", "HEADERS"],
-     "severity": "HIGH",
+    "id": "lfi-basic-path-traversal",
+    "phase": 2,
+    "pattern": "(?i)(?:\\.\\.[/\\\\]|\\.\\./|\\.\\.\\\\/)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
     "action": "block",
-     "score": 7,
-     "description": "Block Double encoded path traversals"
-   },
-   {
-    "id":"lfi-nullbyte-injection",
-     "phase": 2,
-     "pattern": "(?i)(?:%00|\\x00)",
-      "targets": ["URI", "ARGS", "HEADERS"],
-     "severity": "MEDIUM",
-     "action": "log",
-     "score": 4,
-      "description": "Log attempts to use null byte for LFI bypass"
-   },
-   {
-       "id": "lfi-long-path-bypass",
-      "phase": 2,
-        "pattern": "(?i)(?:\\.\\.[/\\\\]){20,}",
-       "targets": ["URI", "ARGS", "HEADERS"],
-      "severity": "MEDIUM",
-       "action": "log",
-       "score": 6,
-       "description": "Log LFI attempts using long paths to bypass filters"
-    },
-    {
-      "id":"lfi-encoded-slash-bypass",
-      "phase": 2,
-       "pattern": "(?i)(?:%2f|%5c)",
-        "targets": ["URI","ARGS", "HEADERS"],
-        "severity":"MEDIUM",
-       "action":"log",
-       "score": 4,
-       "description":"Log use of encoded slashes"
+    "score": 8,
+    "description": "Block basic path traversal patterns using ../ and similar."
   },
- {
-       "id": "lfi-symlink-traversal",
-       "phase": 2,
-       "pattern": "(?i)/\\w+/\\.\\.\\/\\w+\\/",
-       "targets": ["URI", "ARGS", "HEADERS"],
-       "severity": "MEDIUM",
-        "action": "log",
-        "score": 5,
-       "description": "Log potential LFI via symlink traversal."
- }
+  {
+    "id": "lfi-url-encoded-path-traversal",
+    "phase": 2,
+    "pattern": "(?i)(?:%2e%2e[/\\\\]|%2e%2e/|%2e%2e%5c|%252e%252e)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block URL encoded path traversal patterns."
+  },
+  {
+    "id": "lfi-windows-path-traversal",
+    "phase": 2,
+    "pattern": "(?i)(?:\\.\\.\\\\|\\.\\.%5c)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "Block Windows style path traversal using ..\\ and ..%5c"
+  },
+  {
+    "id": "lfi-common-sensitive-files",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:etc(?:\\/|%2F)(?:passwd|shadow|hosts)|(?:proc|sys)(?:\\/|%2F)(?:self(?:\\/|%2F)environ|cmdline)|boot(?:\\/|%2F)grub(?:\\/|%2F)grub.cfg)\\b",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 9,
+    "description": "Block direct access to common sensitive files."
+  },
+  {
+    "id": "lfi-log-files",
+    "phase": 2,
+    "pattern": "(?i)(?:\\/var\\/log\\/.*?\\.log)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 5,
+    "description": "Log access to system log files."
+  },
+  {
+    "id": "lfi-apache-config",
+    "phase": 2,
+    "pattern": "(?i)(?:\\/etc\\/apache(?:2)?\\/(?:httpd|apache2)\\.conf)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 5,
+    "description": "Log attempts to access Apache configuration files"
+  },
+  {
+    "id": "lfi-nginx-config",
+    "phase": 2,
+    "pattern": "(?i)(?:\\/etc\\/nginx\\/nginx\\.conf)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 5,
+    "description": "Log attempts to access Nginx configuration file"
+  },
+  {
+    "id": "lfi-ssh-config",
+    "phase": 2,
+    "pattern": "(?i)(?:\\/etc\\/ssh\\/sshd_config)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 5,
+    "description": "Log attempts to access SSH configuration file"
+  },
+  {
+    "id": "lfi-windows-sensitive-files",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:c:\\\\(?:boot\\.ini|windows\\/win\\.ini|windows\\/system32\\/config\\/sam|windows\\/system32\\/config\\/system|windows\\/system32\\/drivers\\/etc\\/hosts))\\b",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block attempts to access Windows sensitive system files"
+  },
+  {
+    "id": "lfi-php-wrapper",
+    "phase": 2,
+    "pattern": "(?i)php:\\/\\/(?:filter|input|stdin|stdout|memory|data|resource)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "Block use of PHP wrappers for LFI"
+  },
+  {
+    "id": "lfi-directory-enumeration",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:dir|ls|ls -l|dir /b|tree)\\b(?:.*\\b(?:etc|proc|boot|var|log)\\b)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 5,
+    "description": "Log directory enumeration attempts."
+  },
+  {
+    "id": "lfi-double-encoded-paths",
+    "phase": 2,
+    "pattern": "(?i)(?:%252e%252e[/\\\\]|%252e%252e%252f|%252e%252e%255c)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 7,
+    "description": "Block Double encoded path traversals"
+  },
+  {
+    "id": "lfi-nullbyte-injection",
+    "phase": 2,
+    "pattern": "(?i)(?:%00|\\x00)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 4,
+    "description": "Log attempts to use null byte for LFI bypass"
+  },
+  {
+    "id": "lfi-long-path-bypass",
+    "phase": 2,
+    "pattern": "(?i)(?:\\.\\.[/\\\\]){20,}",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 6,
+    "description": "Log LFI attempts using long paths to bypass filters"
+  },
+  {
+    "id": "lfi-symlink-traversal",
+    "phase": 2,
+    "pattern": "(?i)/\\w+/\\.\\.\\/\\w+\\/",
+    "targets": [
+      "URI",
+      "ARGS",
+      "HEADERS"
+    ],
+    "severity": "MEDIUM",
+    "action": "log",
+    "score": 5,
+    "description": "Log potential LFI via symlink traversal."
+  }
 ]
