@@ -15,7 +15,7 @@
   {
     "id": "ssrf-reserved-ip",
     "phase": 2,
-    "pattern": "(?i)\\b(?:0\\.0\\.0\\.0|169\\.254\\.\\d{1,3}\\.\\d{1,3}|(?:22[4-9]|23\\d|24\\d|25[0-5])\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\b",
+    "pattern": "(?i)\\b(?:0\\.0\\.0\\.0|169\\.254\\.\\d{1,3}\\.\\d{1,3}|(?:22[4-9]|23\\d)\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\b",
     "targets": [
       "URI",
       "ARGS"
@@ -23,7 +23,7 @@
     "severity": "MEDIUM",
     "action": "block",
     "score": 5,
-    "description": "Block SSRF to Reserved/Multicast IPs."
+    "description": "Block SSRF to unspecified (0.0.0.0), link-local/metadata (169.254.*), and multicast (224-239.*) addresses. Class E / broadcast (240-255.*) was removed: it is unroutable, and matching it blocked every netmask parameter (255.255.255.0)."
   },
   {
     "id": "ssrf-file-protocol",

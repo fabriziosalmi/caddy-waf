@@ -55,9 +55,9 @@ The categories below correspond to the bundled rule sets. Each item lists the fi
 - **Example**: <span v-pre>`?name={{7*7}}`</span>
 
 ## NoSQL Injection
-- **Files**: [`rules/data-validation.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules/data-validation.json) and entries in [`rules.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules.json).
+- **Files**: the `nosql-operator-injection` rule in [`rules.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules.json).
 - **Targets**: `ARGS`, `BODY`.
-- **Patterns detect**: MongoDB operators (`$ne`, `$gt`, `$where`), JSON operator-injection idioms.
+- **Patterns detect**: MongoDB operators delivered as a quoted `"$op":` key or `[$op]` parameter form (`$ne`, `$gt`, `$where`, …).
 - **Example**: `{"username": {"$ne": null}}`
 
 ## LDAP / XPath Injection

@@ -81,6 +81,8 @@ func TestSSRFIPRulesDoNotFalsePositiveOnBenignQueries(t *testing.T) {
 		"t=1010.5",         // "10." inside a number
 		"price=10.99",      // "10." in a decimal
 		"version=1.10.2.5", // multi-part version, no valid private quad
+		"mask=255.255.255.0",       // subnet mask — class E/broadcast dropped from ssrf-reserved-ip
+		"broadcast=255.255.255.255", // broadcast address is not a reachable SSRF target
 	}
 	for _, s := range benign {
 		assert.Falsef(t, anyIPRuleMatches(s),
