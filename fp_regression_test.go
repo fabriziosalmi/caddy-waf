@@ -133,9 +133,11 @@ func TestRealCommandInjectionStillBlocked(t *testing.T) {
 	}
 	for _, a := range attacks {
 		t.Run(a, func(t *testing.T) {
-			// url.RawQuery holds the decoded-intent bytes; the WAF's own decode
-			// leaves them as-is here (no percent-encoding), which is what an
-			// attacker who sends raw bytes achieves.
+			// These payloads are set directly as the raw query bytes an attacker
+			// sends. The WAF matches each rule against both the raw value and the
+			// value after its default transform chain (URL-decode, null-strip,
+			// whitespace-compress); since these bytes carry no percent-encoding,
+			// the metacharacters and spaces reach the matcher intact.
 			assert.Truef(t, fpBlockedQuery(m, a), "command injection %q must be blocked", a)
 		})
 	}

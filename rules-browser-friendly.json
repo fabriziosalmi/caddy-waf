@@ -189,7 +189,7 @@
     "severity": "HIGH",
     "action": "block",
     "score": 5,
-    "description": "Block command injection: a shell command that follows an injection metacharacter (; & | ` $()), reads a sensitive path, fetches a URL, or is piped to a shell. Requires that context so bare words (a `cat=` param, an `id=` value, a curl/wget User-Agent) do not false-positive."
+    "description": "Block command injection: a shell command that follows an injection metacharacter (; | ` $()), reads a sensitive path, fetches a URL, or is piped to a shell. Requires that context so bare words (a `cat=` param, an `id=` value, a curl/wget User-Agent) do not false-positive. `&` is not treated as a metacharacter here because it is the query-string separator; `&&`-chained commands are still caught by the URL and pipe-to-shell branches."
   },
   {
     "id": "rfi-http-url",
