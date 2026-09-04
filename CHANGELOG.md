@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.13] - 2026-09-04
+
+### Changed
+- **Hot-path performance: ~82% fewer allocations per request** ([#115](https://github.com/fabriziosalmi/caddy-waf/issues/115), [#116](https://github.com/fabriziosalmi/caddy-waf/issues/116)). A benign request against the shipped `rules.json` went from **1790 → 331 allocations/op and 170KB → 47KB/op** (≈122µs → ≈80µs), with no behaviour change:
+  - Value extraction uses a static switch instead of building a 16-closure map on every call ([#188](https://github.com/fabriziosalmi/caddy-waf/pull/188)).
+  - The rule loop no longer wraps the request in a per-rule context that nothing read back ([#189](https://github.com/fabriziosalmi/caddy-waf/pull/189)).
+  - The request counters are now `atomic.Int64`, so the per-request path takes no metrics lock ([#190](https://github.com/fabriziosalmi/caddy-waf/pull/190)).
+  - Extracted target values are cached within a phase instead of re-extracted per rule ([#191](https://github.com/fabriziosalmi/caddy-waf/pull/191)).
+  - `compressWhitespace` returns the input unchanged when nothing needs folding ([#192](https://github.com/fabriziosalmi/caddy-waf/pull/192)).
+- Bumped version constant `wafVersion` to `v0.4.13`.
+
 ## [v0.4.12] - 2026-09-04
 
 ### Fixed
