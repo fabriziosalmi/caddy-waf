@@ -111,6 +111,25 @@ func removeNulls(s string) string {
 // compressWhitespace folds any run of ASCII whitespace to a single space,
 // defeating tab/newline substitution for the space in payloads.
 func compressWhitespace(s string) string {
+	// Fast path: return the input unchanged (no allocation) when nothing would
+	// be folded -- no non-space whitespace and no run of two whitespace chars.
+	// This is the common case on the hot path (a query value like "books"), and
+	// the builder below otherwise allocates a fresh string on every call.
+	needs := false
+	prevWS := false
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		ws := c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f'
+		if ws && (c != ' ' || prevWS) {
+			needs = true
+			break
+		}
+		prevWS = ws
+	}
+	if !needs {
+		return s
+	}
+
 	var b strings.Builder
 	b.Grow(len(s))
 	inWS := false
