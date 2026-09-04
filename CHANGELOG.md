@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Rules audit, part 4 of 4: `log`-mode rules are observational by default and no longer block via score accumulation.** Previously every matched rule — including `action: "log"` — added its score to the single `TotalScore` that drives the block decision, so a handful of independent low-confidence "log" signals could sum past `anomaly_threshold` and return a `403` even though no rule intended to block (the v0.4.12 `idor-attacks` fix called out exactly this failure mode). A `log` rule's score now accumulates into a separate advisory tally (`WAFState.AdvisoryScore`) that is logged and reported but does not affect blocking; `block`-mode rules are unchanged (they block on match, and their scores still feed `TotalScore`). The request-completion log now includes `advisory_score`.
+  - New Caddyfile directive **`log_scores_block`** (and JSON `log_scores_block`) restores the legacy CRS-style behaviour where every matched rule, regardless of mode, accumulates toward the threshold.
+
 - **Rules audit, part 3 of 4: fixed the `rules/` category bundles' bypasses, duplicates, and remaining false positives.**
   - `xxe.json`: closed the single-quote (`SYSTEM 'file://…'`), parameter-entity (`<!ENTITY % xxe SYSTEM …>`), and no-space-before-`[` bypasses; DOCTYPE rule now also catches external-DTD XXE and no longer matches `<!DOCTYPE html>`; dropped the pointless HEADERS target.
   - `xss.json` (16 → 11): removed the PHP `base64_encode`/`decode` rules, the fake `<javascript>` element rule, and the `xss-unescaped-quotes`/`xss-comment-bypass` rules that matched every JSON URL and posted HTML fragment; the tag/handler rules now accept `/` as a separator (`<svg/onload=…>`), use a generic `on*=` match (catches `ontoggle`, `onpointerdown`), and require no space before `(` in `alert(`/`eval(` so prose like "retrieval(cached)" no longer blocks.

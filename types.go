@@ -99,7 +99,8 @@ type CustomBlockResponse struct {
 
 // WAFState struct
 type WAFState struct {
-	TotalScore      int
+	TotalScore      int // score that drives the blocking decision
+	AdvisoryScore   int // score contributed by log-action rules (never blocks unless LogScoresBlock)
 	Blocked         bool
 	StatusCode      int
 	ResponseWritten bool
@@ -154,10 +155,17 @@ type Middleware struct {
 	TrustedProxies []string `json:"trusted_proxies,omitempty"`
 	// ClientIPHeader, when set (e.g. CF-Connecting-IP), is consulted for the
 	// client IP instead of X-Forwarded-For once the peer is a trusted proxy.
-	ClientIPHeader   string              `json:"client_ip_header,omitempty"`
-	trustedProxies   *iptrie.Trie        `json:"-"`
-	DNSBlacklistFile string              `json:"dns_blacklist_file"`
-	AnomalyThreshold int                 `json:"anomaly_threshold"`
+	ClientIPHeader   string       `json:"client_ip_header,omitempty"`
+	trustedProxies   *iptrie.Trie `json:"-"`
+	DNSBlacklistFile string       `json:"dns_blacklist_file"`
+	AnomalyThreshold int          `json:"anomaly_threshold"`
+	// LogScoresBlock controls whether a rule with action "log" contributes to
+	// the anomaly score that drives the blocking decision. Default false: log
+	// rules are observational and never push a request over the threshold on
+	// their own -- they are still recorded (advisory score, metrics, logs).
+	// Set true to restore the legacy behaviour where every matched rule,
+	// regardless of action, accumulates toward the block threshold.
+	LogScoresBlock   bool                `json:"log_scores_block,omitempty"`
 	CountryBlacklist CountryAccessFilter `json:"country_blacklist"`
 	CountryWhitelist CountryAccessFilter `json:"country_whitelist"`
 	BlockASNs        ASNAccessFilter     `json:"block_asns"`

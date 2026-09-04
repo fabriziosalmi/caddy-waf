@@ -103,6 +103,7 @@ func TestProcessRuleMatch(t *testing.T) {
 		anomalyScore     int
 		anomalyThreshold int
 		responseWritten  bool
+		logScoresBlock   bool
 		wantBlock        bool
 	}{
 		{
@@ -118,7 +119,7 @@ func TestProcessRuleMatch(t *testing.T) {
 			wantBlock:        true,
 		},
 		{
-			name: "Score Exceeds Threshold",
+			name: "Log Rule Score Does Not Block By Default",
 			rule: Rule{
 				ID:     "test2",
 				Action: "log",
@@ -127,6 +128,19 @@ func TestProcessRuleMatch(t *testing.T) {
 			anomalyScore:     0,
 			anomalyThreshold: 10,
 			responseWritten:  false,
+			wantBlock:        false, // log rules are advisory by default
+		},
+		{
+			name: "Log Rule Score Blocks With LogScoresBlock",
+			rule: Rule{
+				ID:     "test2b",
+				Action: "log",
+				Score:  15,
+			},
+			anomalyScore:     0,
+			anomalyThreshold: 10,
+			responseWritten:  false,
+			logScoresBlock:   true,
 			wantBlock:        true,
 		},
 		{
@@ -148,6 +162,7 @@ func TestProcessRuleMatch(t *testing.T) {
 			m := &Middleware{
 				logger:                logger,
 				AnomalyThreshold:      tt.anomalyThreshold,
+				LogScoresBlock:        tt.logScoresBlock,
 				ruleHits:              sync.Map{},
 				muMetrics:             sync.RWMutex{},
 				requestValueExtractor: NewRequestValueExtractor(logger, false, 0),
