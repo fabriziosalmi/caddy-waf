@@ -11,7 +11,12 @@ import re
 import statistics
 import sys
 
-THRESHOLD = 1.5  # fail on >50% slower
+# Fail on >2x slower. On shared GitHub runners the shortest hot-path benchmarks
+# (~100us) swing run-to-run by well over 50% from environmental noise alone
+# (CPU frequency scaling, noisy neighbours), so a 1.5x gate false-fails on
+# perf-neutral PRs. 2x still catches a real, serious regression while staying
+# above that noise floor. The measured refs are also warmed up first (bench.yml).
+THRESHOLD = 2.0
 
 _LINE = re.compile(r"^(Benchmark\S+?)-\d+\s+\d+\s+([\d.]+)\s+ns/op")
 

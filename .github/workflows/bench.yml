@@ -30,7 +30,15 @@ jobs:
           go-version: '1.25'
 
       - name: Benchmark this ref
-        run: go test -run='^$' -bench=. -benchmem -count=6 ./... | tee new.txt
+        run: |
+          # Warm up before measuring. A cold GitHub runner (CPU frequency
+          # scaling, cold caches, first-time test-binary compilation) inflates
+          # the first benchmarks it runs. On a PR this ref is measured before the
+          # base checkout, so without a warmup the shortest benchmark is
+          # systematically penalised against the (by-then-warm) base — a false
+          # regression. A discarded warmup puts both sides in the same state.
+          go test -run='^$' -bench=. -benchtime=2s ./... >/dev/null 2>&1 || true
+          go test -run='^$' -bench=. -benchmem -count=6 ./... | tee new.txt
 
       - name: Compare against the base branch and gate
         if: github.event_name == 'pull_request'
@@ -43,5 +51,10 @@ jobs:
             exit 0
           fi
           git worktree add --quiet /tmp/base "origin/$base"
-          ( cd /tmp/base && go test -run='^$' -bench=. -benchmem -count=6 ./... ) | tee old.txt
+          # Same warmup for the base side, so both are measured warm.
+          (
+            cd /tmp/base
+            go test -run='^$' -bench=. -benchtime=2s ./... >/dev/null 2>&1 || true
+            go test -run='^$' -bench=. -benchmem -count=6 ./...
+          ) | tee old.txt
           python3 .github/bench-gate.py old.txt new.txt
