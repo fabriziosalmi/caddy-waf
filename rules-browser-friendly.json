@@ -216,5 +216,18 @@
     "action": "block",
     "score": 9,
     "description": "Block Log4Shell (CVE-2021-44228) and similar JNDI lookup injection: ${...jndi...}, a jndi: scheme, or a nested ${...${...  lookup (the standard obfuscation, e.g. ${${lower:j}ndi:...}). Nested-brace CI template syntax like GitHub's ${{ ... }} does not match: the inner brace run contains no second '${'."
+  },
+  {
+    "id": "nosql-operator-injection",
+    "phase": 2,
+    "pattern": "(?i)(?:\"\\$(?:where|ne|gt|gte|lt|lte|in|nin|regex|exists|expr|function|accumulator)\"\\s*:|'\\$(?:where|ne|gt|gte|lt|lte|in|nin|regex)'\\s*:|\\[\\$(?:where|ne|gt|gte|lt|lte|in|nin|regex|exists)\\])",
+    "targets": [
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block MongoDB operator injection in the shape it is actually delivered: a quoted \"$op\": JSON key or a [$op]= form-style parameter. Replaces the removed nosql-injection-attacks rule, which matched bare words (count, find, update, db) in any body."
   }
 ]

@@ -2,7 +2,7 @@
   {
     "id": "xss-basic",
     "phase": 2,
-    "pattern": "(?i)<script[^>]*>.*?</script>",
+    "pattern": "(?i)<script[^>]*>",
     "targets": [
       "ARGS",
       "BODY",
@@ -11,12 +11,12 @@
     "severity": "HIGH",
     "action": "block",
     "score": 8,
-    "description": "Basic XSS using <script> tags"
+    "description": "Block script tags. The closing-tag requirement was removed: an injected fragment does not need its own </script> to execute."
   },
   {
     "id": "xss-img-onerror",
     "phase": 2,
-    "pattern": "(?i)<img[^>]*\\s+onerror\\s*=\\s*['\"]?(.*?)['\"]?[^>]*>",
+    "pattern": "(?i)<img[^>]*[\\s/]onerror\\s*=",
     "targets": [
       "ARGS",
       "BODY",
@@ -25,12 +25,12 @@
     "severity": "HIGH",
     "action": "block",
     "score": 8,
-    "description": "XSS using <img> tag with onerror"
+    "description": "Block img onerror handlers; / accepted as attribute separator (<img/src=x/onerror=...) and no closing > required."
   },
   {
     "id": "xss-iframe-srcdoc",
     "phase": 2,
-    "pattern": "(?i)<iframe[^>]*\\s+srcdoc\\s*=\\s*['\"]?(.*?)['\"]?[^>]*>",
+    "pattern": "(?i)<iframe[^>]*[\\s/]srcdoc\\s*=",
     "targets": [
       "ARGS",
       "BODY",
@@ -39,12 +39,12 @@
     "severity": "HIGH",
     "action": "block",
     "score": 7,
-    "description": "XSS using <iframe> with srcdoc attribute"
+    "description": "Block iframe srcdoc; / separator accepted, no closing > required."
   },
   {
     "id": "xss-svg-onload",
     "phase": 2,
-    "pattern": "(?i)<svg[^>]*\\s+onload\\s*=\\s*['\"]?(.*?)['\"]?[^>]*>",
+    "pattern": "(?i)<svg[^>]*[\\s/]onload\\s*=",
     "targets": [
       "ARGS",
       "BODY",
@@ -53,7 +53,7 @@
     "severity": "HIGH",
     "action": "block",
     "score": 8,
-    "description": "XSS using <svg> tag with onload"
+    "description": "Block svg onload handlers; catches the classic <svg/onload=...> the old \\s+ requirement missed."
   },
   {
     "id": "xss-javascript-href",
@@ -86,7 +86,7 @@
   {
     "id": "xss-event-handlers-on",
     "phase": 2,
-    "pattern": "(?i)\\b(?:on(?:mouse(?:over|out|down|up|move)|focus|blur|click|key(?:press|down|up)|load|error|submit|reset|change))\\s*=\\s*['\"]?(.*?)['\"]?",
+    "pattern": "(?i)<[a-z][^>]{0,200}?[\\s/]on[a-z]{2,24}\\s*=",
     "targets": [
       "ARGS",
       "BODY",
@@ -95,12 +95,12 @@
     "severity": "HIGH",
     "action": "block",
     "score": 7,
-    "description": "XSS using various HTML event handlers"
+    "description": "Block any on* event handler inside a tag (generic match replaces the fixed whitelist that missed ontoggle/onpointerdown/onanimationstart/...). Requires tag context so the bare word 'onclick=' in prose does not fire."
   },
   {
     "id": "xss-alert-function",
     "phase": 2,
-    "pattern": "(?i)alert\\s*\\((.*?)\\)",
+    "pattern": "(?i)\\b(?:alert|confirm|prompt)\\(",
     "targets": [
       "ARGS",
       "BODY",
@@ -109,7 +109,7 @@
     "severity": "HIGH",
     "action": "block",
     "score": 7,
-    "description": "XSS with alert() function call"
+    "description": "Block JS dialog calls. No space allowed before the paren so prose like 'please confirm (by clicking)' does not match; confirm/prompt added (equivalent PoC primitives the old rule missed)."
   },
   {
     "id": "xss-document-cookie",
@@ -142,7 +142,7 @@
   {
     "id": "xss-eval-function",
     "phase": 2,
-    "pattern": "(?i)eval\\s*\\((.*?)\\)",
+    "pattern": "(?i)\\beval\\(",
     "targets": [
       "ARGS",
       "BODY",
@@ -151,76 +151,6 @@
     "severity": "HIGH",
     "action": "block",
     "score": 7,
-    "description": "XSS with eval() function"
-  },
-  {
-    "id": "xss-base64-encode",
-    "phase": 2,
-    "pattern": "(?i)base64_encode\\s*\\((.*?)\\)",
-    "targets": [
-      "ARGS",
-      "BODY",
-      "HEADERS"
-    ],
-    "severity": "HIGH",
-    "action": "block",
-    "score": 7,
-    "description": "XSS using base64_encode function"
-  },
-  {
-    "id": "xss-base64-decode",
-    "phase": 2,
-    "pattern": "(?i)base64_decode\\s*\\((.*?)\\)",
-    "targets": [
-      "ARGS",
-      "BODY",
-      "HEADERS"
-    ],
-    "severity": "HIGH",
-    "action": "block",
-    "score": 7,
-    "description": "XSS using base64_decode function"
-  },
-  {
-    "id": "xss-comment-bypass",
-    "phase": 2,
-    "pattern": "(?i)<!--.*?-->",
-    "targets": [
-      "ARGS",
-      "BODY",
-      "HEADERS"
-    ],
-    "severity": "MEDIUM",
-    "action": "log",
-    "score": 3,
-    "description": "Log HTML comment bypass attempts which can contain XSS payloads."
-  },
-  {
-    "id": "xss-unescaped-quotes",
-    "phase": 2,
-    "pattern": "(?i)[`'\"][^'\"]*[<>/](?:[^'\"]*[<>/])?[`'\"]",
-    "targets": [
-      "ARGS",
-      "BODY",
-      "HEADERS"
-    ],
-    "severity": "MEDIUM",
-    "action": "log",
-    "score": 3,
-    "description": "Log XSS attempts that use unescaped quotes"
-  },
-  {
-    "id": "xss-javascript-tags",
-    "phase": 2,
-    "pattern": "(?i)<(?:j|J)(?:a|A)(?:v|V)(?:a|A)(?:s|S)(?:c|C)(?:r|R)(?:i|I)(?:p|P)(?:t|T)[^>]*>",
-    "targets": [
-      "ARGS",
-      "BODY",
-      "HEADERS"
-    ],
-    "severity": "HIGH",
-    "action": "block",
-    "score": 7,
-    "description": "XSS attempt with Javascript tag variations"
+    "description": "Block eval calls. \\b + no space: 'retrieval(cached)' and 'medieval (12th c.)' prose no longer match."
   }
 ]

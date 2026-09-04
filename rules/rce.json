@@ -2,15 +2,14 @@
   {
     "id": "rce-command-separators",
     "phase": 2,
-    "pattern": "(?i)(?:`[^`]+`|\\b(?:;|\\|\\||&&|\\n|%0a|%0d)\\s*(?:rm|cat|echo|curl|wget|python|php|jsp|cmd|exec|system|passthru|shell_exec|popen|pcntl_exec))",
+    "pattern": "(?i)(?:`[^`]+`|(?:^|[;|]|%0a|%0d|\\n)\\s*(?:rm|cat|echo|curl|wget|python[23]?|php|perl|ruby|nc|ncat|cmd|exec|system|passthru|shell_exec|popen|pcntl_exec)\\b)",
     "targets": [
-      "ARGS",
-      "HEADERS"
+      "ARGS"
     ],
     "severity": "HIGH",
     "action": "block",
     "score": 8,
-    "description": "Block command separators followed by specific commands."
+    "description": "Block a command after a separator. Fixes the old \\b(?:;|...) construct, whose word-boundary before ';' made 'q=;rm' unmatchable, and covers a single pipe (only || matched before). '&' is excluded (query-string separator) and HEADERS was dropped: the evaluated header string joins headers and cookies with semicolons, so a cookie named after a command word would match."
   },
   {
     "id": "rce-direct-commands",
@@ -54,15 +53,14 @@
   {
     "id": "rce-special-chars-command",
     "phase": 2,
-    "pattern": "(?i)(?:\\b(?:;|\\|\\||&|&&|`|\\)|\\(|>|<|\\n|%0a|%0d)\\b.*?\\b(?:cmd|exec|system|passthru|shell_exec|popen|proc_open|pcntl_exec)\\b)",
+    "pattern": "(?i)(?:[;|]|\\$\\(|`)\\s*(?:cmd|exec|system|passthru|shell_exec|popen|proc_open|pcntl_exec)\\b",
     "targets": [
-      "ARGS",
-      "HEADERS"
+      "ARGS"
     ],
     "severity": "HIGH",
     "action": "block",
     "score": 9,
-    "description": "Block RCE commands using special characters and functions"
+    "description": "Block PHP/OS execution primitives after an injection metacharacter. Same \\b-before-';' fix as rce-command-separators; '&' excluded so a parameter literally named exec/cmd in a multi-param query does not block by position alone."
   },
   {
     "id": "rce-obfuscated-commands",

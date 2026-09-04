@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Rules audit, part 3 of 4: fixed the `rules/` category bundles' bypasses, duplicates, and remaining false positives.**
+  - `xxe.json`: closed the single-quote (`SYSTEM 'file://…'`), parameter-entity (`<!ENTITY % xxe SYSTEM …>`), and no-space-before-`[` bypasses; DOCTYPE rule now also catches external-DTD XXE and no longer matches `<!DOCTYPE html>`; dropped the pointless HEADERS target.
+  - `xss.json` (16 → 11): removed the PHP `base64_encode`/`decode` rules, the fake `<javascript>` element rule, and the `xss-unescaped-quotes`/`xss-comment-bypass` rules that matched every JSON URL and posted HTML fragment; the tag/handler rules now accept `/` as a separator (`<svg/onload=…>`), use a generic `on*=` match (catches `ontoggle`, `onpointerdown`), and require no space before `(` in `alert(`/`eval(` so prose like "retrieval(cached)" no longer blocks.
+  - `sql-injection.json`: `union(select…)` now caught; boolean tautologies match double-quote context; `WAITFOR DELAY` (no paren) caught; blind-injection matches `2=2`/`'a'='a'`/`true`, not just literal `1=1`; `sqli-function-injection` no longer blocks `user(id: 1)` GraphQL/ORM calls (no-arg info functions now require empty parens) and dropped below the blocking threshold. Removed `sqli-null-byte` (the NUL it looks for is stripped by the transform pipeline) and `sqli-xpath-injection` (its `//word[…]` shape never matches real XPath-injection payloads).
+  - `ssti.json` (12 → 5): deduplicated the byte-identical `{{…}}`, `{%…%}`, `${…}`, `<%…%>` rules (a single `${…}` used to stack 21–28 points across duplicates and block CI YAML) and dropped their score below the threshold.
+  - `lfi.json` (15 → 12): fixed `lfi-windows-sensitive-files` (required forward slashes, so real `c:\windows\win.ini` never matched), added the RedHat Apache path, escaped a stray `.` in `grub.cfg`, removed three redundant traversal rules subsumed by `lfi-basic-path-traversal`.
+  - `rce.json`: fixed the `\b(?:;|…)` construct whose word-boundary made `q=;rm` unmatchable, added single-pipe coverage, dropped the HEADERS target (joined Cookie header caused matches).
+  - `ssrf.json`: file/ftp/gopher rules now catch the single-slash form (`file:/etc/passwd`) that Java/curl accept.
+  - `insecure-deserialization.json`: Java hex form now case-insensitive; PHP rule catches `C:` custom-serializable and namespaced classes (`App\Models\…`); YAML rule catches `!!python/object/apply:` anywhere (was start-anchored and single-`!` only); prototype-pollution rule closes the `"__proto__" :` spacing bypass.
+  - `graphql.json`: introspection rule now catches aliased/nested `__schema` and `__type(` probes.
+- **Removed** `rules/data-validation.json` (both surviving rules — a 15+ digit number and a >5000-char string — logged ordinary Snowflake IDs and minified JSON) and `rules/authentication.json`'s response-text rule; replaced the latter with `auth-jwt-alg-none`, which matches the base64url encodings of an `alg:none` JWT header as they actually appear on the wire.
+- **Restored NoSQL coverage** as `nosql-operator-injection` in `rules.json`/`rules-browser-friendly.json` — matches a quoted `"$op":` key or `[$op]` parameter form instead of the bare words (`count`, `find`, `db`) the removed rule matched in any body.
+
+### Added
+- `rules/bundle_fixes_test.go`: regex-level pins for every closed bundle bypass.
+- `all_bundles_regression_test.go`: loads `rules.json` plus every `rules/*.json` bundle together (the maximal-coverage, worst-case-for-score-stacking deployment) and pins that 12 ordinary-traffic shapes are not blocked.
+
 - **Rules audit, part 2 of 4: rewrote the surviving `rules.json` / `rules-browser-friendly.json` rules.**
   - `sql-injection` now allows content between keyword pairs but not a `&` (real `SELECT col1, col2 FROM t` is caught; `?select=name&from=2024` is not), adds string tautologies (`' OR 'a'='b`), `OR true/false`, `waitfor delay` (the old pattern demanded a paren T-SQL never uses), `pg_sleep`, `load_file`, `INTO OUTFILE`. BODY moved to a new stricter `sql-injection-body` rule using high-confidence signals only, so prose like "select an item from the list" no longer blocks.
   - `xss-attacks` replaces its fixed event-handler whitelist with a generic in-tag `on*=` match accepting `/` as a separator — `<svg/onload=…>`, `<details ontoggle=…>`, `<body onpointerdown=…>` are now caught — while dialog/eval calls require no space before the paren so "please confirm (by clicking)" and "retrieval(" prose do not match.

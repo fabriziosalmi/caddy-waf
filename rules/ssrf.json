@@ -28,7 +28,7 @@
   {
     "id": "ssrf-file-protocol",
     "phase": 2,
-    "pattern": "(?i)file:\\/\\/",
+    "pattern": "(?i)\\bfile:/{1,2}",
     "targets": [
       "URI",
       "ARGS"
@@ -36,12 +36,12 @@
     "severity": "HIGH",
     "action": "block",
     "score": 7,
-    "description": "Block file:// protocol to avoid LFI/RFI based SSRF"
+    "description": "Block file: URLs including the single-slash form (file:/...) that Java and curl accept. Word boundary so a substring like 'profile:/...' does not match."
   },
   {
     "id": "ssrf-ftp-protocol",
     "phase": 2,
-    "pattern": "(?i)ftp:\\/\\/",
+    "pattern": "(?i)\\bftp:/{1,2}",
     "targets": [
       "URI",
       "ARGS"
@@ -49,12 +49,12 @@
     "severity": "HIGH",
     "action": "block",
     "score": 7,
-    "description": "Block ftp:// protocol to avoid RFI based SSRF"
+    "description": "Block ftp: URLs including the single-slash form (ftp:/...) that Java and curl accept. Word boundary so a substring like 'profile:/...' does not match."
   },
   {
     "id": "ssrf-gopher-protocol",
     "phase": 2,
-    "pattern": "(?i)gopher:\\/\\/",
+    "pattern": "(?i)\\bgopher:/{1,2}",
     "targets": [
       "URI",
       "ARGS"
@@ -62,7 +62,7 @@
     "severity": "HIGH",
     "action": "block",
     "score": 7,
-    "description": "Block gopher:// protocol to avoid SSRF"
+    "description": "Block gopher: URLs including the single-slash form (gopher:/...) that Java and curl accept. Word boundary so a substring like 'profile:/...' does not match."
   },
   {
     "id": "ssrf-data-protocol",

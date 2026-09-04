@@ -28,23 +28,9 @@
     "description": "Block URL encoded path traversal patterns."
   },
   {
-    "id": "lfi-windows-path-traversal",
-    "phase": 2,
-    "pattern": "(?i)(?:\\.\\.\\\\|\\.\\.%5c)",
-    "targets": [
-      "URI",
-      "ARGS",
-      "HEADERS"
-    ],
-    "severity": "HIGH",
-    "action": "block",
-    "score": 7,
-    "description": "Block Windows style path traversal using ..\\ and ..%5c"
-  },
-  {
     "id": "lfi-common-sensitive-files",
     "phase": 2,
-    "pattern": "(?i)\\b(?:etc(?:\\/|%2F)(?:passwd|shadow|hosts)|(?:proc|sys)(?:\\/|%2F)(?:self(?:\\/|%2F)environ|cmdline)|boot(?:\\/|%2F)grub(?:\\/|%2F)grub.cfg)\\b",
+    "pattern": "(?i)\\b(?:etc(?:\\/|%2F)(?:passwd|shadow|hosts)|(?:proc|sys)(?:\\/|%2F)(?:self(?:\\/|%2F)environ|cmdline)|boot(?:\\/|%2F)grub(?:\\/|%2F)grub\\.cfg)\\b",
     "targets": [
       "URI",
       "ARGS",
@@ -72,7 +58,7 @@
   {
     "id": "lfi-apache-config",
     "phase": 2,
-    "pattern": "(?i)(?:\\/etc\\/apache(?:2)?\\/(?:httpd|apache2)\\.conf)",
+    "pattern": "(?i)/etc/(?:apache2?/(?:httpd|apache2)\\.conf|httpd/conf/httpd\\.conf)",
     "targets": [
       "URI",
       "ARGS",
@@ -81,7 +67,7 @@
     "severity": "MEDIUM",
     "action": "log",
     "score": 5,
-    "description": "Log attempts to access Apache configuration files"
+    "description": "Log Apache config paths, including the RedHat layout (/etc/httpd/conf/httpd.conf) the old pattern missed."
   },
   {
     "id": "lfi-nginx-config",
@@ -114,7 +100,7 @@
   {
     "id": "lfi-windows-sensitive-files",
     "phase": 2,
-    "pattern": "(?i)\\b(?:c:\\\\(?:boot\\.ini|windows\\/win\\.ini|windows\\/system32\\/config\\/sam|windows\\/system32\\/config\\/system|windows\\/system32\\/drivers\\/etc\\/hosts))\\b",
+    "pattern": "(?i)[a-z]:[\\\\/](?:boot\\.ini|windows[\\\\/](?:win\\.ini|system32[\\\\/]config[\\\\/](?:sam|system)|system32[\\\\/]drivers[\\\\/]etc[\\\\/]hosts))",
     "targets": [
       "URI",
       "ARGS",
@@ -123,7 +109,7 @@
     "severity": "HIGH",
     "action": "block",
     "score": 8,
-    "description": "Block attempts to access Windows sensitive system files"
+    "description": "Block Windows sensitive-file paths with either slash direction. The old pattern required c:\\ followed by FORWARD slashes -- the actual backslash form (c:\\windows\\win.ini) never matched."
   },
   {
     "id": "lfi-php-wrapper",
@@ -180,33 +166,5 @@
     "action": "log",
     "score": 4,
     "description": "Log attempts to use null byte for LFI bypass"
-  },
-  {
-    "id": "lfi-long-path-bypass",
-    "phase": 2,
-    "pattern": "(?i)(?:\\.\\.[/\\\\]){20,}",
-    "targets": [
-      "URI",
-      "ARGS",
-      "HEADERS"
-    ],
-    "severity": "MEDIUM",
-    "action": "log",
-    "score": 6,
-    "description": "Log LFI attempts using long paths to bypass filters"
-  },
-  {
-    "id": "lfi-symlink-traversal",
-    "phase": 2,
-    "pattern": "(?i)/\\w+/\\.\\.\\/\\w+\\/",
-    "targets": [
-      "URI",
-      "ARGS",
-      "HEADERS"
-    ],
-    "severity": "MEDIUM",
-    "action": "log",
-    "score": 5,
-    "description": "Log potential LFI via symlink traversal."
   }
 ]

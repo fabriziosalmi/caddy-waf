@@ -2,7 +2,7 @@
   {
     "id": "deserial-java-serialized",
     "phase": 2,
-    "pattern": "(?:rO0AB)",
+    "pattern": "(?:rO0AB|(?i:aced0005))",
     "targets": [
       "BODY",
       "HEADERS",
@@ -11,12 +11,12 @@
     "severity": "CRITICAL",
     "action": "block",
     "score": 9,
-    "description": "Block requests containing potential Java serialized objects."
+    "description": "Block Java serialized objects: base64 (rO0AB) or hex (aced0005, either case) forms."
   },
   {
     "id": "deserial-php-serialized",
     "phase": 2,
-    "pattern": "(?i)O:\\d+:\\\"\\w+\\\":",
+    "pattern": "(?i)[OC]:\\+?\\d+:\"[\\w\\\\]+\":",
     "targets": [
       "BODY",
       "HEADERS",
@@ -25,12 +25,12 @@
     "severity": "HIGH",
     "action": "log",
     "score": 7,
-    "description": "Log requests containing potential PHP serialized objects."
+    "description": "Log PHP serialized objects: O: and C: (custom Serializable) forms, the tolerated O:+4: length sign, and namespaced classes (App\\Models\\...) -- modern gadget chains use namespaced classes, which the old \\w+ could not match."
   },
   {
     "id": "deserial-yaml-payload",
     "phase": 2,
-    "pattern": "(?i)^\\s*!\\w+",
+    "pattern": "(?i)!{1,2}(?:python|ruby|perl|java|javax)(?:/[\\w:]+)?",
     "targets": [
       "BODY",
       "HEADERS",
@@ -39,12 +39,12 @@
     "severity": "MEDIUM",
     "action": "log",
     "score": 6,
-    "description": "Log potential YAML deserialization payloads."
+    "description": "Log dangerous YAML language tags (!!python/object/apply:, !ruby/object:) anywhere in the value. The old ^\\s*!\\w+ was start-anchored and could not match the double-! form. Benign non-language tags like CloudFormation's !Ref do not match."
   },
   {
     "id": "deserial-json-custom",
     "phase": 2,
-    "pattern": "(?i)\"__proto__\":|\\\"constructor\\\":|\\\"prototype\\\":",
+    "pattern": "(?i)\"(?:__proto__|constructor|prototype)\"\\s*:",
     "targets": [
       "BODY",
       "HEADERS",
@@ -53,6 +53,6 @@
     "severity": "MEDIUM",
     "action": "log",
     "score": 5,
-    "description": "Log requests containing potentially malicious keys when deserializing JSON"
+    "description": "Log prototype-pollution keys; \\s* before the colon closes the '\"__proto__\" :' spacing bypass."
   }
 ]

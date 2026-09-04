@@ -1,14 +1,15 @@
 [
   {
-    "id": "auth-weak-password-indicators",
-    "phase": 2,
-    "pattern": "(?i)(?:\\b(?:password|pwd|pass)\\b.*?(?:invalid|incorrect|not\\s+found))",
+    "id": "auth-jwt-alg-none",
+    "phase": 1,
+    "pattern": "(?:eyJhbGciOiJub25lI|eyJhbGciOiAibm9uZSI|eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lI)",
     "targets": [
-      "BODY"
+      "HEADERS:Authorization",
+      "COOKIES"
     ],
-    "severity": "LOW",
-    "action": "log",
-    "score": 2,
-    "description": "Log login responses that might indicate weak password handling."
+    "severity": "HIGH",
+    "action": "block",
+    "score": 8,
+    "description": "Block JWTs whose header declares alg:none, matched in the form it actually appears on the wire: the base64url encodings of {\"alg\":\"none\"...}, {\"alg\": \"none\"...} and {\"typ\":\"JWT\",\"alg\":\"none\"...}. (The removed predecessor looked for the plaintext '\"alg\":\"none\"', which never occurs in an encoded token.)"
   }
 ]

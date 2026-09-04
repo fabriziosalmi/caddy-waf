@@ -98,20 +98,6 @@
     "description": "Block use of PHP filter stream"
   },
   {
-    "id": "rfi-compressed-files",
-    "phase": 2,
-    "pattern": "(?i)(?:\\w+\\.zip|\\w+\\.tar\\.gz|\\w+\\.tgz|\\w+\\.rar|\\w+\\.7z|\\w+\\.bz2)",
-    "targets": [
-      "URI",
-      "ARGS",
-      "HEADERS"
-    ],
-    "severity": "MEDIUM",
-    "action": "log",
-    "score": 4,
-    "description": "Log inclusion of compressed files from remote locations (can contain malicious code)"
-  },
-  {
     "id": "rfi-javascript-include",
     "phase": 2,
     "pattern": "(?i)(?:src\\s*=\\s*['\"]\\s*https?:\\/\\/[^'\"]+\\.js\\s*['\"])",
