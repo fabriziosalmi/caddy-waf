@@ -106,7 +106,10 @@ func TestLFIBypassesClosed(t *testing.T) {
 
 func TestRCESeparatorFix(t *testing.T) {
 	p := loadPatterns(t, "rce.json")
-	mustMatch(t, p["rce-command-separators"], "rce-command-separators", `;rm -rf /`, `|cat /etc/passwd`)
+	mustMatch(t, p["rce-command-separators"], "rce-command-separators", `;rm -rf /`, `|cat /etc/passwd`, `q=1;id`)
+	// ARGS is the whole query string, so a start-of-string branch would match
+	// any request whose first parameter is named id/cmd/exec.
+	mustNotMatch(t, p["rce-command-separators"], "rce-command-separators", `id=42`, `cmd=ls`, `exec=1&x=2`, `id=42&name=alice`)
 }
 
 func TestDeserializationFixes(t *testing.T) {
