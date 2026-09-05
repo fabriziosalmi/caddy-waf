@@ -1,15 +1,5 @@
 [
   {
-        "id": "rfi-http-url",
-        "phase": 2,
-        "pattern": "(?i)https?:\\/\\/[^\\s]+",
-        "targets": ["URI", "ARGS", "HEADERS"],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 8,
-        "description": "Block direct use of HTTP or HTTPS URLs for inclusion."
-    },
-    {
         "id": "rfi-ftp-url",
         "phase": 2,
         "pattern": "(?i)ftp:\\/\\/[^\\s]+",
@@ -79,16 +69,6 @@
        "score": 8,
          "description": "Block use of PHP filter stream"
      },
-  {
-       "id":"rfi-compressed-files",
-      "phase": 2,
-      "pattern": "(?i)(?:\\w+\\.zip|\\w+\\.tar\\.gz|\\w+\\.tgz|\\w+\\.rar|\\w+\\.7z|\\w+\\.bz2)",
-       "targets": ["URI", "ARGS", "HEADERS"],
-       "severity":"MEDIUM",
-       "action": "log",
-       "score": 4,
-       "description": "Log inclusion of compressed files from remote locations (can contain malicious code)"
-  },
  {
         "id":"rfi-javascript-include",
          "phase":2,

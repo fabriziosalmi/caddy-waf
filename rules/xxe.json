@@ -2,42 +2,32 @@
     {
         "id": "xxe-doctype-declaration",
         "phase": 2,
-       "pattern": "(?i)<!DOCTYPE\\s+\\w+\\s+\\[",
-        "targets": ["BODY","HEADERS"],
+       "pattern": "(?i)<!DOCTYPE\\s+[^>\\[]{0,100}?(?:\\[|SYSTEM\\b|PUBLIC\\b)",
+        "targets": ["BODY"],
         "severity": "HIGH",
         "action": "block",
        "score": 8,
-        "description": "Block XML documents with a DOCTYPE declaration (potential for XXE)."
+        "description": "Block DOCTYPE declarations carrying an internal DTD subset ([, with or without a preceding space) or an external DTD (SYSTEM/PUBLIC). A plain <!DOCTYPE html> does not match. HEADERS dropped: XML never arrives in request headers."
     },
     {
         "id": "xxe-system-entity",
         "phase": 2,
-       "pattern": "(?i)SYSTEM\\s+\"file:\\/\\/|SYSTEM\\s+\"http:\\/\\/|SYSTEM\\s+\"https:\\/\\/|SYSTEM\\s+\"ftp:\\/\\/|SYSTEM\\s+\"gopher:\\/\\/",
-        "targets": ["BODY","HEADERS"],
+       "pattern": "(?i)SYSTEM\\s+[\"'](?:file|https?|ftp|gopher|jar|netdoc|php|expect):",
+        "targets": ["BODY"],
         "severity": "HIGH",
         "action": "block",
        "score": 9,
-        "description": "Block XML documents using a SYSTEM entity with file/URL schemes."
-    },
-    {
-        "id":"xxe-parameter-entity",
-       "phase": 2,
-        "pattern":"(?i)%\\w+;",
-        "targets":["BODY","HEADERS"],
-       "severity":"MEDIUM",
-       "action":"log",
-       "score": 4,
-       "description": "Log XML with parameter entity declaration."
+        "description": "Block external SYSTEM identifiers in either quote style (XML allows single quotes; the old pattern only matched double) across the schemes used for exfiltration and wrapper tricks."
     },
     {
       "id":"xxe-external-dtd",
       "phase": 2,
-       "pattern": "(?i)<!ENTITY\\s+\\w+\\s+SYSTEM\\s+\"\\s*(?:file|http|https|ftp|gopher):\\/\\/[^>]*\">",
-        "targets":["BODY","HEADERS"],
+       "pattern": "(?i)<!ENTITY\\s+%?\\s*[\\w.-]+\\s+(?:SYSTEM|PUBLIC)\\s+[\"']",
+        "targets":["BODY"],
       "severity":"HIGH",
        "action":"block",
       "score": 9,
-     "description":"Block external DTD with file or url schemas"
+     "description":"Block external entity declarations, including parameter entities (<!ENTITY % xxe SYSTEM ...>, the blind-XXE workhorse the old \\w+ requirement missed) and single-quoted system identifiers."
   },
   {
       "id":"xxe-inclusion-paths",
@@ -48,15 +38,5 @@
         "action":"log",
         "score": 6,
        "description":"Log attempts to use XXE to include sensitive paths."
-  },
-    {
-    "id":"xxe-internal-ip",
-    "phase":2,
-      "pattern":"(?:127\\.0\\.0\\.1|10\\.|172\\.(?:1[6-9]|2\\d|3[01])\\.|192\\.168\\.)",
-    "targets": ["BODY","HEADERS"],
-     "severity":"MEDIUM",
-     "action":"log",
-     "score": 4,
-    "description":"Log attempts to use XXE to internal ips"
-}
+  }
 ]
