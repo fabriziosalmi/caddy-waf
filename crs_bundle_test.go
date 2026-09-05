@@ -385,7 +385,7 @@ func TestCRSPL1KnownGaps(t *testing.T) {
 	tautology := func() *http.Request { return crsGet("/login", "user=admin' OR 1=1--") }
 	crsOnly := crsMiddleware(t, crsPL1Bundle)
 	code, fired := crsServe(t, crsOnly, tautology())
-	assert.NotEqual(t, http.StatusForbidden, code, "PL1 alone does not port @detectSQLi; fired: %v", fired)
+	assert.NotEqualf(t, http.StatusForbidden, code, "PL1 alone does not port @detectSQLi; fired: %v", fired)
 
 	withDefaults := crsMiddleware(t, "rules.json", crsPL1Bundle)
 	code, _ = crsServe(t, withDefaults, tautology())
