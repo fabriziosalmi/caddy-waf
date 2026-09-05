@@ -325,10 +325,11 @@ func TestCRSPL1BlocksTextbookAttacks(t *testing.T) {
 }
 
 // TestCRSPL1RuleCoverage checks individual translated patterns at the regex
-// level, against the value as the rule sees it after its transformation chain
-// (decoded, and lower-cased where the chain says so). It pins that the
-// translation preserved each rule's detection, including the anchor
-// relaxation for values that are not first in the query string.
+// level. It does not run the transformation chain: each payload is written
+// by hand in the form the chain would produce (already percent-decoded, and
+// lower-cased for the rules whose chain includes lowercase, e.g. 944100). It
+// pins that the translation preserved each rule's detection, including the
+// anchor relaxation for values that are not first in the query string.
 func TestCRSPL1RuleCoverage(t *testing.T) {
 	byID := map[string]*regexp.Regexp{}
 	for _, path := range []string{crsPL1Bundle, crsPL1ResponseBundle} {
