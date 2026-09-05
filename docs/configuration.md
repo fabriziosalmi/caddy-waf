@@ -44,12 +44,14 @@ Within each phase the runtime iterates over the rules already sorted by descendi
 3. On match:
    - The rule's per-ID hit counter (`atomic.Int64`) is incremented.
    - The per-phase hit counter is incremented.
-   - The rule's `score` is added to `state.TotalScore`.
+   - The rule's `score` is added to the blocking score `state.TotalScore` **unless** the rule's `action` is `"log"`, in which case it is added to `state.AdvisoryScore` instead and does not affect the blocking decision (see `log_scores_block` to change this).
    - The request is **blocked** if either of the following is true:
      - `state.TotalScore >= anomaly_threshold`
      - the rule's `action` field equals `"block"`
    - When blocked, `403 Forbidden` is written (or the configured custom response for that status code), and rule processing stops for that phase.
    - When the rule's `action` is `"log"` and neither condition above is true, processing continues with the next target/rule.
+
+> **Note on `log` rules and the threshold.** By default a `log`-mode rule is purely observational: its score is recorded (advisory score, metrics, logs) but never pushes a request over `anomaly_threshold`. This means the threshold only ever fires on the accumulation of `block`-mode scores, and several low-confidence `log` signals cannot silently sum into a `403`. Set `log_scores_block` to restore the legacy CRS-style behaviour where every matched rule, regardless of mode, accumulates toward the threshold.
 
 ### Blocking precedence summary
 
@@ -95,6 +97,7 @@ The full list is the `directiveHandlers` map in [`config.go`](https://github.com
 | `trusted_proxies` | `<entry> [<entry> …]` | unset | Peers allowed to speak for their clients via `X-Forwarded-For` / `client_ip_header`: bare IPs, CIDR ranges, or `private_ranges`. Repeatable. Empty = ignore forwarding headers. See [Client IP & trusted proxies](/client-ip). |
 | `client_ip_header` | `<name>` | unset | A single-IP header (e.g. `CF-Connecting-IP`, `True-Client-IP`, `X-Real-IP`) read for the client IP once the peer is a trusted proxy, instead of `X-Forwarded-For`. |
 | `anomaly_threshold` | `<positive int>` | `5` (Caddyfile) / `20` (Provision fallback) | Score at which a request is blocked. Lower values are stricter. |
+| `log_scores_block` | (flag) | off | When present, `log`-mode rule scores count toward `anomaly_threshold` (legacy accumulation). Off by default: `log` rules are advisory and never block on their own. |
 | `max_request_body_size` | `<bytes>` | `10485760` (10 MiB) | Upper bound for request body reads via `io.LimitReader`. `0` means "use the default". |
 | `max_response_body_size` | `<bytes>` | `10485760` (10 MiB) | Upper bound on how much of the response body is held in memory for Phase 4 inspection. `0` means "use the default". See [Response body buffering](#response-body-buffering). |
 | `block_countries` | `<mmdb> <ISO> [<ISO> …]` | disabled | Block requests whose source country (per the GeoLite2 Country MMDB) is in the list. |
