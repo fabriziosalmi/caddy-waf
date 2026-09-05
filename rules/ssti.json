@@ -49,16 +49,6 @@
          "score": 7,
          "description": "Log requests with potential SSTI payloads using FreeMarker interpolation syntax."
     },
-    {
-        "id":"ssti-freemarker-directive",
-        "phase":2,
-        "pattern":"(?i)<#.*?#>",
-        "targets":["ARGS", "BODY", "HEADERS"],
-        "severity": "HIGH",
-       "action":"log",
-       "score": 7,
-       "description":"Log requests with potential SSTI using freemarker directives."
-    },
      {
         "id": "ssti-velocity-reference",
         "phase": 2,

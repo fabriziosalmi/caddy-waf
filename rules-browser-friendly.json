@@ -12,18 +12,6 @@
     "description": "Allow and log traffic from legitimate browsers, search engine crawlers, and social media bots."
   },
   {
-    "id": "auth-login-form-missing",
-    "phase": 2,
-    "pattern": "^$",
-    "targets": [
-      "BODY"
-    ],
-    "severity": "LOW",
-    "action": "log",
-    "score": 3,
-    "description": "Log login requests that do not contain login form fields"
-  },
-  {
     "id": "block-scanners",
     "phase": 1,
     "pattern": "(?i)(nikto|sqlmap|nmap|acunetix|nessus|openvas|wpscan|dirbuster|burpsuite|owasp zap|netsparker|appscan|arachni|skipfish|gobuster|wfuzz|hydra|metasploit|nessus|openvas|qualys|zap|w3af|openwebspider|netsparker|appspider|rapid7|nessus|qualys|nuclei|zgrab|vega|gospider|gxspider|whatweb|xspider|joomscan|uniscan|blindelephant)",
@@ -46,18 +34,6 @@
     "action": "log",
     "score": 5,
     "description": "Log requests with potential CRLF injection characters in headers. Improved pattern matching."
-  },
-  {
-    "id": "csrf-missing-token-post",
-    "phase": 2,
-    "pattern": "^$",
-    "targets": [
-      "BODY"
-    ],
-    "severity": "HIGH",
-    "action": "log",
-    "score": 6,
-    "description": "Log POST requests to write operation endpoints that are missing a CSRF token in the body (use this with a condition to ensure that a write operation was done)."
   },
   {
     "id": "header-attacks-consolidated",
@@ -112,19 +88,6 @@
     "action": "block",
     "score": 9,
     "description": "Block requests containing potential Java serialized objects, including magic bytes for serialized objects."
-  },
-  {
-    "id": "jwt-tampering",
-    "phase": 1,
-    "pattern": "^(eyJ[A-Za-z0-9_-]{0,}\\.eyJ[A-Za-z0-9_-]{0,}\\.[A-Za-z0-9_-]{0,})",
-    "targets": [
-      "HEADERS:Authorization",
-      "COOKIES"
-    ],
-    "severity": "HIGH",
-    "action": "block",
-    "score": 8,
-    "description": "Block potential JWT tampering attempts in Authorization headers or cookies."
   },
   {
     "id": "nosql-injection-attacks",
@@ -342,66 +305,6 @@
     "action": "block",
     "score": 8,
     "description": "Improved XSS rule to catch encoded payloads and iframe srcdoc. Removed HEADERS target to prevent false positives."
-  },
-  {
-    "id": "browser-integrity-sec-fetch-dest-missing-block",
-    "phase": 1,
-    "pattern": "^$",
-    "targets": [
-      "HEADERS:Sec-Fetch-Dest-Presence-Check"
-    ],
-    "severity": "CRITICAL",
-    "action": "log",
-    "score": 5,
-    "description": "Changed to LOG: Requests missing Sec-Fetch-Dest header. Very strong indicator of non-browser traffic but can cause issues with normal browsers."
-  },
-  {
-    "id": "browser-integrity-sec-fetch-mode-missing-log-score",
-    "phase": 1,
-    "pattern": "^$",
-    "targets": [
-      "HEADERS:Sec-Fetch-Mode-Presence-Check"
-    ],
-    "severity": "MEDIUM",
-    "action": "log",
-    "score": 3,
-    "description": "LOG+SCORE: Requests missing Sec-Fetch-Mode header. Suspicious, might be non-browser. Moderate confidence, low to moderate false positive risk. Assigns score."
-  },
-  {
-    "id": "browser-integrity-sec-fetch-site-missing-log-score",
-    "phase": 1,
-    "pattern": "^$",
-    "targets": [
-      "HEADERS:Sec-Fetch-Site-Presence-Check"
-    ],
-    "severity": "LOW",
-    "action": "log",
-    "score": 1,
-    "description": "LOG+SCORE: Requests missing Sec-Fetch-Site header. Less critical but still worth monitoring. Lower confidence, slightly higher false positive risk. Assigns score."
-  },
-  {
-    "id": "browser-integrity-sec-fetch-user-missing-log-score",
-    "phase": 1,
-    "pattern": "^$",
-    "targets": [
-      "HEADERS:Sec-Fetch-User-Presence-Check"
-    ],
-    "severity": "LOW",
-    "action": "log",
-    "score": 1,
-    "description": "LOG+SCORE: Requests missing Sec-Fetch-User header. Might indicate non-user-initiated actions or bots. Lowest confidence, moderate to higher false positive risk. Assigns score, mainly for correlation."
-  },
-  {
-    "id": "browser-integrity-sec-fetch-dest-not-document-ua-suspicious-log-score",
-    "phase": 1,
-    "pattern": "(?i)^(?:script|style|image|font|fetch|xhr|audio|video|manifest|object|embed|report|worker|sharedworker|serviceworker|empty|unknown)$",
-    "targets": [
-      "HEADERS:Sec-Fetch-Dest-Not"
-    ],
-    "severity": "MEDIUM",
-    "action": "log",
-    "score": 3,
-    "description": "LOG+SCORE: Sec-Fetch-Dest not 'document' AND Suspicious User-Agent. More suspicious combination. Moderate confidence, reduced false positive risk by combining checks. Assigns score."
   },
   {
     "id": "browser-integrity-sec-fetch-mode-no-cors-document-log-score",

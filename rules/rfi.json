@@ -39,16 +39,6 @@
       "score": 8,
       "description":"Block attempts to use phar stream wrapper"
   },
-   {
-        "id": "rfi-data-uri",
-        "phase": 2,
-        "pattern": "(?i)data:\\/\\/(?:text|plain|application)\\/.*?base64,.*",
-        "targets": ["URI", "ARGS", "HEADERS"],
-        "severity": "HIGH",
-        "action": "block",
-        "score": 7,
-       "description": "Block data URIs as potential RFI."
-    },
   {
         "id":"rfi-expect-stream",
         "phase":2,

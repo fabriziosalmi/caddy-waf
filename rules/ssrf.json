@@ -19,16 +19,6 @@
          "score": 5,
         "description": "Block SSRF to Reserved/Multicast IPs."
     },
-    {
-        "id": "ssrf-protocol-whitelist",
-        "phase": 2,
-        "pattern": "^(?i)(?:http|https)://.*$",
-         "targets": ["URI", "ARGS"],
-        "severity": "MEDIUM",
-        "action": "log",
-        "score": 3,
-        "description": "Log URLs that do not follow the protocol whitelist (http/https)."
-    },
       {
          "id":"ssrf-file-protocol",
          "phase": 2,
@@ -68,16 +58,6 @@
           "action":"block",
          "score": 7,
          "description":"Block data:// protocol to avoid SSRF"
-    },
-    {
-          "id": "ssrf-redirects",
-           "phase": 2,
-          "pattern": "(?i)(?:\\s*(?:Location|Redirect)\\s*:\\s*https?:\\/\\/[^\\s]+)",
-          "targets": ["HEADERS"],
-          "severity":"MEDIUM",
-         "action":"log",
-           "score": 4,
-          "description":"Log headers containing redirections to other websites, can be used for SSRF via headers."
     }
 
 ]

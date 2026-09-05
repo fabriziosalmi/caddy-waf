@@ -1,15 +1,5 @@
 [
     {
-         "id": "hpp-duplicate-parameters",
-        "phase": 2,
-         "pattern":"(?i)(?:\\w+=\\w*&\\w+=\\w*){2,}",
-        "targets": ["URI","ARGS"],
-        "severity": "MEDIUM",
-         "action": "log",
-        "score": 4,
-         "description": "Log multiple occurences of the same parameter."
-    },
-     {
         "id": "hpp-array-syntax",
          "phase": 2,
          "pattern":"(?i)(?:\\w+\\[\\w*\\]=\\w*&){2,}",
