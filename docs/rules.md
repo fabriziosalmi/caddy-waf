@@ -16,7 +16,7 @@ The schema below mirrors the `Rule` struct in [`types.go`](https://github.com/fa
   "targets":     ["URI", "ARGS"],
   "severity":    "HIGH",
   "score":       8,
-  "mode":        "block",
+  "action":      "block",
   "description": "Human-readable description",
   "priority":    10
 }
@@ -31,7 +31,7 @@ The schema below mirrors the `Rule` struct in [`types.go`](https://github.com/fa
 | Transformations | `transformations` | array of string | no | Optional per-rule input transformation pipeline (ModSecurity/CRS names, e.g. `["urlDecodeUni","removeNulls"]`). See [Input normalization](#input-normalization). Absent = the per-target default chain; explicit `[]` = no transformation. |
 | Severity | `severity` | string | no | Free-form label used only for logging (e.g. `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`). It does **not** affect blocking decisions. |
 | Score | `score` | int | yes (validated ≥ 0) | Added to the request's anomaly score on match. |
-| Mode | `mode` | string | no | `"block"` (block immediately on match) or `"log"` (log and continue). Empty / missing means: rely on the anomaly threshold only. The Go field is `Action` but the JSON tag is `mode` — see [Field name caveat](#field-name-caveat). |
+| Action | `action` | string | no | `"block"` (block immediately on match) or `"log"` (log and continue). Empty / missing means: rely on the anomaly threshold only. `mode` is accepted as an alias for files written against older documentation — see [Field name caveat](#field-name-caveat). |
 | Description | `description` | string | no | Human-readable description, written to log records. |
 | Priority | `priority` | int | no | Higher priority is evaluated first within a phase. Defaults to `0`. |
 
@@ -44,17 +44,15 @@ A rule is rejected (and dropped from the runtime ruleset, with a warning logged)
 - `targets` is empty
 - `phase` is outside `[1, 4]`
 - `score` is negative
-- `mode` is non-empty and not equal to `"block"` or `"log"`
+- `action` is non-empty and not equal to `"block"` or `"log"`
 
 Loading a file is aborted only when the file cannot be read or its contents cannot be parsed as a JSON array of rules. Individual invalid rules do not abort the load; they are reported in the `Validation errors in rules` log entry.
 
 ### Field name caveat
 
-The Go struct declares the action as `Action string \`json:"mode"\`` ([`types.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/types.go) line 79). This means the JSON property name read by the loader is **`mode`**, not `action`. Files that use `"action"` will be parsed (the field is simply absent from the rule), and the rule will not have an explicit block — it will rely entirely on the cumulative anomaly score reaching `anomaly_threshold`.
+The JSON key for the action is **`action`**, matching the Go field `Action` ([`types.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/types.go)). Every bundled rule file uses it.
 
-The bundled [`rules.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules.json) currently uses `"action"`; the bundled [`sample_rules.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/sample_rules.json) uses `"mode"`. Files under [`rules/`](https://github.com/fabriziosalmi/caddy-waf/tree/main/rules) use `"action"` and therefore behave as if no explicit block were set.
-
-When authoring new rules, prefer `"mode"`.
+Earlier versions of this page documented the key as `mode` because the Go struct was tagged `json:"mode"` while the bundled files used `"action"` — so, in practice, no shipped rule ever had an explicit action and all blocking came from the anomaly threshold. That tag is fixed. To keep rule files written against the old documentation working, the loader still accepts `mode` as an alias; when both keys are present, `action` wins. When authoring new rules, use `"action"`.
 
 ---
 
@@ -216,7 +214,7 @@ Rules with `mode == "log"` log the match at INFO level and let evaluation contin
     "targets": ["HEADERS:User-Agent"],
     "severity": "CRITICAL",
     "score": 10,
-    "mode": "block",
+    "action": "block",
     "priority": 100,
     "description": "Block well-known vulnerability scanners by User-Agent."
   },
@@ -227,7 +225,7 @@ Rules with `mode == "log"` log the match at INFO level and let evaluation contin
     "targets": ["BODY", "ARGS", "URI", "HEADERS"],
     "severity": "CRITICAL",
     "score": 10,
-    "mode": "block",
+    "action": "block",
     "description": "Detect Log4Shell (CVE-2021-44228) JNDI injection attempts."
   },
   {
@@ -237,7 +235,7 @@ Rules with `mode == "log"` log the match at INFO level and let evaluation contin
     "targets": ["BODY"],
     "severity": "LOW",
     "score": 1,
-    "mode": "log",
+    "action": "log",
     "description": "Record suspicious keyword without blocking."
   },
   {
@@ -247,7 +245,7 @@ Rules with `mode == "log"` log the match at INFO level and let evaluation contin
     "targets": ["JSON_PATH:user.is_admin"],
     "severity": "HIGH",
     "score": 8,
-    "mode": "block",
+    "action": "block",
     "description": "Block requests attempting to set is_admin via mass assignment."
   },
   {
@@ -257,7 +255,7 @@ Rules with `mode == "log"` log the match at INFO level and let evaluation contin
     "targets": ["RESPONSE_HEADERS:Server"],
     "severity": "MEDIUM",
     "score": 2,
-    "mode": "log",
+    "action": "log",
     "description": "Log responses leaking the server software identity."
   }
 ]
