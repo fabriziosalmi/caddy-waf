@@ -1,15 +1,5 @@
 [
     {
-        "id": "hpp-array-syntax",
-         "phase": 2,
-         "pattern":"(?i)(?:\\w+\\[\\w*\\]=\\w*&){2,}",
-        "targets": ["URI", "ARGS"],
-        "severity": "MEDIUM",
-         "action": "log",
-        "score": 3,
-         "description": "Log multiple parameters with array like syntax which might indicate HPP"
-      },
-     {
        "id":"hpp-encoded-parameters",
        "phase":2,
         "pattern":"(?i)(?:(%[a-f0-9]{2,})+=[^&]*?&){2,}",

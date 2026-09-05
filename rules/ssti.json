@@ -1,134 +1,52 @@
 [
     {
-        "id": "ssti-jinja2-expression",
+        "id": "ssti-curly-expression",
         "phase": 2,
         "pattern": "(?i)\\{\\{.*?\\}\\}",
         "targets": ["ARGS", "BODY", "HEADERS"],
-        "severity": "HIGH",
+        "severity": "MEDIUM",
         "action": "log",
-        "score": 7,
-        "description": "Log requests with potential SSTI payloads using Jinja2 expression syntax."
+        "score": 4,
+        "description": "Log {{...}} template expressions (Jinja2, Twig, Mustache, Handlebars). Replaces three byte-identical rules whose stacked scores (21) block any body containing template syntax on their own; one rule at score 4 stays below the default threshold."
     },
-  {
-        "id": "ssti-jinja2-statement",
-       "phase": 2,
-       "pattern": "(?i)\\{\\%.*?%\\}",
-       "targets": ["ARGS", "BODY", "HEADERS"],
-       "severity": "HIGH",
-       "action": "log",
-        "score": 7,
-       "description": "Log requests with potential SSTI payloads using Jinja2 statement syntax."
-    },
-   {
-        "id": "ssti-twig-expression",
-         "phase": 2,
-        "pattern": "(?i)\\{\\{.*?\\}\\}",
+    {
+        "id": "ssti-block-statement",
+        "phase": 2,
+        "pattern": "(?i)\\{\\%.*?%\\}",
         "targets": ["ARGS", "BODY", "HEADERS"],
-        "severity": "HIGH",
+        "severity": "MEDIUM",
         "action": "log",
-       "score": 7,
-        "description": "Log requests with potential SSTI payloads using Twig expression syntax."
+        "score": 4,
+        "description": "Log {%...%} template statements (Jinja2, Twig). Deduplicated."
     },
-   {
-        "id": "ssti-twig-statement",
+    {
+        "id": "ssti-dollar-brace",
         "phase": 2,
-        "pattern":"(?i)\\{\\%.*?%\\}",
-       "targets": ["ARGS", "BODY", "HEADERS"],
-       "severity":"HIGH",
-        "action":"log",
-       "score": 7,
-         "description": "Log requests with potential SSTI payloads using Twig statement syntax."
-    },
-  {
-        "id": "ssti-freemarker-interpolation",
-        "phase": 2,
-         "pattern": "(?i)\\$\\{.*?\\}",
-         "targets": ["ARGS", "BODY", "HEADERS"],
-       "severity": "HIGH",
-        "action": "log",
-         "score": 7,
-         "description": "Log requests with potential SSTI payloads using FreeMarker interpolation syntax."
-    },
-     {
-        "id": "ssti-velocity-reference",
-        "phase": 2,
-       "pattern":"(?i)\\$\\{.*?\\}",
-       "targets": ["ARGS", "BODY", "HEADERS"],
-       "severity": "HIGH",
-        "action":"log",
-       "score": 7,
-         "description":"Log requests with potential SSTI using velocity references"
-     },
-  {
-        "id":"ssti-velocity-directive",
-        "phase":2,
-       "pattern": "(?i)#.*?#",
-         "targets": ["ARGS", "BODY", "HEADERS"],
-       "severity":"HIGH",
-        "action":"log",
-         "score": 7,
-       "description":"Log requests with potential SSTI using velocity directives"
-
-    },
- {
-        "id": "ssti-thymeleaf-expression",
-         "phase": 2,
         "pattern": "(?i)\\$\\{.*?\\}",
-         "targets": ["ARGS", "BODY", "HEADERS"],
-       "severity": "HIGH",
+        "targets": ["ARGS", "BODY", "HEADERS"],
+        "severity": "MEDIUM",
         "action": "log",
-         "score": 7,
-        "description": "Log requests with potential SSTI payloads using Thymeleaf expression syntax."
+        "score": 4,
+        "description": "Log ${...} interpolation (FreeMarker, Velocity, Thymeleaf, Mako -- four byte-identical rules deduplicated). Score 4: shell/JS/CI snippets in bodies legitimately contain ${...}, so this must not block alone; JNDI abuse is separately blocked by log4shell-jndi."
     },
    {
         "id": "ssti-thymeleaf-link",
         "phase": 2,
          "pattern": "(?i)@\\{.*?\\}",
         "targets": ["ARGS", "BODY", "HEADERS"],
-        "severity": "HIGH",
+        "severity": "MEDIUM",
         "action": "log",
-       "score": 7,
-         "description":"Log requests with potential SSTI using thymeleaf link syntax."
+       "score": 4,
+         "description":"Log Thymeleaf @{...} link expressions."
     },
-     {
-       "id":"ssti-ejs-expression",
-       "phase": 2,
-        "pattern":"(?i)<%=.*?%>",
-         "targets": ["ARGS", "BODY", "HEADERS"],
-        "severity":"HIGH",
-        "action":"log",
-        "score": 7,
-        "description":"Log requests with potential SSTI payloads using EJS syntax."
-     },
-     {
-       "id":"ssti-ejs-statement",
-       "phase": 2,
-        "pattern":"(?i)<%.*?%>",
-      "targets": ["ARGS", "BODY", "HEADERS"],
-        "severity":"HIGH",
-        "action":"log",
-      "score": 7,
-      "description":"Log requests with potential SSTI payloads using EJS statements syntax."
-     },
-     {
-        "id": "ssti-mako-expression",
+   {
+        "id": "ssti-erb-ejs-tag",
         "phase": 2,
-        "pattern": "(?i)(?:\\${.*?\\})",
+        "pattern": "(?i)<%.*?%>",
         "targets": ["ARGS", "BODY", "HEADERS"],
-         "severity": "HIGH",
+        "severity": "MEDIUM",
         "action": "log",
-        "score": 7,
-        "description":"Log requests with potential SSTI using Mako template syntax."
-    },
-  {
-        "id":"ssti-mustache-expression",
-         "phase": 2,
-      "pattern":"(?i)(?:\\{\\{.*?\\}\\})",
-         "targets": ["ARGS", "BODY", "HEADERS"],
-       "severity": "HIGH",
-         "action":"log",
-       "score": 7,
-       "description":"Log requests with potential SSTI using mustache templates syntax."
-
-  }
+        "score": 4,
+        "description": "Log <%...%> tags (EJS, ERB, JSP, ASP). The separate <%=...%> expression rule was a strict subset and always double-fired."
+   }
 ]
