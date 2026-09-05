@@ -196,10 +196,10 @@ For each rule that matches:
 3. `state.TotalScore += rule.score`.
 4. The request is blocked with `403 Forbidden` if either:
    - `state.TotalScore >= anomaly_threshold`, or
-   - `rule.mode == "block"`.
+   - `rule.action == "block"`.
 5. When blocked, the configured custom response for `403` (if any) is written; otherwise the default plain-text body is sent.
 
-Rules with `mode == "log"` log the match at INFO level and let evaluation continue.
+Rules with `action == "log"` log the match at INFO level and let evaluation continue.
 
 ---
 
@@ -275,4 +275,4 @@ Rules with `mode == "log"` log the match at INFO level and let evaluation contin
 - Prefer modular files under [`rules/`](https://github.com/fabriziosalmi/caddy-waf/tree/main/rules) over a single monolithic `rules.json`. Multiple `rule_file` directives load them all.
 - Always test new rules against the bundled offensive payloads in [`test.py`](https://github.com/fabriziosalmi/caddy-waf/blob/main/test.py) before deploying.
 - Set `priority` on rules that should evaluate before others within the same phase.
-- Use `mode: "log"` while tuning thresholds; switch to `mode: "block"` once false-positive rates are acceptable.
+- Use `action: "log"` while tuning thresholds; switch to `action: "block"` once false-positive rates are acceptable.

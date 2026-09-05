@@ -94,18 +94,23 @@ type Rule struct {
 // UnmarshalJSON reads the rule action from the "action" key, which every
 // shipped rule file uses, and falls back to "mode" so rule files written
 // against the earlier documentation (which named the key "mode") keep working.
-// When both keys are present "action" wins.
+// Precedence is by key presence, not value: when "action" is present it wins
+// even if it is empty, so a legacy "mode" can be overridden explicitly.
 func (r *Rule) UnmarshalJSON(data []byte) error {
 	type plain Rule // no methods, so json.Unmarshal does not recurse into this one
 	aux := struct {
 		*plain
-		Mode string `json:"mode"`
+		Action *string `json:"action"` // shadows plain.Action so presence is visible
+		Mode   *string `json:"mode"`
 	}{plain: (*plain)(r)}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
-	if r.Action == "" {
-		r.Action = aux.Mode
+	switch {
+	case aux.Action != nil:
+		r.Action = *aux.Action
+	case aux.Mode != nil:
+		r.Action = *aux.Mode
 	}
 	return nil
 }
