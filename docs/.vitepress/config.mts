@@ -162,7 +162,13 @@ export default defineConfig({
     outline: { level: [2, 3] },
 
     footer: {
-      message: `Released under the AGPL-3.0 licence. <a href="${repo}/security/advisories">Security advisories</a>.`,
+      // The privacy notice lives once, at fabriziosalmi.github.io/privacy, and
+      // is shared by every project site published from this account — same
+      // publisher, same GitHub Pages hosting, same absence of analytics,
+      // cookies and forms. A copy here would start drifting from it the day it
+      // was written, which is the reason there is one document rather than
+      // thirty.
+      message: `Released under the AGPL-3.0 licence. <a href="${repo}/security/advisories">Security advisories</a>. <a href="https://fabriziosalmi.github.io/privacy">Privacy &amp; legal</a>.`,
       copyright: `Copyright © ${new Date().getFullYear()} Fabrizio Salmi`,
     },
   },
