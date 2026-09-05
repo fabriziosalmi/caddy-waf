@@ -17,13 +17,28 @@ import (
 
 // TestRuleActionUnmarshalsFromJSON pins the fix for the json:"mode" tag bug:
 // the shipped rule files key the action as "action", so a rule loaded from
-// JSON must have Action populated. Before the fix every rule unmarshalled to
-// Action=="" — action:"block" never triggered an explicit block, and the
-// log-vs-block distinction did not exist at runtime. This test loads the real
-// rules.json and asserts both actions are present, so the tag cannot silently
-// regress. The Go tests did not catch the original bug because they set
-// Action directly on the struct, bypassing JSON.
+// JSON must carry exactly the "action" value written in the file. Before the
+// fix every rule unmarshalled to Action=="" — action:"block" never triggered
+// an explicit block, and the log-vs-block distinction did not exist at
+// runtime. Comparing against the raw file (rather than requiring particular
+// actions to exist) keeps the test independent of the rule set's contents.
 func TestRuleActionUnmarshalsFromJSON(t *testing.T) {
+	raw, err := os.ReadFile("rules.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var want []struct {
+		ID     string `json:"id"`
+		Action string `json:"action"`
+	}
+	if err := json.Unmarshal(raw, &want); err != nil {
+		t.Fatal(err)
+	}
+	expected := map[string]string{}
+	for _, w := range want {
+		expected[w.ID] = w.Action
+	}
+
 	m := &Middleware{
 		logger:                zap.NewNop(),
 		ruleCache:             NewRuleCache(),
@@ -33,21 +48,14 @@ func TestRuleActionUnmarshalsFromJSON(t *testing.T) {
 	if err := m.loadRules([]string{"rules.json"}); err != nil {
 		t.Fatalf("loadRules: %v", err)
 	}
-	var haveBlock, haveLog bool
+	seen := 0
 	for _, phaseRules := range m.Rules {
 		for _, r := range phaseRules {
-			switch r.Action {
-			case "block":
-				haveBlock = true
-			case "log":
-				haveLog = true
-			case "":
-				t.Errorf("rule %q loaded with empty Action (json tag regression?)", r.ID)
-			}
+			seen++
+			assert.Equalf(t, expected[r.ID], r.Action, "rule %q: Action must equal the file's \"action\" value", r.ID)
 		}
 	}
-	assert.True(t, haveBlock, "rules.json must contain at least one block-action rule")
-	assert.True(t, haveLog, "rules.json must contain at least one log-action rule")
+	assert.Equal(t, len(expected), seen, "every rule in rules.json must load")
 }
 
 // TestRuleModeKeyStillAccepted pins the compatibility alias: rule files written
@@ -59,7 +67,8 @@ func TestRuleModeKeyStillAccepted(t *testing.T) {
 	  {"id":"legacy","phase":1,"pattern":"x","targets":["ARGS"],"score":1,"mode":"block"},
 	  {"id":"canonical","phase":1,"pattern":"x","targets":["ARGS"],"score":1,"action":"log"},
 	  {"id":"both","phase":1,"pattern":"x","targets":["ARGS"],"score":1,"action":"log","mode":"block"},
-	  {"id":"neither","phase":1,"pattern":"x","targets":["ARGS"],"score":1}
+	  {"id":"neither","phase":1,"pattern":"x","targets":["ARGS"],"score":1},
+	  {"id":"empty-action-wins","phase":1,"pattern":"x","targets":["ARGS"],"score":1,"action":"","mode":"block"}
 	]`
 	if err := json.Unmarshal([]byte(src), &rules); err != nil {
 		t.Fatal(err)
@@ -72,6 +81,7 @@ func TestRuleModeKeyStillAccepted(t *testing.T) {
 	assert.Equal(t, "log", got["canonical"])
 	assert.Equal(t, "log", got["both"], `"action" must win over "mode"`)
 	assert.Equal(t, "", got["neither"])
+	assert.Equal(t, "", got["empty-action-wins"], `a present but empty "action" must still win over "mode"`)
 }
 
 // TestBlockActionFromJSONBlocksBelowThreshold pins the runtime effect of the
