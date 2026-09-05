@@ -1,6 +1,7 @@
 package caddywaf
 
 import (
+	"encoding/json"
 	"regexp"
 	"sync"
 	"sync/atomic"
@@ -77,7 +78,7 @@ type Rule struct {
 	Targets     []string `json:"targets"`
 	Severity    string   `json:"severity"` // Used for logging only
 	Score       int      `json:"score"`
-	Action      string   `json:"mode"` // CRITICAL FIX: This should map to the "mode" field in JSON
+	Action      string   `json:"action"` // "block" or "log"; "mode" is accepted as an alias, see UnmarshalJSON
 	Description string   `json:"description"`
 	// Transformations is an optional per-rule ModSecurity/CRS-style pipeline
 	// (e.g. ["urlDecodeUni","removeNulls","replaceComments"]) applied to the
@@ -88,6 +89,25 @@ type Rule struct {
 	Transformations *[]string `json:"transformations,omitempty"`
 	regex           *regexp.Regexp
 	Priority        int // New field for rule priority
+}
+
+// UnmarshalJSON reads the rule action from the "action" key, which every
+// shipped rule file uses, and falls back to "mode" so rule files written
+// against the earlier documentation (which named the key "mode") keep working.
+// When both keys are present "action" wins.
+func (r *Rule) UnmarshalJSON(data []byte) error {
+	type plain Rule // no methods, so json.Unmarshal does not recurse into this one
+	aux := struct {
+		*plain
+		Mode string `json:"mode"`
+	}{plain: (*plain)(r)}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if r.Action == "" {
+		r.Action = aux.Mode
+	}
+	return nil
 }
 
 // CustomBlockResponse struct

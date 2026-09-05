@@ -18,7 +18,7 @@ If the configured `metrics_endpoint` matches the request path, the middleware se
 
 ## Capabilities at a glance
 
-- Regex rules with phases, severity, score, and explicit `mode` (`block` or `log`).
+- Regex rules with phases, severity, score, and explicit `action` (`block` or `log`).
 - Anomaly scoring: rule scores accumulate; the request is blocked when `anomaly_threshold` is reached.
 - IP blacklist (single addresses and CIDR ranges, IPv4 and IPv6) backed by a prefix trie.
 - DNS blacklist with exact (case-insensitive) host matching.

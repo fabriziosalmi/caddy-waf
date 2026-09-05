@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **The rule `action` field was never read.** `Rule.Action` was tagged `json:"mode"`, but every shipped rule file (and the documentation) keys it `"action"`, so `Action` unmarshalled to the empty string for every rule. In practice `action: "block"` never triggered an explicit block: all blocking happened only when accumulated scores crossed `anomaly_threshold`, and the `log`-vs-`block` distinction did not exist at runtime. The tag is now `json:"action"`, and `mode` is still accepted as an alias (with `action` winning when both are present) so rule files written against the earlier documentation, which named the key `mode`, keep working. `docs/rules.md` now documents `action` as the canonical key. Two consequences worth knowing when upgrading: (1) a `block` rule now blocks on its first match regardless of score, which matters if your `anomaly_threshold` is higher than a rule's score (no rule shipped in `rules.json` or the `rules/` bundles is scored below the Caddyfile default of 5, but the JSON-config fallback threshold is 20, and 23 `rules.json` block rules score below that); (2) the load-time validation that only accepts `block` or `log` is now effective, so a custom rule with any other `action` value fails to load instead of silently running as a score-only rule. `rule_action_test.go` pins both the unmarshalling and the runtime effect.
+
 ## [v0.4.13] - 2026-09-04
 
 ### Changed
