@@ -9,16 +9,6 @@
         "score": 2,
         "description": "Log requests with potentially incomplete or suspicious Basic Authentication headers."
     },
-    {
-        "id": "auth-jwt-no-signature",
-        "phase": 2,
-        "pattern": "^(?:[a-zA-Z0-9_-]+\\.){2}[a-zA-Z0-9_-]*$",
-        "targets": ["HEADERS:Authorization", "COOKIES"],
-        "severity": "HIGH",
-        "action": "log",
-        "score": 7,
-        "description": "Log JWT tokens without a signature (can be vulnerable to tampering)."
-    },
    {
       "id": "auth-jwt-algorithm-none",
       "phase": 2,
@@ -39,25 +29,5 @@
         "action": "log",
         "score": 2,
        "description": "Log login responses that might indicate weak password handling."
-    },
-    {
-        "id":"auth-no-cookies-set",
-       "phase": 2,
-       "pattern":"^$",
-       "targets": ["HEADERS:Set-Cookie"],
-      "severity": "MEDIUM",
-        "action":"log",
-        "score": 4,
-        "description":"Log requests that should be setting a cookie but they are not"
-    },
-    {
-      "id":"auth-login-form-missing",
-       "phase": 2,
-      "pattern":"^$",
-        "targets": ["BODY"],
-      "severity":"LOW",
-        "action":"log",
-        "score": 3,
-        "description":"Log login requests that do not contain login form fields"
-     }
+    }
 ]

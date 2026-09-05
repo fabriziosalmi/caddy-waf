@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+- **Rules that could never fire.** Removed 37 rule entries (28 distinct rule IDs; the `rules.json` and `rules-browser-friendly.json` copies count twice) whose pattern is structurally unable to match the traffic they describe, so deleting them changes no blocking or logging outcome. In `rules.json` and `rules-browser-friendly.json`: every `^$` "missing header/token" rule (`auth-login-form-missing`, `csrf-missing-token-post`, the four `browser-integrity-sec-fetch-*-missing-*` rules), which can never match because a missing header or empty body makes the extractor skip the rule; `browser-integrity-sec-fetch-dest-not-document-ua-suspicious-log-score`, whose target `HEADERS:Sec-Fetch-Dest-Not` is not a header any client sends; and `jwt-tampering`, whose `^eyJ` anchor is defeated by the `Bearer ` / cookie-name prefix it is matched against. In the `rules/` bundles: `rce-9` and `log4j-14/15/16` (a mid-pattern `$` end-anchor), `xss-0/1/2` (`(1)` is a capture group, so `alert(1)` never matches), `sqli-5` (`* ` quantifies a space), `lfi-data-wrapper` and `rfi-data-uri` (require `data://`, which a data URI never has), `lfi-windows-cifs` (four backslashes where a UNC path has two), `ssti-freemarker-directive` (FreeMarker directives never end in `#>`), `sqli-xpath-injection` (demands `=` right after `//node[`), `graphql-batching` (needs a bare `{query`, which JSON never contains), `ssrf-protocol-whitelist` (`^https?://` anchored against `k=v` / `/path`), `ssrf-redirects` (`Location`/`Redirect` are response headers), `hpp-duplicate-parameters` (cannot consume the `&` between pairs), `auth-jwt-no-signature` (same anchor problem as `jwt-tampering`), `auth-no-cookies-set` (`Set-Cookie` is a response header), `auth-login-form-missing` (`^$`), and `sqli-null-byte` (the default transformation chain strips NUL before matching, and `net/http` rejects a raw NUL in headers or the URL). `dead_rules_test.go` pins each removed pattern against the payload its description advertises and the `^$` skip behaviour, so the deletions are verifiable.
+
 ## [v0.4.13] - 2026-09-04
 
 ### Changed

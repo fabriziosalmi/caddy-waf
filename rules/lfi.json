@@ -111,27 +111,6 @@
        "description": "Block use of PHP wrappers for LFI"
   },
   {
-       "id":"lfi-data-wrapper",
-        "phase": 2,
-       "pattern":"(?i)data:\\/\\/(?:text|plain|application)\\/(?:base64,)?.*",
-       "targets": ["URI", "ARGS", "HEADERS"],
-        "severity": "HIGH",
-      "action":"block",
-      "score": 7,
-       "description": "Block use of data wrappers for LFI"
-  },
-  {
-     "id": "lfi-windows-cifs",
-     "phase": 2,
-      "pattern": "(?i)(?:\\\\\\\\\\\\\\\\\\w+)",
-      "targets": ["URI", "ARGS", "HEADERS"],
-       "severity": "MEDIUM",
-       "action": "log",
-      "score": 5,
-        "description": "Log attempts to use Windows CIFS path which might indicate a server-side LFI"
-
-  },
-  {
         "id": "lfi-directory-enumeration",
         "phase": 2,
          "pattern": "(?i)\\b(?:dir|ls|ls -l|dir /b|tree)\\b(?:.*\\b(?:etc|proc|boot|var|log)\\b)",

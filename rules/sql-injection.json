@@ -171,26 +171,6 @@
         "score": 4,
         "description":"Log hex encoded values used in potential SQLi attempts"
   },
-  {
-      "id":"sqli-null-byte",
-      "phase": 2,
-      "pattern": "(?i)\\x00",
-      "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-        "action":"log",
-        "score": 4,
-        "description":"Log SQLi attempts using Null Byte"
-  },
- {
-       "id": "sqli-xpath-injection",
-        "phase": 2,
-        "pattern": "(?i)/(?:\\/\\w+)+(\\[|\\|)(?i)\\s*(?:\\@(?:\\w+)|\\.)*\\s*(?:=|!=|<|>)[\"']?.*[\"']?\\s*(\\]|\\|)",
-        "targets": ["ARGS", "BODY", "HEADERS", "REQUEST_COOKIES"],
-        "severity": "MEDIUM",
-        "action": "log",
-         "score": 4,
-        "description": "Log potential xpath injection"
-    },
 {
      "id": "sqli-database-specific-keywords",
         "phase": 2,

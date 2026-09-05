@@ -41,16 +41,6 @@
 
      },
     {
-        "id": "graphql-batching",
-       "phase": 2,
-      "pattern":"(?i)(?:\\{(?:\\s*(?:query|mutation|fragment)\\s*\\w*\\s*\\{.*?\\})\\s*\\}\\s*){2,}",
-     "targets":["BODY"],
-     "severity": "MEDIUM",
-       "action": "log",
-        "score": 4,
-        "description": "Log GraphQL batching attempts that might be used for resource exhaustion."
-    },
-    {
         "id":"graphql-inline-fragments",
         "phase":2,
         "pattern":"(?i)(?:\\.\\.\\.\\s*\\{\\s*(?:\\w+\\s*\\{.*?\\})\\s*\\})",
