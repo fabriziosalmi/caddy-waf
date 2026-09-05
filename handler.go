@@ -334,6 +334,7 @@ func (m *Middleware) logRequestCompletion(logID string, state *WAFState) {
 	m.logger.Info("WAF request evaluation completed",
 		zap.String("log_id", logID),
 		zap.Int("total_score", state.TotalScore),
+		zap.Int("advisory_score", state.AdvisoryScore),
 		zap.Bool("blocked", state.Blocked),
 		zap.Int("status_code", state.StatusCode),
 	)
