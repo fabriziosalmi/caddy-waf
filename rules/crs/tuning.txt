@@ -1,0 +1,14 @@
+# Per-rule tuning applied by get_owasp_rules.py --tuning (see COVERAGE.md).
+#
+#   <id> remove                       drop the rule entirely
+#   <id> remove-target <TARGET,...>   keep the rule but not on these targets
+#
+# caddy-waf matches the raw request body, not parsed parameter values, so a few
+# CRS rules that are sound against a single decoded value match the framing of
+# ordinary JSON, YAML and multipart bodies. Each line below was added because a
+# benign request in crs_bundle_test.go was blocked by the rule; the comment is
+# copied into COVERAGE.md as the reason.
+
+921150 remove-target BODY   # [\n\r] in a raw multipart, JSON or YAML body is framing, not header injection; query-string coverage stays (921160 covers names)
+942190 remove-target BODY   # the quote-prefixed keyword branch matches JSON keys such as "select" and "having"; query-string coverage stays
+932130 remove-target BODY   # ${...} shell-expression syntax is also CI/template syntax (${{ inputs.x }}) in YAML/JSON bodies; $(...) in bodies is still caught by 932235/932260 and ${IFS}-style variables by 932160

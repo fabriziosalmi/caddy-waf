@@ -17,6 +17,11 @@ Two kinds of rule files live in this project:
   ```
 
   Load as many as you like — rules are merged and de-duplicated by `id`.
+- **`rules/crs/`** — opt-in bundles **translated from the OWASP Core Rule Set**
+  by `get_owasp_rules.py`, one file per paranoia level plus the response-phase
+  rules. Every rule is `log` (advisory) until `log_scores_block` is set. See
+  [`rules/crs/README.md`](crs/README.md) for what is and is not covered and the
+  per-request cost.
 
 ## Constraints every bundle must satisfy
 
