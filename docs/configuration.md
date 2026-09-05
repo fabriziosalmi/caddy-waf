@@ -47,9 +47,9 @@ Within each phase the runtime iterates over the rules already sorted by descendi
    - The rule's `score` is added to `state.TotalScore`.
    - The request is **blocked** if either of the following is true:
      - `state.TotalScore >= anomaly_threshold`
-     - the rule's `mode` field equals `"block"`
+     - the rule's `action` field equals `"block"`
    - When blocked, `403 Forbidden` is written (or the configured custom response for that status code), and rule processing stops for that phase.
-   - When the rule's `mode` is `"log"` and neither condition above is true, processing continues with the next target/rule.
+   - When the rule's `action` is `"log"` and neither condition above is true, processing continues with the next target/rule.
 
 ### Blocking precedence summary
 
