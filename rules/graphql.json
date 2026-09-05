@@ -2,23 +2,13 @@
     {
         "id": "graphql-introspection-query",
         "phase": 2,
-        "pattern": "(?i)(?:query\\s+__schema|mutation\\s+__schema|fragment\\s+__schema|\\{\\s*__schema)",
+        "pattern": "(?i)(?:__schema\\b|__type\\s*\\()",
         "targets": ["BODY"],
         "severity": "MEDIUM",
         "action": "log",
         "score": 5,
-        "description": "Log GraphQL queries attempting to access the schema."
+        "description": "Log GraphQL introspection: any __schema selection (including aliased or nested forms the old first-position patterns missed) or a __type(name:...) probe."
     },
-     {
-        "id": "graphql-union-type-abuse",
-         "phase": 2,
-        "pattern": "(?i)(?:...\\s+on\\s+)",
-        "targets": ["BODY"],
-        "severity": "MEDIUM",
-         "action": "log",
-        "score": 5,
-         "description": "Log usage of union types that can be used for denial of service."
-     },
     {
         "id": "graphql-directives-abuse",
          "phase": 2,
