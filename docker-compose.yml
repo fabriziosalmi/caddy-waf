@@ -4,7 +4,7 @@ services:
     # security fixes, and `latest` leaves no way to name the image you tested
     # against. Swap for `build: .` to run your local checkout instead -- since
     # v0.4.0 that actually compiles the working tree.
-    image: ghcr.io/fabriziosalmi/caddy-waf:0.4.13
+    image: ghcr.io/fabriziosalmi/caddy-waf:0.4.14
     # build: .
     ports:
       - "8080:8080"

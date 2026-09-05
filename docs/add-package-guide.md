@@ -54,7 +54,7 @@ caddy list-modules | grep waf
 ## Pin a version
 
 ```bash
-caddy add-package github.com/fabriziosalmi/caddy-waf@v0.4.13
+caddy add-package github.com/fabriziosalmi/caddy-waf@v0.4.14
 ```
 
 Any tag from the [Releases](https://github.com/fabriziosalmi/caddy-waf/releases)

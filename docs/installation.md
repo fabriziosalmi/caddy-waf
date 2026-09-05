@@ -36,7 +36,7 @@ A representative provisioning log:
 ```
 INFO  Provisioning WAF middleware     {"log_level":"info","log_path":"debug.json","log_json":true,"anomaly_threshold":20}
 INFO  http.handlers.waf  Tor exit nodes updated  {"count":1093}
-INFO  WAF middleware version          {"version":"v0.4.13"}
+INFO  WAF middleware version          {"version":"v0.4.14"}
 INFO  Rate limit configuration        {"requests":100,"window":10,"cleanup_interval":300,"paths":["/api/v1/.*"],"match_all_paths":false}
 WARN  GeoIP database not found. Country blacklisting/whitelisting will be disabled  {"path":"GeoLite2-Country.mmdb"}
 INFO  IP blacklist loaded             {"path":"ip_blacklist.txt","valid_entries":223770,"invalid_entries":0,"total_lines":223770}
@@ -82,7 +82,7 @@ The module is registered in Caddy's package registry, so an existing Caddy v2.7+
 caddy add-package github.com/fabriziosalmi/caddy-waf
 ```
 
-This asks the Caddy build service for a binary containing your current module set plus `caddy-waf`, then replaces the binary in place (backing up the old one unless `--keep-backup` is passed). Pin a version with `@v0.4.13` if needed.
+This asks the Caddy build service for a binary containing your current module set plus `caddy-waf`, then replaces the binary in place (backing up the old one unless `--keep-backup` is passed). Pin a version with `@v0.4.14` if needed.
 
 The module is also selectable on <https://caddyserver.com/download>.
 
@@ -93,16 +93,16 @@ See [add-package-guide.md](add-package-guide.md) for the full flow, removal, and
 Images are published to GitHub Container Registry on every release tag, for `linux/amd64` and `linux/arm64`. No Go toolchain, no build step:
 
 ```bash
-docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.13
+docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.14
 ```
 
 | Tag | Meaning |
 |---|---|
-| `0.4.13` | An exact release. **Prefer this in deployments.** |
+| `0.4.14` | An exact release. **Prefer this in deployments.** |
 | `0.4` | Latest patch of the 0.4 line. |
 | `latest` | Latest release, whatever it currently is. |
 
-The image tag carries **no `v` prefix**, unlike the Go module version: `@v0.4.13` for `add-package`, `:0.4.13` for `docker pull`.
+The image tag carries **no `v` prefix**, unlike the Go module version: `@v0.4.14` for `add-package`, `:0.4.14` for `docker pull`.
 
 See [docker.md](docker.md) for mounting rule files and blacklists, Docker Compose, and hot reload inside a container.
 
