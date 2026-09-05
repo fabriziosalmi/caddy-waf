@@ -61,7 +61,7 @@ xcaddy build --with github.com/fabriziosalmi/caddy-waf
 Or run the published container image, which needs no Go toolchain:
 
 ```bash
-docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.13
+docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.14
 ```
 
 The module is also selectable on the [Caddy download page](https://caddyserver.com/download?package=github.com%2Ffabriziosalmi%2Fcaddy-waf), and `caddy add-package github.com/fabriziosalmi/caddy-waf` works for a one-off install — though Caddy's maintainers have proposed moving that command out of core, so do not build a deployment around it ([#138](https://github.com/fabriziosalmi/caddy-waf/issues/138)).

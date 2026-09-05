@@ -8,7 +8,7 @@ A Web Application Firewall middleware for the [Caddy](https://caddyserver.com/) 
 
 - **Module ID**: `http.handlers.waf` — [registered in Caddy's package registry](https://caddyserver.com/docs/modules/http.handlers.waf), so the module is selectable on the [download page](https://caddyserver.com/download?package=github.com%2Ffabriziosalmi%2Fcaddy-waf)
 - **Go module path**: `github.com/fabriziosalmi/caddy-waf`
-- **Current version**: `v0.4.13` (see [`caddywaf.go`](caddywaf.go) — `const wafVersion`)
+- **Current version**: `v0.4.14` (see [`caddywaf.go`](caddywaf.go) — `const wafVersion`)
 - **License**: AGPL-3.0 — note this is a copyleft licence; check it suits your deployment before integrating
 
 ---
@@ -67,7 +67,7 @@ A representative provisioning log:
 ```
 INFO  Provisioning WAF middleware     {"log_level":"info","log_path":"debug.json","log_json":true,"anomaly_threshold":20}
 INFO  http.handlers.waf  Tor exit nodes updated  {"count":1093}
-INFO  WAF middleware version  {"version":"v0.4.13"}
+INFO  WAF middleware version  {"version":"v0.4.14"}
 INFO  Rate limit configuration  {"requests":100,"window":10,"cleanup_interval":300,"paths":["/api/v1/.*"],"match_all_paths":false}
 WARN  GeoIP database not found. Country blacklisting/whitelisting will be disabled  {"path":"GeoLite2-Country.mmdb"}
 INFO  IP blacklist loaded     {"path":"ip_blacklist.txt","valid_entries":223770,"invalid_entries":0,"total_lines":223770}
@@ -142,11 +142,11 @@ It is also selectable on [caddyserver.com/download](https://caddyserver.com/down
 Images are published to GitHub Container Registry on every release tag, for `linux/amd64` and `linux/arm64`:
 
 ```bash
-docker pull ghcr.io/fabriziosalmi/caddy-waf:0.4.13
-docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.13
+docker pull ghcr.io/fabriziosalmi/caddy-waf:0.4.14
+docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.14
 ```
 
-Tags are `0.4.13`, `0.4` and `latest` — note there is **no `v` prefix**, unlike the Go module version. Pin an exact version in anything you deploy. See [`docs/docker.md`](docs/docker.md) for volumes, Compose, and hot reload.
+Tags are `0.4.14`, `0.4` and `latest` — note there is **no `v` prefix**, unlike the Go module version. Pin an exact version in anything you deploy. See [`docs/docker.md`](docs/docker.md) for volumes, Compose, and hot reload.
 
 ---
 
