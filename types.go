@@ -182,7 +182,8 @@ type Middleware struct {
 	// LogScoresBlock controls whether a rule with action "log" contributes to
 	// the anomaly score that drives the blocking decision. Default false: log
 	// rules are observational and never push a request over the threshold on
-	// their own -- they are still recorded (advisory score, metrics, logs).
+	// their own -- the score is still recorded as WAFState.AdvisoryScore and
+	// written to the request logs (it is not exported by the metrics endpoint).
 	// Set true to restore the legacy behaviour where every matched rule,
 	// regardless of action, accumulates toward the block threshold.
 	LogScoresBlock   bool                `json:"log_scores_block,omitempty"`

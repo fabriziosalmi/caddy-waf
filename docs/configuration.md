@@ -51,7 +51,7 @@ Within each phase the runtime iterates over the rules already sorted by descendi
    - When blocked, `403 Forbidden` is written (or the configured custom response for that status code), and rule processing stops for that phase.
    - When the rule's `action` is `"log"` and neither condition above is true, processing continues with the next target/rule.
 
-> **Note on `log` rules and the threshold.** By default a `log`-mode rule is purely observational: its score is recorded (advisory score, metrics, logs) but never pushes a request over `anomaly_threshold`. This means the threshold only ever fires on the accumulation of `block`-mode scores, and several low-confidence `log` signals cannot silently sum into a `403`. Set `log_scores_block` to restore the legacy CRS-style behaviour where every matched rule, regardless of mode, accumulates toward the threshold.
+> **Note on `log` rules and the threshold.** By default a `log`-mode rule is purely observational: its score is recorded as the advisory score and written to the request log (`advisory_score`; it is not exported by the metrics endpoint) but never pushes a request over `anomaly_threshold`. This means the threshold only ever fires on the accumulation of `block`-mode scores, and several low-confidence `log` signals cannot silently sum into a `403`. Set `log_scores_block` to restore the legacy CRS-style behaviour where every matched rule, regardless of mode, accumulates toward the threshold.
 
 ### Blocking precedence summary
 
