@@ -459,6 +459,9 @@ func TestCRSCoverageReportMatchesBundles(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, json.Unmarshal(data, &rules))
 		want := "`" + filepath.Base(path) + "`: " + strconv.Itoa(len(rules)) + " rules"
+		if len(rules) == 1 {
+			want = "`" + filepath.Base(path) + "`: 1 rule\n"
+		}
 		assert.Containsf(t, string(report), want, "COVERAGE.md must report %s", want)
 	}
 }
