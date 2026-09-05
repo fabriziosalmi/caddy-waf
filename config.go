@@ -192,6 +192,7 @@ func (cl *ConfigLoader) UnmarshalCaddyfile(d *caddyfile.Dispenser, m *Middleware
 		"anomaly_threshold":      cl.parseAnomalyThreshold,
 		"custom_response":        cl.parseCustomResponse,
 		"redact_sensitive_data":  cl.parseRedactSensitiveData,
+		"log_scores_block":       cl.parseLogScoresBlock,
 		"tor":                    cl.parseTorBlock,
 		"log_buffer":             cl.parseLogBuffer,
 		"max_request_body_size":  cl.parseMaxRequestBodySize,
@@ -481,6 +482,13 @@ func (cl *ConfigLoader) parseTorBlock(d *caddyfile.Dispenser, m *Middleware) err
 func (cl *ConfigLoader) parseLogJSON(d *caddyfile.Dispenser, m *Middleware) error {
 	m.LogJSON = true
 	cl.logger.Debug("Log JSON enabled", zap.String("file", d.File()), zap.Int("line", d.Line()))
+	return nil
+}
+
+func (cl *ConfigLoader) parseLogScoresBlock(d *caddyfile.Dispenser, m *Middleware) error {
+	m.LogScoresBlock = true
+	cl.logger.Debug("Log-action rule scores now count toward the block threshold (legacy accumulation)",
+		zap.String("file", d.File()), zap.Int("line", d.Line()))
 	return nil
 }
 

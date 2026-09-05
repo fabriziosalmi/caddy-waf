@@ -35,14 +35,28 @@ func (m *Middleware) processRuleMatch(w http.ResponseWriter, r *http.Request, ru
 	// Metrics for Rule Hits by Phase - Refactored for clarity
 	m.incrementRuleHitsByPhaseMetric(rule.Phase)
 
+	// A log-action rule is observational: by default its score is recorded as
+	// advisory only and does not feed the blocking decision, so several
+	// low-confidence "log" signals cannot silently sum past the threshold and
+	// block a request. Set log_scores_block to restore the legacy behaviour
+	// where every matched rule accumulates toward the block threshold.
 	oldScore := state.TotalScore
-	state.TotalScore += rule.Score
-	m.logRequest(zapcore.DebugLevel, "Anomaly score increased", r, // Corrected argument order - 'r' is now the third argument
+	oldAdvisory := state.AdvisoryScore
+	countsTowardBlock := rule.Action != "log" || m.LogScoresBlock
+	if countsTowardBlock {
+		state.TotalScore += rule.Score
+	} else {
+		state.AdvisoryScore += rule.Score
+	}
+	m.logRequest(zapcore.DebugLevel, "Rule score recorded", r, // Corrected argument order - 'r' is now the third argument
 		zap.String("log_id", logID),
 		zap.String("rule_id", rule.ID),
 		zap.Int("score_increase", rule.Score),
+		zap.Bool("counts_toward_block", countsTowardBlock),
 		zap.Int("old_score", oldScore),
 		zap.Int("new_score", state.TotalScore),
+		zap.Int("old_advisory_score", oldAdvisory),
+		zap.Int("advisory_score", state.AdvisoryScore),
 		zap.Int("anomaly_threshold", m.AnomalyThreshold),
 	)
 
