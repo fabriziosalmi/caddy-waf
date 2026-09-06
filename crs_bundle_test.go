@@ -187,6 +187,7 @@ var crsBenignCorpus = []struct {
 		return crsPost("/s", "application/x-www-form-urlencoded", "css=--main-color%3A+%23fff%3B+padding%3A+10px")
 	}},
 	{"pagination limit param", func() *http.Request { return crsGet("/items", "limit=20&offset=40") }},
+	{"query with id param", func() *http.Request { return crsGet("/posts", "page=2&id=42&sort=desc") }},
 	{"framework array params", func() *http.Request {
 		return crsGet("/search", "filter[status]=open&filter[tag]=urgent&sort[]=date")
 	}},
@@ -419,6 +420,32 @@ func BenchmarkCRSPL1BenignPOST(b *testing.B) {
 		rec := httptest.NewRecorder()
 		_ = m.ServeHTTP(rec, r, crsNext)
 	}
+}
+
+// TestCRSPL2BenignCorpusPinned documents what paranoia level 2 costs in
+// false positives on the same corpus. CRS itself describes PL2+ as needing
+// per-site tuning, and a raw-body engine adds JSON/YAML syntax on top, so
+// this test pins the exact set of benign cases PL1+PL2 blocks rather than
+// asserting zero: a regeneration that changes the set fails here and the
+// README table has to be updated with it.
+func TestCRSPL2BenignCorpusPinned(t *testing.T) {
+	m := crsMiddleware(t, crsPL1Bundle, "rules/crs/crs-pl2.json")
+	want := map[string]string{
+		"legit GraphQL query":                   "crs-942150",            // SQL function-name list contains user(
+		"CI YAML body with template syntax":     "crs-941380",            // {{ }} is also AngularJS client-side template syntax
+		"JSON body with common fields":          "crs-942200",            // ",…<hex>"" branch matches any 2+ member JSON object
+		"JSON with nested numbers and booleans": "crs-942200",            // same
+		"markdown comment body":                 "crs-942200",            // same
+		"English prose body":                    "crs-920230,crs-942200", // %27 counts as double encoding (advisory) + 942200 on "don't"
+	}
+	got := map[string]string{}
+	for _, c := range crsBenignCorpus {
+		code, fired := crsServe(t, m, c.r())
+		if code == http.StatusForbidden {
+			got[c.name] = strings.Join(fired, ",")
+		}
+	}
+	assert.Equal(t, want, got, "PL2 false-positive set changed; update rules/crs/README.md")
 }
 
 // TestCRSBundlesAdvisoryByDefault checks the documented default: without

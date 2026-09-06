@@ -9,6 +9,10 @@ replace it (see [What is not covered](#what-is-not-covered)).
 |---|---:|---|
 | `crs-pl1.json` | 101 | Paranoia level 1 request rules (phases 1–2): scanner detection, protocol attacks, LFI/RFI, RCE, PHP/Java/Node injection, XSS, SQLi, session fixation. |
 | `crs-pl1-response.json` | 50 | Paranoia level 1 response rules (phase 4): SQL/PHP/Java/IIS error leakage, directory listings, web-shell fingerprints. Runs against every response body, so it is the more expensive half. |
+| `crs-pl2.json` | 54 | Paranoia level 2 request rules: stricter SQLi/XSS/RCE siblings, double-encoding, restricted content types. Expect false positives on JSON APIs (see below). |
+| `crs-pl2-response.json` | 1 | Paranoia level 2 response rule (PHP error strings, second list). |
+| `crs-pl3.json` | 22 | Paranoia level 3 request rules. |
+| `crs-pl4.json` | 5 | Paranoia level 4 request rules. |
 | `tuning.txt` | | Per-rule adjustments applied at generation time (the caddy-waf equivalent of CRS `SecRuleUpdateTargetById`). Each line carries its reason. |
 | `COVERAGE.md` | | Generated report: what was ported, what was skipped and why, and which ported rules lost a transformation, an exclusion or an anchor on the way. |
 
@@ -36,6 +40,28 @@ on the request log.
 
 Higher paranoia levels are cumulative: load `crs-pl2.json` on top of
 `crs-pl1.json`, and so on.
+
+## Paranoia levels 2 to 4
+
+CRS itself describes PL2 and above as needing per-site tuning, and matching a
+raw body instead of parsed parameter values adds JSON and YAML syntax to what
+the stricter rules see. `TestCRSPL2BenignCorpusPinned` records the result on
+the 29-request benign corpus that PL1 passes in full: with PL1 + PL2 loaded,
+six requests are blocked.
+
+| Benign request | Blocked by | Why |
+|---|---|---|
+| JSON bodies (three cases) | `crs-942200` | its `,…<hex>"` branch matches any JSON object with two or more members |
+| GraphQL query | `crs-942150` | `user(` is in the SQL function-name list (CRS behaves the same) |
+| CI YAML with `${{ inputs.x }}` | `crs-941380` | `{{ }}` is also AngularJS template syntax (CRS behaves the same) |
+| prose form field with `don't` | `crs-942200`, `crs-920230` | quote-context branch; `%27` counts as double encoding (advisory) |
+
+PL3 and PL4 block most of the corpus (`942431`/`942432` restricted-character
+counting, `921210` array parameters). Treat them as material for a tuned
+deployment: for a JSON API, start with `<id> remove-target BODY` lines in
+`tuning.txt` for the `942` series and regenerate. Only one PL2 rule is tuned
+out of the box, `932236` (2–3 character Unix commands after a separator),
+because the raw query string puts `&id=` in front of every `id` parameter.
 
 ## What is not covered
 
@@ -79,8 +105,7 @@ alternation) alone costs about 0.7 ms per 1 KB of response body.
 ## Regenerating
 
 ```bash
-python3 get_owasp_rules.py --ref v4.9.0 --output rules/crs/crs-pl1.json \
-    --paranoia-level 1 --tuning rules/crs/tuning.txt
+python3 get_owasp_rules.py --ref v4.9.0 --output-dir rules/crs --tuning rules/crs/tuning.txt
 go test -run TestCRS .
 ```
 

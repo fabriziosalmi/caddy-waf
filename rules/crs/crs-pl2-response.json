@@ -1,0 +1,15 @@
+[
+  {
+    "id": "crs-953101",
+    "phase": 4,
+    "pattern": "(?i)(?:File\\ size\\ is|Invalid\\ date|Static\\ function|The\\ function|cannot\\ be\\ empty)",
+    "targets": [
+      "RESPONSE_BODY"
+    ],
+    "severity": "ERROR",
+    "action": "log",
+    "score": 4,
+    "description": "OWASP CRS 953101 PL2: PHP Information Leakage",
+    "transformations": []
+  }
+]

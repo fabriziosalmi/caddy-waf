@@ -1,0 +1,89 @@
+[
+  {
+    "id": "crs-920460",
+    "phase": 2,
+    "pattern": "(?:^|[^\\x5c])\\x5c[cdeghijklmpqwxyz123456789]",
+    "targets": [
+      "URI",
+      "HEADERS",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 920460 PL4: Abnormal character escapes in request",
+    "transformations": [
+      "urlDecodeUni",
+      "htmlEntityDecode",
+      "lowercase"
+    ]
+  },
+  {
+    "id": "crs-921220",
+    "phase": 2,
+    "pattern": "\\[",
+    "targets": [
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 921220 PL4: HTTP Parameter Pollution possible via array notation",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942421",
+    "phase": 1,
+    "pattern": "((?:[~!@#\\$%\\^&\\*\\(\\)\\-\\+=\\{\\}\\[\\]\\|:;\"'´’‘`<>][^~!@#\\$%\\^&\\*\\(\\)\\-\\+=\\{\\}\\[\\]\\|:;\"'´’‘`<>]*?){3})",
+    "targets": [
+      "COOKIES"
+    ],
+    "severity": "WARNING",
+    "action": "log",
+    "score": 3,
+    "description": "OWASP CRS 942421 PL4: Restricted SQL Character Anomaly Detection (cookies): # of special characters exceeded (3)",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942432",
+    "phase": 2,
+    "pattern": "((?:[~!@#\\$%\\^&\\*\\(\\)\\-\\+=\\{\\}\\[\\]\\|:;\"'´’‘`<>][^~!@#\\$%\\^&\\*\\(\\)\\-\\+=\\{\\}\\[\\]\\|:;\"'´’‘`<>]*?){2})",
+    "targets": [
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "WARNING",
+    "action": "log",
+    "score": 3,
+    "description": "OWASP CRS 942432 PL4: Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-944152",
+    "phase": 2,
+    "pattern": "(?i)(?:\\$|&dollar;?)(?:\\{|&l(?:brace|cub);?)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "BODY",
+      "COOKIES",
+      "HEADERS"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 944152 PL4: Potential Remote Command Execution: Log4j / Log4shell",
+    "transformations": [
+      "urlDecodeUni",
+      "htmlEntityDecode"
+    ]
+  }
+]

@@ -1,0 +1,935 @@
+[
+  {
+    "id": "crs-920121",
+    "phase": 2,
+    "pattern": "['\";=\\x5c]",
+    "targets": [
+      "FILE_NAME"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 920121 PL2: Attempted multipart/form-data bypass",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-920230",
+    "phase": 2,
+    "pattern": "%[0-9a-fA-F]{2}",
+    "targets": [
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "WARNING",
+    "action": "log",
+    "score": 3,
+    "description": "OWASP CRS 920230 PL2: Multiple URL Encoding Detected",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-921151",
+    "phase": 1,
+    "pattern": "[\\n\\r]",
+    "targets": [
+      "ARGS"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 921151 PL2: HTTP Header Injection Attack via payload (CR/LF detected)",
+    "transformations": [
+      "urlDecodeUni",
+      "htmlEntityDecode"
+    ]
+  },
+  {
+    "id": "crs-921422",
+    "phase": 1,
+    "pattern": "^[^\\s\\x0b,;]+[\\s\\x0b,;].*?\\b(?:((?:tex|multipar)t|application)|((?:audi|vide)o|image|cs[sv]|(?:vn|relate)d|p(?:df|lain)|json|(?:soa|cs)p|x(?:ml|-www-form-urlencoded)|form-data|x-amf|(?:octe|repor)t|stream)|([\\+/]))\\b",
+    "targets": [
+      "HEADERS:Content-Type"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 921422 PL2: Content-Type header: Dangerous content type outside the mime type declaration",
+    "transformations": [
+      "lowercase"
+    ]
+  },
+  {
+    "id": "crs-930121",
+    "phase": 1,
+    "pattern": "(?i)(?:\\.addressbook|\\.anydesk/|\\.aptitude/config|\\.atom/|\\.aws/|\\.azure/|\\.bash_|\\.bashrc|\\.boto|\\.cache/notify\\-osd\\.log|\\.config/|\\.cshrc|\\.cups/|\\.dbus/|\\.docker|\\.drush/|\\.env|\\.eslintignore|\\.fbcindex|\\.forward|\\.gem/|\\.gitattributes|\\.gitconfig|\\.gnonme/|\\.gnupg/|\\.gsutil/|\\.hplip/hplip\\.conf|\\.htaccess|\\.htdigest|\\.htpasswd|\\.java/|\\.ksh_history|\\.kube/|\\.lesshst|\\.lftp/|\\.lhistory|\\.lighttpdpassword|\\.lldb\\-history|\\.local/share/mc/|\\.lynx_cookies|\\.minikube/|\\.my\\.cnf|\\.mysql_history|\\.nano_history|\\.netrc|\\.node_repl_history|\\.npm/|\\.nsconfig|\\.nsr|\\.nvm/|\\.oh\\-my\\-|\\.password\\-store|\\.pearrc|\\.pgpass|\\.php_history|\\.pinerc|\\.pki/|\\.proclog|\\.procmailrc|\\.profile|\\.psql_history|\\.python_history|\\.rediscli_history|\\.rhistory|\\.rhosts|\\.sh_history|\\.sqlite_history|\\.ssh/|\\.subversion/|\\.tconn/|\\.tcshrc|\\.thunderbird/|\\.tor/|\\.vidalia/|\\.vim/|\\.viminfo|\\.vimrc|\\.vmware/|\\.www_acl|\\.wwwacl|\\.xauthority|\\.zhistory|\\.zsh_history|\\.zshrc|/php\\.ini|/tmp/|apache/access\\.conf|apache/apache\\.conf|apache/apache2\\.conf|apache/audit_log|apache/conf|apache/default\\-server\\.conf|apache/error\\.log|apache/error_log|apache/httpd\\.conf|apache/log|apache2/apache\\.conf|apache2/apache2\\.conf|apache2/conf|apache2/default\\-server\\.conf|apache2/envvars|apache2/httpd\\.conf|apache2/httpd2\\.conf|apache2/logs|apache2/mods|apache2/ports\\.conf|apache2/sites|apache2/ssl\\-global\\.conf|apache2/vhosts\\.d|apache22/conf|apache22/httpd\\.conf|apache22/logs|apache24/conf|apache24/httpd\\.conf|apache24/logs|app/etc/local\\.xml|boot\\.ini|boot/grub/grub\\.cfg|boot/grub/menu\\.lst|config\\.inc\\.php|config\\.php|config\\.sample\\.php|config\\.yml|config/app\\.php|config/custom\\.php|config/database\\.php|config_dev\\.yml|config_prod\\.yml|config_test\\.yml|configuration\\.php|cpanel/logs|data/elasticsearch|data/kafka|defaults\\.inc\\.php|etc/\\.java|etc/acpi|etc/adduser\\.conf|etc/alias|etc/alsa|etc/alternatives|etc/anacrontab|etc/ansible|etc/apache/access\\.conf|etc/apache/apache\\.conf|etc/apache/default\\-server\\.conf|etc/apache/httpd\\.conf|etc/apache/vhosts\\.conf|etc/apache2|etc/apm|etc/apparmor|etc/apport|etc/apt|etc/asciidoc|etc/at\\.allow|etc/at\\.deny|etc/avahi|etc/bash\\.bashrc|etc/bash_completion\\.d|etc/bashrc|etc/bind|etc/binfmt\\.d|etc/bluetooth|etc/bonobo\\-activation|etc/bootptab|etc/brltty|etc/ca\\-certificates|etc/calendar|etc/casper\\.conf|etc/centos\\-release|etc/chatscripts|etc/chkrootkit\\.conf|etc/chromium\\-browser|etc/chrootusers|etc/chttp\\.conf|etc/clam\\.d|etc/clamav|etc/cni|etc/console\\-setup|etc/coraza\\-waf|etc/cracklib|etc/cron\\.allow|etc/cron\\.d|etc/cron\\.hourly|etc/cron\\.monthly|etc/cron\\.weekly|etc/crontab|etc/crypttab|etc/cups|etc/cvs\\-cron\\.conf|etc/cvs\\-pserver\\.conf|etc/dbus\\-1|etc/dconf|etc/debconf\\.conf|etc/debian_version|etc/default|etc/deluser\\.conf|etc/depmod\\.d|etc/dhcp|etc/dictionaries\\-common|etc/dkms|etc/dns2tcpd\\.conf|etc/dnsmasq\\.d|etc/dockeretc/dpkg|etc/e2fsck\\.conf|etc/elasticsearch|etc/emacs|etc/environment\\.d|etc/esound/esd\\.conf|etc/etter\\.conf|etc/exports|etc/fail2ban|etc/fedora\\-release|etc/firebird|etc/firefox|etc/firewall|etc/fonts|etc/foremost\\.conf|etc/freshclam\\.conf|etc/fstab|etc/ftpaccess|etc/ftpchroot|etc/ftphosts|etc/ftpusers|etc/fuse\\.conf|etc/fwupd|etc/gconf|etc/gdb|etc/gdm3|etc/geoclue|etc/ghostscript|etc/gimp|etc/glvnd|etc/gnome|etc/gnucash|etc/gnustep|etc/groff|etc/group|etc/grub\\.conf|etc/grub\\.d|etc/gshadow|etc/gss|etc/gtk\\-2\\.0|etc/gtk\\-3\\.0|etc/hdparm\\.conf|etc/host\\.conf|etc/hostname|etc/hosts|etc/hp|etc/http/conf|etc/http/httpd\\.conf|etc/httpd|etc/ifplugd|etc/imagemagick\\-6|etc/inetd\\.conf|etc/init|etc/insserv\\.conf\\.d|etc/ipfw|etc/iproute2|etc/iptables|etc/issue|etc/java|etc/kafka|etc/kbd/config|etc/kernel|etc/kibana|etc/ld\\.so\\.conf|etc/ldap|etc/libblockdev|etc/libibverbs\\.d|etc/libnl\\-3|etc/libpaper\\.d|etc/libreoffice|etc/lighttpd|etc/lilo\\.conf|etc/logcheck|etc/login\\.defs|etc/logrotate\\.conf|etc/logrotate\\.d|etc/logstash|etc/lsb\\-release|etc/ltrace\\.conf|etc/lvm|etc/lynx|etc/mail|etc/mandrake\\-release|etc/manpath\\.config|etc/mc|etc/menu|etc/miredo\\-server\\.conf|etc/miredo\\.conf|etc/miredo/miredo\\-server\\.conf|etc/miredo/miredo\\.conf|etc/modprobe\\.d|etc/modsecurity|etc/modulesf|etc/mongod\\.conf|etc/monit|etc/mono|etc/motd|etc/mplayer|etc/mpv|etc/mtab|etc/mtools\\.conf|etc/muddleftpd|etc/muddleftpd\\.com|etc/muttrc\\.d|etc/my\\.cnf|etc/my\\.conf|etc/mysql|etc/netplan|etc/network|etc/networkmanager|etc/newsyslog\\.conf|etc/newt|etc/nghttpx|etc/nginx/|etc/nikto|etc/npasswd|etc/nuxeo\\.conf|etc/odbcdatasources|etc/openal|etc/openldap/ldap\\.conf|etc/openmpi|etc/opt|etc/os\\-release|etc/osxhttpd|etc/osync|etc/packagekit|etc/pam\\.conf|etc/pam\\.d|etc/pam\\.d/proftpd|etc/passwd|etc/password|etc/pcmcia|etc/perl|etc/php|etc/pki|etc/pm|etc/polkit\\-1|etc/postfix|etc/postgresql|etc/ppp|etc/printcap|etc/profile|etc/proftp\\.conf|etc/proftpd|etc/pulse|etc/pure\\-ftpd|etc/pureftpd|etc/python|etc/rc\\.conf|etc/rc\\.d/rc\\.httpd|etc/rc0\\.d|etc/rc1\\.d|etc/rc2\\.d|etc/rc3\\.d|etc/rc4\\.d|etc/rc5\\.d|etc/rc6\\.d|etc/rcs\\.d|etc/redhat\\-release|etc/redis\\-sentinel\\.conf|etc/redis\\.conf|etc/resolv\\.conf|etc/resolvconf|etc/rsyslog\\.d|etc/samba|etc/sane\\.d|etc/scw\\-release|etc/security|etc/selinux|etc/sensors\\.conf|etc/sensors\\.d|etc/sensors3\\.conf|etc/sgml|etc/shadow|etc/signon\\-ui|etc/skel|etc/slackware\\-release|etc/smb\\.conf|etc/smbpasswd|etc/smi\\.conf|etc/snmp|etc/sound|etc/spamassassin|etc/speech\\-dispatcher|etc/squid|etc/squirrelmail|etc/ssh|etc/ssl|etc/sso|etc/stunnel|etc/subgid|etc/subuid|etc/subversion|etc/sudoers|etc/suse\\-release|etc/sw\\-cp\\-server/applications\\.d|etc/sysconfig|etc/sysctl\\.conf|etc/sysctl\\.d|etc/syslog\\.conf|etc/sysstat|etc/system\\-release\\-cpe|etc/systemd|etc/termcap|etc/terminfo|etc/texmf|etc/thermald|etc/thnuclnt|etc/thunderbird|etc/timezone|etc/timidity|etc/tinyproxy|etc/tmpfiles\\.d|etc/tor/tor\\-tsocks\\.conf|etc/tsocks\\.conf|etc/ubuntu\\-advantage|etc/udev|etc/udisks2|etc/ufw|etc/update\\-manager|etc/update\\-motd\\.d|etc/update\\-notifier|etc/updatedb\\.conf|etc/upower|etc/urlview|etc/usb_modeswitch\\.d|etc/utmp|etc/vhcs2/proftpd/proftpd\\.conf|etc/vim|etc/vmware|etc/vsftpd\\.chroot_list|etc/vsftpd\\.conf|etc/vsftpd/vsftpd\\.conf|etc/vulkan|etc/w3m|etc/webmin|etc/wicd|etc/wireshark|etc/wpa_supplicant|etc/wu\\-ftpd|etc/x11|etc/xdg|etc/xml|gruntfile\\.js|home/postgres|http/httpd\\.conf|httpd/conf/httpd\\.conf|inc/config\\.php|includes/config\\.php|includes/configure\\.php|inetpub/wwwroot/global\\.asa|jakarta/dist/tomcat|jakarta/tomcat/conf|jakarta/tomcat/logs|library/webserver/documents|lighttpd/conf|lighttpd/lighttpd\\.conf|lighttpd/log|localsettings\\.php|logs/access\\.log|logs/access_log|logs/error\\.log|logs/error_log|logs/pure\\-ftpd\\.log|logs/samba\\.log|logs/security_debug_log|logs/security_log|lsws/conf|lsws/logs|mysql/bin/my\\.ini|mysql/data|mysql/my\\.cnf|mysql/my\\.ini|nginx/conf/nginx\\.conf|npm\\-debug\\.log|opt/apache|opt/apache2|opt/httpd/apache\\.conf|opt/httpd/apache2\\.conf|opt/httpd/conf/|opt/jboss|opt/lampp|opt/nuxeo|opt/tomcat|opt/xampp|ormconfig\\.json|package\\-lock\\.json|package\\.json|parameters\\.yml|pgsql/bin/pg_passwd|pgsql/data|php/apache\\.conf|php/apache2\\.conf|php/httpd\\.conf|php5/apache\\.conf|php5/apache2\\.conf|php5/httpd\\.conf|postgresql/log/|proc/0|proc/1|proc/2|proc/3|proc/4|proc/5|proc/6|proc/7|proc/8|proc/9|proc/acpi|proc/asound|proc/bootconfig|proc/buddyinfo|proc/bus|proc/cgroups|proc/cmdline|proc/config\\.gz|proc/consoles|proc/cpuinfo|proc/crypto|proc/devices|proc/diskstats|proc/dma|proc/docker|proc/driver|proc/dynamic_debug|proc/execdomains|proc/fb|proc/filesystems|proc/fs|proc/interrupts|proc/iomem|proc/ioports|proc/ipmi|proc/irq|proc/kallsyms|proc/kcore|proc/key\\-users|proc/keys|proc/kmsg|proc/kpagecgroup|proc/kpagecount|proc/kpageflags|proc/latency_stats|proc/loadavg|proc/locks|proc/mdstat|proc/meminfo|proc/misc|proc/modules|proc/mounts|proc/mpt|proc/mtd|proc/mtrr|proc/net|proc/pagetypeinfo|proc/partitions|proc/pressure|proc/sched_debug|proc/schedstat|proc/scsi|proc/self|proc/slabinfo|proc/softirqs|proc/stat|proc/swaps|proc/sys|proc/sysrq\\-trigger|proc/sysvipc|proc/thread\\-self|proc/timer_list|proc/timer_stats|proc/tty|proc/uptime|proc/version|proc/version_signature|proc/vmallocinfo|proc/vmstat|proc/zoneinfo|program\\ files|psa/admin|pureftpd/etc|root/anaconda\\-ks\\.cfg|routing\\.yml|samba/lib|sb/config|security\\.yml|server/default/conf|server/default/deploy|server/default/log|services\\.yml|sftp\\-config\\.json|sites/default/default\\.settings\\.php|sites/default/settings\\.local\\.php|sites/default/settings\\.php|squirrelmail/config/config\\.php|squirrelmail/www|sys/block|sys/bus|sys/class|sys/dev|sys/devices|sys/firmware|sys/fs|sys/hypervisor|sys/kernel|sys/module|sys/power|system/library/webobjects/adaptors|system32/config|system32/inetsrv/config|tmp/access\\.log|tmp/kafka\\-logs|tsconfig\\.json|typo3conf/localconf\\.php|usr/etc/pure\\-ftpd\\.conf|usr/home/user/lighttpd|usr/lib/cron/log|usr/lib/php|usr/lib/rpm/rpm\\.log|usr/lib/security|usr/local/zeus/web|usr/pkg/etc/httpd|usr/pkgsrc/net/pureftpd|usr/ports/contrib/pure\\-ftpd|usr/ports/ftp/pure\\-ftpd|usr/sbin/mudlogd|usr/sbin/mudpasswd|usr/sbin/pure\\-config\\.pl|usr/share/adduser|usr/share/logs|usr/share/squirrelmail|usr/share/tomcat|usr/spool/lp|usr/spool/mqueue|var/adm|var/apache/logs|var/apache2/config\\.inc|var/cpanel|var/cron/log|var/data/elasticsearch|var/data/mysql\\-bin|var/htmp|var/lib/elasticsearch|var/lib/mysql|var/lib/pgsql|var/lib/squirrelmail|var/lighttpd|var/local/www/conf|var/log|var/lp/logs|var/mail|var/mysql\\-bin|var/mysql\\.log|var/nm2/postgresql\\.conf|var/postgresql|var/run/utmp|var/saf/_log|var/saf/port/log|var/spool|var/webmin|var/www/conf|var/www/html/squirrelmail|var/www/log|volumes/macintosh_hd|volumes/webbackup|wamp/bin/apache|wamp/bin/mysql|wamp/bin/php|wamp/logs|web\\.config|webpack\\.config\\.js|windows/comsetup\\.log|windows/debug/netsetup\\.log|windows/odbc\\.ini|windows/repair/setup\\.log|windows/setupact\\.log|windows/setupapi\\.log|windows/setuperr\\.log|windows/system32|windows/updspapi\\.log|windows/windowsupdate\\.log|windows/wmsetup\\.log|winnt/repair|winnt/system32/logfiles|wp\\-config\\.|www/conf/httpd\\.conf|www/logs|xampp/apache/logs|xampp/filezillaftp|xampp/htdocs|xampp/mercurymail|xampp/mysql/data|xampp/php|xampp/sendmail|xampp/webalizer/webalizer\\.conf|yarn\\.lock)",
+    "targets": [
+      "HEADERS:Referer",
+      "HEADERS:User-Agent"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 930121 PL2: OS File Access Attempt in REQUEST_HEADERS",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-932131",
+    "phase": 1,
+    "pattern": "\\$(?:\\((?:.*|\\(.*\\))\\)|\\{.*\\}|\\[.*\\])|[<>]\\(.*\\)|/[0-9A-Z_a-z]*\\[!?.+\\]",
+    "targets": [
+      "HEADERS:User-Agent",
+      "HEADERS:Referer"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 932131 PL2: Remote Command Execution: Unix Shell Expression Found",
+    "transformations": []
+  },
+  {
+    "id": "crs-932161",
+    "phase": 1,
+    "pattern": "(?i)(?:\\$CDPATH|\\$DIRSTACK|\\$HOME|\\$HOSTNAME|\\$IFS|\\$OLDPWD|\\$OSTYPE|\\$PATH|\\$PWD|\\$SHELL|\\$\\{CDPATH\\}|\\$\\{DIRSTACK\\}|\\$\\{HOME\\}|\\$\\{HOSTNAME\\}|\\$\\{IFS\\}|\\$\\{OLDPWD\\}|\\$\\{OSTYPE\\}|\\$\\{PATH\\}|\\$\\{PWD\\}|\\$\\{SHELL\\}|bin/7z|bin/7za|bin/7zr|bin/7zx|bin/GET|bin/HEAD|bin/POST|bin/ab|bin/addgroup|bin/adduser|bin/agetty|bin/alias|bin/alpine|bin/ansible|bin/apt|bin/apt\\-get|bin/aptitude|bin/ar|bin/arch|bin/aria2c|bin/arj|bin/arp|bin/as|bin/ascii\\-xfr|bin/ascii85|bin/ash|bin/aspell|bin/at|bin/atobm|bin/awk|bin/aws|bin/axel|bin/base32|bin/base64|bin/basename|bin/basenc|bin/bash|bin/batch|bin/blkid|bin/bpftrace|bin/breaksw|bin/bridge|bin/bsdcat|bin/bsdiff|bin/bsdtar|bin/builtin|bin/bundler|bin/bunzip2|bin/busctl|bin/busybox|bin/byebug|bin/byobu|bin/bzcat|bin/bzcmp|bin/bzdiff|bin/bzegrep|bin/bzexe|bin/bzfgrep|bin/bzgrep|bin/bzip2|bin/bzip2recover|bin/bzless|bin/bzmore|bin/bzz|bin/c89|bin/c99|bin/cancel|bin/capsh|bin/cat|bin/cc|bin/certbot|bin/chattr|bin/chdir|bin/check_by_ssh|bin/check_cups|bin/check_log|bin/check_memory|bin/check_raid|bin/check_ssl_cert|bin/check_statusfile|bin/chef|bin/chflags|bin/chgpasswd|bin/chgrp|bin/chmod|bin/choom|bin/chown|bin/chpass|bin/chroot|bin/chsh|bin/clang|bin/clang\\+\\+|bin/cmp|bin/cobc|bin/column|bin/comm|bin/command|bin/composer|bin/compress|bin/coproc|bin/core_perl/zipdetails|bin/cowsay|bin/cowthink|bin/cp|bin/cpan|bin/cpio|bin/cpulimit|bin/crash|bin/cron|bin/crontab|bin/cscli|bin/csh|bin/csplit|bin/csvtool|bin/cupsfilter|bin/curl|bin/cut|bin/dash|bin/date|bin/dd|bin/df|bin/dhclient|bin/dialog|bin/diff|bin/dig|bin/dir|bin/dmesg|bin/dmidecode|bin/dmsetup|bin/dnf|bin/doas|bin/docker|bin/done|bin/dosbox|bin/dpkg|bin/du|bin/dvips|bin/e2fsck|bin/easy_install|bin/eb|bin/echo|bin/ed|bin/efax|bin/egrep|bin/emacs|bin/endif|bin/endsw|bin/env|bin/env\\-update|bin/eqn|bin/es|bin/esac|bin/esh|bin/eval|bin/ex|bin/exec|bin/exiftool|bin/expand|bin/expect|bin/export|bin/expr|bin/facter|bin/fc|bin/fetch|bin/fg|bin/fgrep|bin/fi|bin/file|bin/filetest|bin/find|bin/finger|bin/fish|bin/flock|bin/fmt|bin/fold|bin/foreach|bin/fping|bin/ftp|bin/ftpstats|bin/ftpwho|bin/function|bin/gawk|bin/gcc|bin/gcore|bin/gdb|bin/gem|bin/genie|bin/genisoimage|bin/getfacl|bin/ghc|bin/ghci|bin/gimp|bin/ginsh|bin/git|bin/go|bin/gpg|bin/grc|bin/grep|bin/groupmod|bin/gtester|bin/gunzip|bin/gzcat|bin/gzexe|bin/gzip|bin/hash|bin/hd|bin/head|bin/hexdump|bin/highlight|bin/history|bin/hostid|bin/hostname|bin/hping3|bin/htdigest|bin/htop|bin/htpasswd|bin/hup|bin/iconv|bin/id|bin/ifconfig|bin/iftop|bin/install|bin/ionice|bin/ip|bin/ip6tables|bin/ipconfig|bin/iptables|bin/irb|bin/ispell|bin/java|bin/jexec|bin/jjs|bin/jobs|bin/join|bin/journalctl|bin/jq|bin/jrunscript|bin/kill|bin/killall|bin/knife|bin/ksh|bin/ksshell|bin/last|bin/lastcomm|bin/lastlog|bin/lastlogin|bin/latex|bin/ld|bin/ldconfig|bin/ldd|bin/less|bin/lessecho|bin/lessfile|bin/lesspipe|bin/lftp|bin/lftpget|bin/links|bin/ln|bin/local|bin/locate|bin/loginctl|bin/logname|bin/logsave|bin/look|bin/losetup|bin/lp|bin/ls|bin/ls\\-F|bin/lsb_release|bin/lscpu|bin/lshw|bin/lsmod|bin/lsof|bin/lspci|bin/lsusb|bin/ltrace|bin/lua|bin/lualatex|bin/luatex|bin/lwp\\-download|bin/lwp\\-dump|bin/lwp\\-mirror|bin/lwp\\-request|bin/lynx|bin/lz|bin/lz4|bin/lz4c|bin/lz4cat|bin/lzcat|bin/lzcmp|bin/lzdiff|bin/lzegrep|bin/lzfgrep|bin/lzgrep|bin/lzless|bin/lzma|bin/lzmadec|bin/lzmainfo|bin/lzmore|bin/mail|bin/mailq|bin/mailx|bin/make|bin/man|bin/mawk|bin/mkdir|bin/mkfifo|bin/mknod|bin/mktemp|bin/mlocate|bin/more|bin/mosquitto|bin/mount|bin/msgattrib|bin/msgcat|bin/msgconv|bin/msgfilter|bin/msgmerge|bin/msguniq|bin/mtr|bin/mutt|bin/mv|bin/mysql|bin/mysqladmin|bin/mysqldump|bin/mysqldumpslow|bin/mysqlhotcopy|bin/mysqlshow|bin/nano|bin/nasm|bin/nawk|bin/nc|bin/nc\\.openbsd|bin/nc\\.traditional|bin/ncat|bin/neofetch|bin/net|bin/netcat|bin/netkit\\-ftp|bin/netplan|bin/netstat|bin/nice|bin/nl|bin/nm|bin/nmap|bin/node|bin/nohup|bin/nping|bin/npm|bin/nroff|bin/nsenter|bin/nslookup|bin/nstat|bin/octave|bin/od|bin/onintr|bin/openssl|bin/openvpn|bin/openvt|bin/opkg|bin/pacman|bin/parted|bin/passwd|bin/paste|bin/patch|bin/pax|bin/pdb|bin/pdflatex|bin/pdftex|bin/pdksh|bin/perf|bin/perl|bin/perl5|bin/perlsh|bin/perms|bin/pf|bin/pftp|bin/pg|bin/pgrep|bin/php|bin/php\\-cgi|bin/php5|bin/php7|bin/pic|bin/pico|bin/pidstat|bin/pigz|bin/ping|bin/pip|bin/pkexec|bin/pkg|bin/pkg_info|bin/pkginfo|bin/pkill|bin/popd|bin/pr|bin/printenv|bin/printf|bin/pry|bin/ps|bin/psed|bin/psftp|bin/psql|bin/ptar|bin/ptardiff|bin/ptargrep|bin/ptx|bin/puppet|bin/pushd|bin/pwd|bin/pxz|bin/py3versions|bin/python|bin/python2|bin/python3|bin/pyversions|bin/rake|bin/raku|bin/rar|bin/rbash|bin/rc|bin/rcp|bin/readelf|bin/realpath|bin/red|bin/redcarpet|bin/rename|bin/repeat|bin/replace|bin/restic|bin/rev|bin/rlogin|bin/rlwrap|bin/rm|bin/rmdir|bin/rmuser|bin/rnano|bin/route|bin/rpm|bin/rpmdb|bin/rpmquery|bin/rpmverify|bin/rsync|bin/ruby|bin/run\\-mailcap|bin/run\\-parts|bin/rview|bin/rvim|bin/sash|bin/sched|bin/scp|bin/screen|bin/script|bin/sdiff|bin/sed|bin/sendmail|bin/service|bin/set|bin/setarch|bin/setenv|bin/setfacl|bin/setsid|bin/sftp|bin/sg|bin/sh|bin/sh\\.distrib|bin/shuf|bin/shutdown|bin/sleep|bin/slsh|bin/smbclient|bin/snap|bin/socat|bin/soelim|bin/sort|bin/source|bin/split|bin/sqlite3|bin/ss|bin/ssh|bin/ssh\\-keygen|bin/ssh\\-keyscan|bin/sshpass|bin/start\\-stop\\-daemon|bin/stdbuf|bin/strace|bin/strings|bin/su|bin/sudo|bin/svn|bin/sysctl|bin/systemctl|bin/systemd\\-resolve|bin/tac|bin/tail|bin/tailf|bin/tar|bin/task|bin/taskset|bin/tbl|bin/tclsh|bin/tcpdump|bin/tcping|bin/tcptraceroute|bin/tcsh|bin/tee|bin/telnet|bin/tex|bin/tftp|bin/tic|bin/time|bin/timedatectl|bin/timeout|bin/tmux|bin/top|bin/touch|bin/traceroute|bin/traceroute6|bin/troff|bin/tshark|bin/ul|bin/ulimit|bin/uname|bin/uncompress|bin/unexpand|bin/uniq|bin/unlink|bin/unlz4|bin/unlzma|bin/unpigz|bin/unrar|bin/unset|bin/unshare|bin/unxz|bin/unzip|bin/unzstd|bin/up2date|bin/update\\-alternatives|bin/useradd|bin/userdel|bin/usermod|bin/uudecode|bin/uuencode|bin/valgrind|bin/vi|bin/view|bin/vigr|bin/vim|bin/vimdiff|bin/vipw|bin/virsh|bin/visudo|bin/volatility|bin/w|bin/w3m|bin/wall|bin/watch|bin/wc|bin/wget|bin/whiptail|bin/who|bin/whoami|bin/whois|bin/wireshark|bin/wish|bin/xargs|bin/xelatex|bin/xetex|bin/xmodmap|bin/xmore|bin/xpad|bin/xterm|bin/xxd|bin/xz|bin/xzcat|bin/xzcmp|bin/xzdec|bin/xzdiff|bin/xzegrep|bin/xzfgrep|bin/xzgrep|bin/xzless|bin/xzmore|bin/yarn|bin/yelp|bin/yes|bin/yum|bin/zathura|bin/zcat|bin/zcmp|bin/zdiff|bin/zegrep|bin/zfgrep|bin/zgrep|bin/zip|bin/zipcloak|bin/zipcmp|bin/zipdetails|bin/zipgrep|bin/zipinfo|bin/zipmerge|bin/zipnote|bin/zipsplit|bin/ziptool|bin/zless|bin/zmore|bin/zrun|bin/zsh|bin/zsoelim|bin/zstd|bin/zstdcat|bin/zstdgrep|bin/zstdless|bin/zstdmt|bin/zypper|dev/fd|dev/null|dev/stderr|dev/stdin|dev/stdout|dev/tcp|dev/udp|dev/zero|etc/group|etc/master\\.passwd|etc/passwd|etc/pwd\\.db|etc/shadow|etc/shells|etc/spwd\\.db|proc/self|sbin/capsh|sbin/logsave|sbin/service|sbin/start\\-stop\\-daemon)",
+    "targets": [
+      "HEADERS:User-Agent",
+      "HEADERS:Referer"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 932161 PL2: Remote Command Execution: Unix Shell Code Found in REQUEST_HEADERS",
+    "transformations": []
+  },
+  {
+    "id": "crs-932210",
+    "phase": 2,
+    "pattern": ";[\\s\\x0b]*\\.[\\s\\x0b]*[\"']?(?:a(?:rchive|uth)|b(?:a(?:ckup|il)|inary)|c(?:d|h(?:anges|eck)|lone|onnection)|d(?:atabases|b(?:config|info)|ump)|e(?:cho|qp|x(?:cel|it|p(?:ert|lain)))|f(?:ilectrl|ullschema)|he(?:aders|lp)|i(?:mpo(?:rt|ster)|ndexes|otrace)|l(?:i(?:mi|n)t|o(?:ad|g))|(?:mod|n(?:onc|ullvalu)|unmodul)e|o(?:nce|pen|utput)|p(?:arameter|r(?:int|o(?:gress|mpt)))|quit|re(?:ad|cover|store)|s(?:ave|c(?:anstats|hema)|e(?:lftest|parator|ssion)|h(?:a3sum|ell|ow)?|tats|ystem)|t(?:ables|estc(?:ase|trl)|ime(?:out|r)|race)|vfs(?:info|list|name)|width)",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 932210 PL2: Remote Command Execution: SQLite System Command Execution",
+    "transformations": [
+      "urlDecodeUni",
+      "compressWhitespace"
+    ]
+  },
+  {
+    "id": "crs-932220",
+    "phase": 2,
+    "pattern": "(?i).\\|(?:[\\s\\x0b]*|b[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?s[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?y[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?b[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?x|c[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?n[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?d|e[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:n[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?v|v[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?l)|[ls][\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?r[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?c[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?e|n[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?h[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?p|t[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?i[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?e(?:[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t)?|w[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?c[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?h|[\\n\\r;=`\\{]|\\|\\|?|&&?|\\$(?:\\(\\(?|[\\[\\{])|<(?:\\(|<<)|>\\(|\\([\\s\\x0b]*\\))[\\s\\x0b]*(?:[\\$\\{]|(?:[\\s\\x0b]*\\(|!)[\\s\\x0b]*|[0-9A-Z_a-z]+=(?:[^\\s\\x0b]*|\\$(?:.*|.*)|[<>].*|'.*'|\".*\")[\\s\\x0b]+)*[\\s\\x0b]*[\"']*(?:[\"'-\\+\\--9\\?A-\\]_a-z\\|]+/)?[\"'\\x5c]*(?:7[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?z(?:[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?[arx])?|G[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?E[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?T|a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:b|(?:p[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?)?t|r(?:[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?[jp])?|s(?:[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?h)?|w[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?[ks])|b[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?z[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?z|c[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:[89][\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?9|[au][\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t|c|(?:m[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?)?p|s[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?h)|d[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:[dfu]|i[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?[gr])|e[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:[bdx]|n[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?v|q[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?n|s(?:[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?h)?)|f[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:[cdgi]|m[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t|t[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?p)|g[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:[chr][\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?c|d[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?b|e[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m|i[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t|o|p[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?g)|h[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:d|u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?p)|i[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:[dp]|r[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?b)|j[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:j[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?s|q)|k[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?s[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?h|l[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:d(?:[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?d)?|[nps]|u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a|z(?:[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?4)?)|m[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?n|t[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?r|v)|n[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:[cl]|e[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t|(?:p[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?)?m)|o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?d|p[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:[at][\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?x|d[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?b|f|(?:k[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?)?g|h[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?p|i[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?[cp]|r(?:[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?y)?|w[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?d|x[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?z)|r[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?r|c(?:[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?p)?|e[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?[dv]|(?:p[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?)?m)|s[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:c[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?p|e[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?[dt]|[ghu]|s(?:[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?h)?|v[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?n)|t[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?[cr]|b[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?l|[co][\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?p|e[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?[ex]|i[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?c)|u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:d[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?p|l)|v[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?i[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m|w[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:3[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m|c)|x[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:x[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?d|z)|y[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:e[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?s|u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m)|z[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:i[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?p|s[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?h))",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 932220 PL2: Remote Command Execution: Unix Command Injection with pipe",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-932231",
+    "phase": 2,
+    "pattern": "(?:b[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?s[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?y[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?b[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?x|c[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?n[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?d|e[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:n[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?v|v[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?l)|[ls][\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?r[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?c[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?e|n[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?h[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?p|t[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?i[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?e(?:[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t)?|w[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?c[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?h|[\\n\\r;=`\\{]|\\|\\|?|&&?|\\$(?:\\(\\(?|[\\[\\{])|<(?:\\(|<<)|>\\(|\\([\\s\\x0b]*\\))[\\s\\x0b]*(?:[\\$\\{]|(?:[\\s\\x0b]*\\(|!)[\\s\\x0b]*|[0-9A-Z_a-z]+=(?:[^\\s\\x0b]*|\\$(?:.*|.*)|[<>].*|'.*'|\".*\")[\\s\\x0b]+)*[\\s\\x0b]*[\"']*(?:[\"'-\\+\\--9\\?A-\\]_a-z\\|]+/)?[\"'\\x5c]*\\.[\\s\\x0b].*\\b",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 932231 PL2: Remote Command Execution: Unix Command Injection",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-932239",
+    "phase": 1,
+    "pattern": "(?i)(?:^|b[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?s[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?y[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?b[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?x|c[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?n[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?d|e[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?(?:n[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?v|v[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?l)|[ls][\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?r[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?c[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?e|n[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?h[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?p|t[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?i[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?m[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?e(?:[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?o[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?u[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t)?|w[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?a[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?t[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?c[\"'\\)\\[\\x5c]*(?:(?:(?:\\|\\||&&)[\\s\\x0b]*)?\\$[!#\\(\\*\\-0-9\\?@_a-\\{]*)?\\x5c?h|[\\n\\r;=`\\{]|\\|\\|?|&&?|\\$(?:\\(\\(?|[\\[\\{])|<(?:\\(|<<)|>\\(|\\([\\s\\x0b]*\\))[\\s\\x0b]*(?:[\\$\\{]|(?:[\\s\\x0b]*\\(|!)[\\s\\x0b]*|[0-9A-Z_a-z]+=(?:[^\\s\\x0b]*|\\$(?:.*|.*)|[<>].*|'.*'|\".*\")[\\s\\x0b]+)*[\\s\\x0b]*[\"']*(?:[\"'-\\+\\--9\\?A-\\]_a-z\\|]+/)?[\"'\\x5c]*(?:7z[arx]?|(?:(?:GE|POS)T|HEAD)[\\s\\x0b&\\)<>\\|]|a(?:(?:b|w[ks]|l(?:ias|pine)|xel)[\\s\\x0b&\\)<>\\|]|pt(?:[\\s\\x0b&\\)<>\\|]|-get)|r(?:[\\s\\x0b&\\)<>j\\|]|(?:p|ch)[\\s\\x0b&\\)<>\\|]|ia2c)|s(?:h[\\s\\x0b&\\)<>\\|]|cii(?:-xfr|85)|pell)|dd(?:group|user)|getty|nsible|tobm)|b(?:z(?:z[\\s\\x0b&\\)<>\\|]|c(?:at|mp)|diff|e(?:grep|xe)|f?grep|ip2(?:recover)?|less|more)|a(?:s(?:e(?:32|64|n(?:ame[\\s\\x0b&\\)<>\\|]|c))|h[\\s\\x0b&\\)<>\\|])|tch[\\s\\x0b&\\)<>\\|])|lkid|pftrace|r(?:eaksw|idge[\\s\\x0b&\\)<>\\|])|sd(?:cat|iff|tar)|u(?:iltin|n(?:dler[\\s\\x0b&\\)<>\\|]|zip2)|s(?:ctl|ybox))|y(?:ebug|obu))|c(?:[89]9|(?:a(?:t|ncel|psh)|c)[\\s\\x0b&\\)<>\\|]|mp|p(?:[\\s\\x0b&\\)<>\\|]|io|ulimit)|s(?:h|cli[\\s\\x0b&\\)<>\\|]|plit|vtool)|u(?:t[\\s\\x0b&\\)<>\\|]|psfilter)|ertbot|h(?:attr|(?:dir|root)[\\s\\x0b&\\)<>\\|]|e(?:ck_(?:by_ssh|cups|log|memory|raid|s(?:sl_cert|tatusfile))|f[\\s\\x0b&\\)\\-<>\\|])|(?:flag|pas)s|g(?:passwd|rp)|mod|o(?:om|wn)|sh)|lang(?:[\\s\\x0b&\\)<>\\|]|\\+\\+)|o(?:(?:b|pro)c|(?:lumn|m(?:m(?:and)?|p(?:oser|ress)))[\\s\\x0b&\\)<>\\|]|w(?:say|think))|r(?:ash[\\s\\x0b&\\)<>\\|]|on(?:[\\s\\x0b&\\)<>\\|]|tab)))|d(?:(?:[du]|i(?:(?:alo)?g|r|ff)|a(?:sh|te))[\\s\\x0b&\\)<>\\|]|f|hclient|m(?:esg|idecode|setup)|o(?:as|(?:cker|ne)[\\s\\x0b&\\)<>\\|]|sbox)|pkg|vips)|e(?:(?:[bd]|cho)[\\s\\x0b&\\)<>\\|]|n(?:v(?:[\\s\\x0b&\\)<>\\|]|-update)|d(?:if|sw))|qn|s(?:[\\s\\x0b&\\)<>h\\|]|ac)|x(?:(?:ec)?[\\s\\x0b&\\)<>\\|]|iftool|p(?:(?:and|(?:ec|or)t)[\\s\\x0b&\\)<>\\|]|r))|2fsck|(?:asy_instal|va)l|fax|grep|macs)|f(?:(?:c|etch|lock|unction)[\\s\\x0b&\\)<>\\|]|d|g(?:rep)?|i(?:(?:n(?:d|ger)|sh)?[\\s\\x0b&\\)<>\\|]|le(?:[\\s\\x0b&\\)<>\\|]|test))|mt|tp(?:[\\s\\x0b&\\)<>\\|]|stats|who)|acter|o(?:ld[\\s\\x0b&\\)<>\\|]|reach)|ping)|g(?:c(?:c[^\\s\\x0b]|ore)|db|e(?:(?:m|tfacl)[\\s\\x0b&\\)<>\\|]|ni(?:e[\\s\\x0b&\\)<>\\|]|soimage))|hci?|i(?:(?:t|mp)[\\s\\x0b&\\)<>\\|]|nsh)|(?:o|awk)[\\s\\x0b&\\)<>\\|]|pg|r(?:c|ep[\\s\\x0b&\\)<>\\|]|oup(?:[\\s\\x0b&\\)<>\\|]|mod))|tester|unzip|z(?:cat|exe|ip))|h(?:(?:d|up|ash|i(?:ghlight|story))[\\s\\x0b&\\)<>\\|]|e(?:ad[\\s\\x0b&\\)<>\\|]|xdump)|ost(?:id|name)|ping3|t(?:digest|op|passwd))|i(?:d|p(?:6?tables|config)?|rb|conv|f(?:config|top)|nstall[\\s\\x0b&\\)<>\\|]|onice|spell)|j(?:js|q|ava[\\s\\x0b&\\)<>\\|]|exec|o(?:(?:bs|in)[\\s\\x0b&\\)<>\\|]|urnalctl)|runscript)|k(?:s(?:h|shell)|ill(?:[\\s\\x0b&\\)<>\\|]|all)|nife[\\s\\x0b&\\)<>\\|])|l(?:d(?:d?[\\s\\x0b&\\)<>\\|]|config)|(?:[np]|ynx)[\\s\\x0b&\\)<>\\|]|s(?:-F|b_release|cpu|hw|mod|of|pci|usb)?|ua(?:[\\s\\x0b&\\)<>\\|]|(?:la)?tex)|z(?:[\\s\\x0b&\\)4<>\\|]|4c(?:at)?|c(?:at|mp)|diff|[ef]?grep|less|m(?:a(?:dec|info)?|ore))|a(?:st(?:[\\s\\x0b&\\)<>\\|]|comm|log(?:in)?)|tex[\\s\\x0b&\\)<>\\|])|ess(?:[\\s\\x0b&\\)<>\\|]|echo|(?:fil|pip)e)|ftp(?:get)?|o(?:(?:ca(?:l|te)|ok)[\\s\\x0b&\\)<>\\|]|g(?:inctl|(?:nam|sav)e)|setup)|trace|wp-(?:d(?:ownload|ump)|mirror|request))|m(?:a(?:(?:n|ke)[\\s\\x0b&\\)<>\\|]|il(?:[\\s\\x0b&\\)<>q\\|]|x[\\s\\x0b&\\)<>\\|])|ster\\.passwd|wk)|tr|(?:v|utt)[\\s\\x0b&\\)<>\\|]|k(?:dir[\\s\\x0b&\\)<>\\|]|fifo|nod|temp)|locate|o(?:squitto|unt[\\s\\x0b&\\)<>\\|])|sg(?:attrib|c(?:at|onv)|filter|merge|uniq)|ysql(?:admin|dump(?:slow)?|hotcopy|show)?)|n(?:c(?:[\\s\\x0b&\\)<>\\|]|\\.(?:openbsd|traditional)|at)|e(?:t(?:[\\s\\x0b&\\)<>\\|]|(?:c|st)at|kit-ftp|plan)|ofetch)|(?:(?:ul)?l|ice)[\\s\\x0b&\\)<>\\|]|m(?:[\\s\\x0b&\\)<>\\|]|ap)|p(?:m[\\s\\x0b&\\)<>\\|]|ing)|a(?:no[\\s\\x0b&\\)<>\\|]|sm|wk)|o(?:de[\\s\\x0b&\\)<>\\|]|hup)|roff|s(?:enter|lookup|tat))|o(?:(?:d|ctave)[\\s\\x0b&\\)<>\\|]|nintr|p(?:en(?:ssl|v(?:pn|t))|kg))|p(?:a(?:(?:x|rted|tch)[\\s\\x0b&\\)<>\\|]|s(?:swd|te[\\s\\x0b&\\)<>\\|]))|d(?:b|f(?:la)?tex|ksh)|f(?:[\\s\\x0b&\\)<>\\|]|tp)|g(?:[\\s\\x0b&\\)<>\\|]|rep)|hp(?:[\\s\\x0b&\\)57<>\\|]|-cgi)|i(?:(?:co?|ng)[\\s\\x0b&\\)<>\\|]|p[^\\s\\x0b]|dstat|gz)|k(?:g(?:_?info)?|exec|ill)|r(?:y?[\\s\\x0b&\\)<>\\|]|int(?:env|f[\\s\\x0b&\\)<>\\|]))|t(?:x|ar(?:diff|grep)?)|wd(?:\\.db)?|xz|er(?:(?:f|ms)[\\s\\x0b&\\)<>\\|]|l(?:[\\s\\x0b&\\)5<>\\|]|sh))|opd|s(?:ed|ftp|ql)|u(?:ppet[\\s\\x0b&\\)<>\\|]|shd)|y(?:thon[23]|3?versions))|r(?:a(?:r[\\s\\x0b&\\)<>\\|]|k(?:e[\\s\\x0b&\\)<>\\|]|u))|c(?:p[\\s\\x0b&\\)<>\\|])?|e(?:(?:d(?:carpet)?|v|name|p(?:eat|lace))[\\s\\x0b&\\)<>\\|]|a(?:delf|lpath)|stic)|m(?:(?:dir)?[\\s\\x0b&\\)<>\\|]|user)|pm(?:[\\s\\x0b&\\)<>\\|]|db|(?:quer|verif)y)|bash|l(?:ogin|wrap)|nano|oute[\\s\\x0b&\\)<>\\|]|sync|u(?:by[^\\s\\x0b]|n-(?:mailcap|parts))|vi(?:ew|m))|s(?:c(?:p|(?:hed|r(?:een|ipt))[\\s\\x0b&\\)<>\\|])|e(?:(?:d|lf|rvice)[\\s\\x0b&\\)<>\\|]|t(?:(?:facl)?[\\s\\x0b&\\)<>\\|]|arch|env|sid)|ndmail)|(?:g|ash)[\\s\\x0b&\\)<>\\|]|h(?:(?:adow|ells)?[\\s\\x0b&\\)<>\\|]|\\.distrib|u(?:f|tdown[\\s\\x0b&\\)<>\\|]))|s(?:[\\s\\x0b&\\)<>\\|]|h(?:[\\s\\x0b&\\)<>\\|]|-key(?:ge|sca)n|pass))|u(?:[\\s\\x0b&\\)<>\\|]|do)|vn|diff|ftp|l(?:eep[\\s\\x0b&\\)<>\\|]|sh)|mbclient|o(?:cat|elim|(?:rt|urce)[\\s\\x0b&\\)<>\\|])|p(?:lit[\\s\\x0b&\\)<>\\|]|wd\\.db)|qlite3|t(?:art-stop-daemon|d(?:buf|err|in|out)|r(?:ace|ings[\\s\\x0b&\\)<>\\|]))|ys(?:ctl|tem(?:ctl|d-resolve)))|t(?:a(?:c|r[\\s\\x0b&\\)<>\\|]|il[\\s\\x0b&\\)<>f\\|]|sk(?:[\\s\\x0b&\\)<>\\|]|set))|bl|c(?:p(?:[\\s\\x0b&\\)<>\\|]|dump|ing|traceroute)|l?sh)|e(?:[ex][\\s\\x0b&\\)<>\\|]|lnet)|i(?:c[\\s\\x0b&\\)<>\\|]|me(?:datectl|out[\\s\\x0b&\\)<>\\|]))|o(?:p|uch[\\s\\x0b&\\)<>\\|])|ftp|mux|r(?:aceroute6?|off)|shark)|u(?:dp|l(?:imit)?[\\s\\x0b&\\)<>\\|]|n(?:ame|(?:compress|s(?:et|hare))[\\s\\x0b&\\)<>\\|]|expand|iq|l(?:ink[\\s\\x0b&\\)<>\\|]|z(?:4|ma))|(?:pig|x)z|rar|z(?:ip[\\s\\x0b&\\)<>\\|]|std))|pdate-alternatives|ser(?:(?:ad|mo)d|del)|u(?:de|en)code)|v(?:i(?:m(?:[\\s\\x0b&\\)<>\\|]|diff)|ew[\\s\\x0b&\\)<>\\|]|gr|pw|rsh|sudo)|algrind|olatility[\\s\\x0b&\\)<>\\|])|w(?:c|a(?:ll|tch)[\\s\\x0b&\\)<>\\|]|h(?:iptail[\\s\\x0b&\\)<>\\|]|o(?:ami|is))|i(?:reshark|sh[\\s\\x0b&\\)<>\\|]))|x(?:(?:x|pa)d|z(?:[\\s\\x0b&\\)<>\\|]|c(?:at|mp)|d(?:ec|iff)|[ef]?grep|less|more)|args|e(?:la)?tex|mo(?:dmap|re)|term)|y(?:(?:e(?:s|lp)|arn)[\\s\\x0b&\\)<>\\|]|um)|z(?:ip(?:[\\s\\x0b&\\)<>\\|]|c(?:loak|mp)|details|grep|info|(?:merg|not)e|split|tool)|s(?:h|oelim|td(?:(?:ca|m)t|grep|less)?)|athura|c(?:at|mp)|diff|e(?:grep|ro[\\s\\x0b&\\)<>\\|])|f?grep|less|more|run|ypper))",
+    "targets": [
+      "HEADERS:User-Agent",
+      "HEADERS:Referer"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 932239 PL2: Remote Command Execution: Unix Command Injection found in user-agent or referer header",
+    "transformations": []
+  },
+  {
+    "id": "crs-932300",
+    "phase": 2,
+    "pattern": "\\r\\n.*?\\b(?:E(?:HLO [\\-\\.A-Za-z\\x17f\\x212a]{1,255}|XPN .{1,64})|HELO [\\-\\.A-Za-z\\x17f\\x212a]{1,255}|MAIL FROM:<.{1,64}@.{1,255}>|R(?:CPT TO:(?:<.{1,64}@.{1,255}>| )?<.{1,64}>|SET\\b)|VRFY .{1,64}(?: <.{1,64}@.{1,255}>|@.{1,255})|AUTH [\\-0-9A-Z_a-z\\x17f\\x212a]{1,20} (?:(?:[\\+/-9A-Z_a-z\\x17f\\x212a]{4})*(?:[\\+/-9A-Z_a-z\\x17f\\x212a]{2}=|[\\+/-9A-Z_a-z\\x17f\\x212a]{3}))?=|STARTTLS\\b|NOOP\\b(?: .{1,255})?)",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 932300 PL2: Remote Command Execution: SMTP Command Execution",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-932310",
+    "phase": 2,
+    "pattern": "(?is)\\r\\n[0-9A-Z_a-z]{1,50}\\b (?:A(?:PPEND (?:[\"#%&\\*\\--9A-Z\\x5c_a-z]+)?(?: \\([ \\x5ca-z]+\\))?(?: \"?[0-9]{1,2}-[0-9A-Z_a-z]{3}-[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} [\\+\\-][0-9]{4}\"?)? \\{[0-9]{1,20}\\+?\\}|UTHENTICATE [\\-0-9_a-z]{1,20}\\r\\n)|L(?:SUB (?:[\"#\\*\\.-9A-Z_a-z~]+)? (?:[\"%&\\*\\.-9A-Z\\x5c_a-z]+)?|ISTRIGHTS (?:[\"%&\\*\\--9A-Z\\x5c_a-z]+)?)|S(?:TATUS (?:[\"%&\\*\\--9A-Z\\x5c_a-z]+)? \\((?:U(?:NSEEN|IDNEXT)|MESSAGES|UIDVALIDITY|RECENT| )+\\)|ETACL (?:[\"%&\\*\\--9A-Z\\x5c_a-z]+)? [\\+\\-][ac-eiklpr-twx]+?)|UID (?:COPY|FETCH|STORE) (?:[\\*,0-:]+)?|(?:(?:DELETE|GET)ACL|MYRIGHTS) (?:[\"%&\\*\\--9A-Z\\x5c_a-z]+)?)",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 932310 PL2: Remote Command Execution: IMAP Command Execution",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-932320",
+    "phase": 2,
+    "pattern": "(?is)\\r\\n.*?\\b(?:(?:LIST|TOP [0-9]+)(?: [0-9]+)?|U(?:SER .+?|IDL(?: [0-9]+)?)|PASS .+?|(?:RETR|DELE) [0-9]+?|A(?:POP [0-9A-Z_a-z]+ [0-9a-f]{32}|UTH [\\-0-9_a-z]{1,20} (?:(?:[\\+/-9A-Z_a-z]{4})*(?:[\\+/-9A-Z_a-z]{2}=|[\\+/-9A-Z_a-z]{3}))?=))",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 932320 PL2: Remote Command Execution: POP3 Command Execution",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-934120",
+    "phase": 2,
+    "pattern": "(?i)(?:a(?:cap|f[ps]|ttachment)|b(?:eshare|itcoin|lob)|c(?:a(?:llto|p)|id|vs|ompress.(?:zlib|bzip2))|d(?:a(?:v|ta)|ict|n(?:s|tp))|e(?:d2k|xpect)|f(?:(?:ee)?d|i(?:le|nger|sh)|tps?)|g(?:it|o(?:pher)?|lob)|h(?:323|ttps?)|i(?:ax|cap|(?:ma|p)ps?|rc[6s]?)|ja(?:bbe)?r|l(?:dap[is]?|ocal_file)|m(?:a(?:ilto|ven)|ms|umble)|n(?:e(?:tdoc|ws)|fs|ntps?)|ogg|p(?:aparazzi|h(?:ar|p)|op(?:2|3s?)|r(?:es|oxy)|syc)|r(?:mi|sync|tm(?:f?p)?|ar)|s(?:3|ftp|ips?|m(?:[bs]|tps?)|n(?:ews|mp)|sh(?:2(?:.(?:s(?:hell|(?:ft|c)p)|exec|tunnel))?)?|vn(?:\\+ssh)?)|t(?:e(?:amspeak|lnet)|ftp|urns?)|u(?:dp|nreal|t2004)|v(?:entrilo|iew-source|nc)|w(?:ebcal|ss?)|x(?:mpp|ri)|zip)://(?:[0-9]{10}|(?:0x[0-9a-f]{2}\\.){3}0x[0-9a-f]{2}|0x(?:[0-9a-f]{8}|[0-9a-f]{16})|(?:0{1,4}[0-9]{1,3}\\.){3}0{1,4}[0-9]{1,3}|[0-9]{1,3}\\.(?:[0-9]{1,3}\\.[0-9]{5}|[0-9]{8})|(?:\\x5c\\x5c[\\-0-9a-z]\\.?_?)+|\\[[0-:a-f]+(?:[\\.0-9]+|%[0-9A-Z_a-z]+)?\\]|[a-z][\\-\\.0-9A-Z_a-z]{1,255}:[0-9]{1,5}(?:#?[\\s\\x0b]*&?@(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3}|[a-z][\\-\\.0-9A-Z_a-z]{1,255}):[0-9]{1,5}/?)+|[\\.0-9]{0,11}(?:\\xe2(?:\\x91[\\xa0-\\xbf]|\\x92[\\x80-\\xbf]|\\x93[\\x80-\\xa9\\xab-\\xbf])|\\xe3\\x80\\x82)+)",
+    "targets": [
+      "COOKIES",
+      "PATH",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 934120 PL2: Possible Server Side Request Forgery (SSRF) Attack: URL Parameter using IP Address",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-934140",
+    "phase": 2,
+    "pattern": "(?:^|[&=\"]|:\\s*)(?:[^@]|@[^\\{])*@+\\{.*\\}",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 934140 PL2: Perl Injection Attack",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-941120",
+    "phase": 2,
+    "pattern": "(?i)[\\s\"'`;/0-9=\\x0B\\x09\\x0C\\x3B\\x2C\\x28\\x3B]on[a-zA-Z]{3,50}[\\s\\x0B\\x09\\x0C\\x3B\\x2C\\x28\\x3B]*?=[^=]",
+    "targets": [
+      "COOKIES",
+      "HEADERS:User-Agent",
+      "HEADERS:Referer",
+      "ARGS",
+      "BODY",
+      "PATH"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 941120 PL2: XSS Filter - Category 2: Event Handler Vector",
+    "transformations": [
+      "urlDecodeUni",
+      "htmlEntityDecode",
+      "removeNulls"
+    ]
+  },
+  {
+    "id": "crs-941150",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:s(?:tyle|rc)|href)\\b[\\s\\S]*?=",
+    "targets": [
+      "COOKIES",
+      "HEADERS:User-Agent",
+      "ARGS",
+      "BODY",
+      "PATH"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 941150 PL2: XSS Filter - Category 5: Disallowed HTML Attributes",
+    "transformations": [
+      "urlDecodeUni",
+      "htmlEntityDecode",
+      "removeNulls"
+    ]
+  },
+  {
+    "id": "crs-941320",
+    "phase": 2,
+    "pattern": "<(?:a|abbr|acronym|address|applet|area|audioscope|b|base|basefront|bdo|bgsound|big|blackface|blink|blockquote|body|bq|br|button|caption|center|cite|code|col|colgroup|comment|dd|del|dfn|dir|div|dl|dt|em|embed|fieldset|fn|font|form|frame|frameset|h1|head|hr|html|i|iframe|ilayer|img|input|ins|isindex|kdb|keygen|label|layer|legend|li|limittext|link|listing|map|marquee|menu|meta|multicol|nobr|noembed|noframes|noscript|nosmartquotes|object|ol|optgroup|option|p|param|plaintext|pre|q|rt|ruby|s|samp|script|select|server|shadow|sidebar|small|spacer|span|strike|strong|style|sub|sup|table|tbody|td|textarea|tfoot|th|thead|title|tr|tt|u|ul|var|wbr|xml|xmp)\\W",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY",
+      "PATH"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 941320 PL2: Possible XSS Attack Detected - HTML Tag Handler",
+    "transformations": [
+      "urlDecodeUni",
+      "lowercase"
+    ]
+  },
+  {
+    "id": "crs-941330",
+    "phase": 2,
+    "pattern": "(?i:[\"'][ ]*(?:[^a-z0-9~_:' ]|in).*?(?:(?:l|\\x5cu006C)(?:o|\\x5cu006F)(?:c|\\x5cu0063)(?:a|\\x5cu0061)(?:t|\\x5cu0074)(?:i|\\x5cu0069)(?:o|\\x5cu006F)(?:n|\\x5cu006E)|(?:n|\\x5cu006E)(?:a|\\x5cu0061)(?:m|\\x5cu006D)(?:e|\\x5cu0065)|(?:o|\\x5cu006F)(?:n|\\x5cu006E)(?:e|\\x5cu0065)(?:r|\\x5cu0072)(?:r|\\x5cu0072)(?:o|\\x5cu006F)(?:r|\\x5cu0072)|(?:v|\\x5cu0076)(?:a|\\x5cu0061)(?:l|\\x5cu006C)(?:u|\\x5cu0075)(?:e|\\x5cu0065)(?:O|\\x5cu004F)(?:f|\\x5cu0066)).*?=)",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY",
+      "PATH"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 941330 PL2: IE XSS Filters - Attack Detected",
+    "transformations": [
+      "urlDecodeUni",
+      "htmlEntityDecode",
+      "compressWhitespace"
+    ]
+  },
+  {
+    "id": "crs-941340",
+    "phase": 2,
+    "pattern": "(?i)[\"\\'][ ]*(?:[^a-z0-9~_:\\' ]|in).+?[.].+?=",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY",
+      "PATH"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 941340 PL2: IE XSS Filters - Attack Detected",
+    "transformations": [
+      "urlDecodeUni",
+      "htmlEntityDecode",
+      "compressWhitespace"
+    ]
+  },
+  {
+    "id": "crs-941380",
+    "phase": 2,
+    "pattern": "{{.*?}}",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY",
+      "PATH"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 941380 PL2: AngularJS client side template injection detected",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942120",
+    "phase": 2,
+    "pattern": "(?i)[!=]=|&&|\\|\\||->|>[=>]|<(?:[<=]|>(?:[\\s\\x0b]+binary)?)|\\b(?:(?:xor|r(?:egexp|like)|i(?:snull|like)|notnull)\\b|collate(?:[^0-9A-Z_a-z]*?(?:U&)?[\"'`]|[^0-9A-Z_a-z]+(?:(?:binary|nocase|rtrim)\\b|[0-9A-Z_a-z]*?_))|(?:likel(?:ihood|y)|unlikely)[\\s\\x0b]*\\()|r(?:egexp|like)[\\s\\x0b]+binary|not[\\s\\x0b]+between[\\s\\x0b]+(?:0[\\s\\x0b]+and|(?:'[^']*'|\"[^\"]*\")[\\s\\x0b]+and[\\s\\x0b]+(?:'[^']*'|\"[^\"]*\"))|is[\\s\\x0b]+null|like[\\s\\x0b]+(?:null|[0-9A-Z_a-z]+[\\s\\x0b]+escape\\b)|(?:^|[^0-9A-Z_a-z])in[\\s\\x0b\\+]*\\([\\s\\x0b\"0-9]+[^\\(\\)]*\\)|[!<->][\\s\\x0b]*all\\b",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "PATH"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942120 PL2: SQL Injection Attack: SQL Operator Detected",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942150",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:json(?:_[0-9A-Z_a-z]+)?|a(?:bs|(?:cos|sin)h?|tan[2h]?|vg)|c(?:eil(?:ing)?|h(?:a(?:nges|r(?:set)?)|r)|o(?:alesce|sh?|unt)|ast)|d(?:e(?:grees|fault)|a(?:te|y))|exp|f(?:loor(?:avg)?|ormat|ield)|g(?:lob|roup_concat)|h(?:ex|our)|i(?:f(?:null)?|if|n(?:str)?)|l(?:ast(?:_insert_rowid)?|ength|ike(?:l(?:ihood|y))?|n|o(?:ad_extension|g(?:10|2)?|wer(?:pi)?|cal)|trim)|m(?:ax|in(?:ute)?|o(?:d|nth))|n(?:ullif|ow)|p(?:i|ow(?:er)?|rintf|assword)|quote|r(?:a(?:dians|ndom(?:blob)?)|e(?:p(?:lace|eat)|verse)|ound|trim|ight)|s(?:i(?:gn|nh?)|oundex|q(?:lite_(?:compileoption_(?:get|used)|offset|source_id|version)|rt)|u(?:bstr(?:ing)?|m)|econd|leep)|t(?:anh?|otal(?:_changes)?|r(?:im|unc)|ypeof|ime)|u(?:n(?:icode|likely)|(?:pp|s)er)|zeroblob|bin|v(?:alues|ersion)|week|year)[^0-9A-Z_a-z]*\\(",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942150 PL2: SQL Injection Attack: SQL function name detected",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942152",
+    "phase": 1,
+    "pattern": "(?i)\\b(?:a(?:dd(?:dat|tim)e|es_(?:de|en)crypt|s(?:cii(?:str)?|in)|tan2?)|b(?:enchmark|i(?:n_to_num|t_(?:and|count|length|x?or)))|c(?:har(?:acter)?_length|iel(?:ing)?|o(?:alesce|ercibility|llation|(?:mpres)?s|n(?:cat(?:_ws)?|nection_id|v(?:ert(?:_tz)?)?)|t)|r32|ur(?:(?:dat|tim)e|rent_(?:date|setting|time(?:stamp)?|user)))|d(?:a(?:t(?:abase(?:_to_xml)?|e(?:_(?:add|format|sub)|diff))|y(?:name|of(?:month|week|year)))|count|e(?:code|grees|s_(?:de|en)crypt)|ump)|e(?:lt|n(?:c(?:ode|rypt)|ds_?with)|x(?:p(?:ort_set)?|tract(?:value)?))|f(?:i(?:el|n)d_in_set|ound_rows|rom_(?:base64|days|unixtime))|g(?:e(?:ometrycollection|t(?:_(?:format|lock)|pgusername))|(?:r(?:eates|oup_conca)|tid_subse)t)|hex(?:toraw)?|i(?:fnull|n(?:et6?_(?:aton|ntoa)|s(?:ert|tr)|terval)|s(?:_(?:(?:free|used)_lock|ipv(?:4(?:_(?:compat|mapped))?|6)|n(?:ot(?:_null)?|ull)|superuser)|null))|json(?:_(?:a(?:gg|rray(?:_(?:elements(?:_text)?|length))?)|build_(?:array|object)|e(?:ac|xtract_pat)h(?:_text)?|object(?:_(?:agg|keys))?|populate_record(?:set)?|strip_nulls|t(?:o_record(?:set)?|ypeof))|b(?:_(?:array(?:_(?:elements(?:_text)?|length))?|build_(?:array|object)|object(?:_(?:agg|keys))?|e(?:ac|xtract_pat)h(?:_text)?|insert|p(?:ath_(?:(?:exists|match)(?:_tz)?|query(?:_(?:(?:array|first)(?:_tz)?|tz))?)|opulate_record(?:set)?|retty)|s(?:et(?:_lax)?|trip_nulls)|t(?:o_record(?:set)?|ypeof)))?|path)?|l(?:ast_(?:day|inser_id)|case|e(?:as|f)t|i(?:kel(?:ihood|y)|nestring)|o(?:_(?:from_bytea|put)|ad_file|ca(?:ltimestamp|te)|g(?:10|2)|wer)|pad|trim)|m(?:a(?:ke(?:_set|date)|ster_pos_wait)|d5|i(?:crosecon)?d|onthname|ulti(?:linestring|po(?:int|lygon)))|n(?:ame_const|ot_in|ullif)|o(?:ct(?:et_length)?|(?:ld_passwo)?rd)|p(?:eriod_(?:add|diff)|g_(?:client_encoding|(?:databas|read_fil)e|l(?:argeobject|s_dir)|sleep|user)|o(?:(?:lyg|siti)on|w)|rocedure_analyse)|qu(?:arter|ery_to_xml|ote)|r(?:a(?:dians|nd|wtohex)|elease_lock|ow_(?:count|to_json)|pad|trim)|s(?:chema|e(?:c_to_time|ssion_user)|ha[12]?|in|oundex|pace|q(?:lite_(?:compileoption_(?:get|used)|source_id)|rt)|t(?:arts_?with|d(?:dev_(?:po|sam)p)?|r(?:_to_date|cmp))|ub(?:(?:dat|tim)e|str(?:ing(?:_index)?)?)|ys(?:date|tem_user))|t(?:ime(?:_(?:format|to_sec)|diff|stamp(?:add|diff)?)|o(?:_(?:base64|jsonb?)|n?char|(?:day|second)s)|r(?:im|uncate))|u(?:case|n(?:compress(?:ed_length)?|hex|i(?:str|x_timestamp)|likely)|(?:pdatexm|se_json_nul)l|tc_(?:date|time(?:stamp)?)|uid(?:_short)?)|var(?:_(?:po|sam)p|iance)|we(?:ek(?:day|ofyear)|ight_string)|xmltype|yearweek)[^0-9A-Z_a-z]*\\(",
+    "targets": [
+      "HEADERS:Referer",
+      "HEADERS:User-Agent"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942152 PL2: SQL Injection Attack: SQL function name detected",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942180",
+    "phase": 2,
+    "pattern": "(?i)(?:/\\*)+[\"'`]+[\\s\\x0b]?(?:--|[#\\{]|/\\*)?|[\"'`](?:[\\s\\x0b]*(?:(?:x?or|and|div|like|between)[\\s\\x0b\\-0-9A-Z_a-z]+[\\(\\)\\+-\\-<->][\\s\\x0b]*[\"'0-9`]|[!=\\|](?:[\\s\\x0b!\\+\\-0-9=]+.*?[\"'\\(`].*?|[\\s\\x0b!0-9=]+.*?[0-9]+)$|(?:like|print)[^0-9A-Z_a-z]+[\"'\\(0-9A-Z_-z]|;)|(?:[<>~]+|[\\s\\x0b]*[^\\s\\x0b0-9A-Z_a-z]?=[\\s\\x0b]*|[^0-9A-Z_a-z]*?[\\+=]+[^0-9A-Z_a-z]*?)[\"'`])|[0-9][\"'`][\\s\\x0b]+[\"'`][\\s\\x0b]+[0-9]|^admin[\\s\\x0b]*?[\"'`]|[\\s\\x0b\"'\\(`][\\s\\x0b]*?glob[^0-9A-Z_a-z]+[\"'\\(0-9A-Z_-z]|[\\s\\x0b]is[\\s\\x0b]*?0[^0-9A-Z_a-z]|where[\\s\\x0b][\\s\\x0b,-\\.0-9A-Z_a-z]+[\\s\\x0b]=",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942180 PL2: Detects basic SQL authentication bypass attempts 1/3",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942200",
+    "phase": 2,
+    "pattern": "(?i),.*?[\"'\\)0-9`-f][\"'`](?:[\"'`].*?[\"'`]|(?:\\r?\\n)?\\z|[^\"'`]+)|[^0-9A-Z_a-z]select.+[^0-9A-Z_a-z]*?from|(?:alter|(?:(?:cre|trunc|upd)at|renam)e|d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load)[\\s\\x0b]*?\\([\\s\\x0b]*?space[\\s\\x0b]*?\\(",
+    "targets": [
+      "COOKIES",
+      "HEADERS:User-Agent",
+      "HEADERS:Referer",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942200 PL2: Detects MySQL comment-/space-obfuscated injections and backtick termination",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942210",
+    "phase": 2,
+    "pattern": "(?i)(?:&&|\\|\\||and|between|div|like|n(?:and|ot)|(?:xx?)?or)[\\s\\x0b\\(]+[0-9A-Z_a-z]+[\\s\\x0b\\)]*?[!\\+=]+[\\s\\x0b0-9]*?[\"'-\\)=`]|[0-9](?:[\\s\\x0b]*?(?:and|between|div|like|x?or)[\\s\\x0b]*?[0-9]+[\\s\\x0b]*?[\\+\\-]|[\\s\\x0b]+group[\\s\\x0b]+by.+\\()|/[0-9A-Z_a-z]+;?[\\s\\x0b]+(?:and|between|div|having|like|x?or|select)[^0-9A-Z_a-z]|(?:[#;]|--)[\\s\\x0b]*?(?:alter|drop|(?:insert|update)[\\s\\x0b]*?[0-9A-Z_a-z]{2,})|@.+=[\\s\\x0b]*?\\([\\s\\x0b]*?select|[^0-9A-Z_a-z]SET[\\s\\x0b]*?@[0-9A-Z_a-z]+",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942210 PL2: Detects chained SQL injection attempts 1/2",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942260",
+    "phase": 2,
+    "pattern": "(?i)[\"'`][\\s\\x0b]*?(?:(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between|\\|\\||&&)[\\s\\x0b]+[\\s\\x0b0-9A-Z_a-z]+=[\\s\\x0b]*?[0-9A-Z_a-z]+[\\s\\x0b]*?having[\\s\\x0b]+|like[^0-9A-Z_a-z]*?[\"'0-9`])|[0-9A-Z_a-z][\\s\\x0b]+like[\\s\\x0b]+[\"'`]|like[\\s\\x0b]*?[\"'`]%|select[\\s\\x0b]+?[\\s\\x0b\"'-\\),-\\.0-9A-\\[\\]_-z]+from[\\s\\x0b]+",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942260 PL2: Detects basic SQL authentication bypass attempts 2/3",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942300",
+    "phase": 2,
+    "pattern": "(?i)\\)[\\s\\x0b]*?when[\\s\\x0b]*?[0-9]+[\\s\\x0b]*?then|[\"'`][\\s\\x0b]*?(?:[#\\{]|--)|/\\*![\\s\\x0b]?[0-9]+|\\b(?:(?:binary|cha?r)[\\s\\x0b]*?\\([\\s\\x0b]*?[0-9]|(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between|r(?:egexp|like))[\\s\\x0b]+[0-9A-Z_a-z]+\\()|(?:\\|\\||&&)[\\s\\x0b]*?[0-9A-Z_a-z]+\\(",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942300 PL2: Detects MySQL comments, conditions and ch(a)r injections",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942310",
+    "phase": 2,
+    "pattern": "(?i)(?:\\([\\s\\x0b]*?select[\\s\\x0b]*?[0-9A-Z_a-z]+|coalesce|order[\\s\\x0b]+by[\\s\\x0b]+if[0-9A-Z_a-z]*?)[\\s\\x0b]*?\\(|\\*/from|\\+[\\s\\x0b]*?[0-9]+[\\s\\x0b]*?\\+[\\s\\x0b]*?@|[0-9A-Z_a-z][\"'`][\\s\\x0b]*?(?:(?:[\\+\\-=@\\|]+[\\s\\x0b]+?)+|[\\+\\-=@\\|]+)[\\(0-9]|@@[0-9A-Z_a-z]+[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z]|[^0-9A-Z_a-z]!+[\"'`][0-9A-Z_a-z]|[\"'`](?:;[\\s\\x0b]*?(?:if|while|begin)|[\\s\\x0b0-9]+=[\\s\\x0b]*?[0-9])|[\\s\\x0b\\(]+case[0-9]*?[^0-9A-Z_a-z].+[tw]hen[\\s\\x0b\\(]",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942310 PL2: Detects chained SQL injection attempts 2/2",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942321",
+    "phase": 1,
+    "pattern": "(?i)create[\\s\\x0b]+(?:function|procedure)[\\s\\x0b]*?[0-9A-Z_a-z]+[\\s\\x0b]*?\\([\\s\\x0b]*?\\)[\\s\\x0b]*?-|d(?:eclare[^0-9A-Z_a-z]+[#@][\\s\\x0b]*?[0-9A-Z_a-z]+|iv[\\s\\x0b]*?\\([\\+\\-]*[\\s\\x0b\\.0-9]+,[\\+\\-]*[\\s\\x0b\\.0-9]+\\))|exec[\\s\\x0b]*?\\([\\s\\x0b]*?@|(?:lo_(?:impor|ge)t|procedure[\\s\\x0b]+analyse)[\\s\\x0b]*?\\(|;[\\s\\x0b]*?(?:declare|open)[\\s\\x0b]+[\\-0-9A-Z_a-z]+|::(?:b(?:igint|ool)|double[\\s\\x0b]+precision|int(?:eger)?|numeric|oid|real|(?:tex|smallin)t)",
+    "targets": [
+      "HEADERS:Referer",
+      "HEADERS:User-Agent"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942321 PL2: Detects MySQL and PostgreSQL stored procedure/function injections",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942330",
+    "phase": 2,
+    "pattern": "(?i)[\"'`][\\s\\x0b]*?\\b(?:x?or|div|like|between|and)\\b[\\s\\x0b]*?[\"'`]?[0-9]|\\x5cx(?:2[37]|3d)|^(?:.?[\"'`]$|[\"'\\x5c`]*?(?:[\"'0-9`]+|[^\"'`]+[\"'`])[\\s\\x0b]*?\\b(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between|\\|\\||&&)\\b[\\s\\x0b]*?[\"'0-9A-Z_-z][!&\\(\\)\\+-\\.@])|[^\\s\\x0b0-9A-Z_a-z][0-9A-Z_a-z]+[\\s\\x0b]*?[\\-\\|][\\s\\x0b]*?[\"'`][\\s\\x0b]*?[0-9A-Z_a-z]|@(?:[0-9A-Z_a-z]+[\\s\\x0b]+(?:and|x?or|div|like|between)\\b[\\s\\x0b]*?[\"'0-9`]+|[\\-0-9A-Z_a-z]+[\\s\\x0b](?:and|x?or|div|like|between)\\b[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z])|[^\\s\\x0b0-:A-Z_a-z][\\s\\x0b]*?[0-9][^0-9A-Z_a-z]+[^\\s\\x0b0-9A-Z_a-z][\\s\\x0b]*?[\"'`].|[^0-9A-Z_a-z]information_schema|table_name[^0-9A-Z_a-z]",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942330 PL2: Detects classic SQL injection probings 1/3",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942340",
+    "phase": 2,
+    "pattern": "(?i)in[\\s\\x0b]*?\\(+[\\s\\x0b]*?select|(?:(?:N?AND|X?X?OR|DIV|LIKE|BETWEEN|NOT)[\\s\\x0b]+|(?:\\|\\||&&)[\\s\\x0b]*)[\\s\\x0b\\+0-9A-Z_a-z]+(?:regexp[\\s\\x0b]*?\\(|sounds[\\s\\x0b]+like[\\s\\x0b]*?[\"'`]|[0-9=]+x)|[\"'`](?:[\\s\\x0b]*?(?:[0-9][\\s\\x0b]*?(?:--|#)|is[\\s\\x0b]*?(?:[0-9].+[\"'`]?[0-9A-Z_a-z]|[\\.0-9]+[\\s\\x0b]*?[^0-9A-Z_a-z].*?[\"'`]))|[%&<->\\^]+[0-9][\\s\\x0b]*?(?:=|x?or|div|like|between|and)|(?:[^0-9A-Z_a-z]+[\\+\\-0-9A-Z_a-z]+[\\s\\x0b]*?=[\\s\\x0b]*?[0-9][^0-9A-Z_a-z]+|\\|?[\\-0-9A-Z_a-z]{3,}[^\\s\\x0b,\\.0-9A-Z_a-z]+)[\"'`]|[\\s\\x0b]*(?:(?:N?AND|X?X?OR|DIV|LIKE|BETWEEN|NOT)[\\s\\x0b]+|(?:\\|\\||&&)[\\s\\x0b]*)(?:array[\\s\\x0b]*\\[|[0-9A-Z_a-z]+(?:[\\s\\x0b]*!?~|[\\s\\x0b]+(?:not[\\s\\x0b]+)?similar[\\s\\x0b]+to[\\s\\x0b]+)|(?:tru|fals)e\\b))|\\bexcept[\\s\\x0b]+(?:select\\b|values[\\s\\x0b]*?\\()",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942340 PL2: Detects basic SQL authentication bypass attempts 3/3",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942361",
+    "phase": 2,
+    "pattern": "(?i:^[\\W\\d]+\\s*?(?:alter|union)\\b)",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942361 PL2: Detects basic SQL injection based on keyword alter or union",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942362",
+    "phase": 2,
+    "pattern": "(?i)(?:alter|(?:(?:cre|trunc|upd)at|renam)e|de(?:lete|sc)|(?:inser|selec)t|load)[\\s\\x0b]+(?:char|group_concat|load_file)[\\s\\x0b]?\\(?|end[\\s\\x0b]*?\\);|[\\s\\x0b\\(]load_file[\\s\\x0b]*?\\(|[\"'`][\\s\\x0b]+regexp[^0-9A-Z_a-z]|[^A-Z_a-z][\\s\\x0b]+as\\b[\\s\\x0b]*[\"'0-9A-Z_-z]+[\\s\\x0b]*\\bfrom|^[^A-Z_a-z]+[\\s\\x0b]*?(?:create[\\s\\x0b]+[0-9A-Z_a-z]+|(?:d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load|(?:renam|truncat)e|u(?:pdate|nion[\\s\\x0b]*(?:all|(?:sele|distin)ct))|alter[\\s\\x0b]*(?:a(?:(?:ggregat|pplication[\\s\\x0b]*rol)e|s(?:sembl|ymmetric[\\s\\x0b]*ke)y|u(?:dit|thorization)|vailability[\\s\\x0b]*group)|b(?:roker[\\s\\x0b]*priority|ufferpool)|c(?:ertificate|luster|o(?:l(?:latio|um)|nversio)n|r(?:edential|yptographic[\\s\\x0b]*provider))|d(?:atabase|efault|i(?:mension|skgroup)|omain)|e(?:(?:ndpoi|ve)nt|xte(?:nsion|rnal))|f(?:lashback|oreign|u(?:lltext|nction))|hi(?:erarchy|stogram)|group|in(?:dex(?:type)?|memory|stance)|java|l(?:a(?:ngua|r)ge|ibrary|o(?:ckdown|g(?:file[\\s\\x0b]*group|in)))|m(?:a(?:s(?:k|ter[\\s\\x0b]*key)|terialized)|e(?:ssage[\\s\\x0b]*type|thod)|odule)|(?:nicknam|queu)e|o(?:perator|utline)|p(?:a(?:ckage|rtition)|ermission|ro(?:cedur|fil)e)|r(?:e(?:mot|sourc)e|o(?:l(?:e|lback)|ute))|s(?:chema|e(?:arch|curity|rv(?:er|ice)|quence|ssion)|y(?:mmetric[\\s\\x0b]*key|nonym)|togroup)|t(?:able(?:space)?|ext|hreshold|r(?:igger|usted)|ype)|us(?:age|er)|view|w(?:ork(?:load)?|rapper)|x(?:ml[\\s\\x0b]*schema|srobject)))\\b)",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942362 PL2: Detects concatenated basic SQL injection and SQLLFI attempts",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942370",
+    "phase": 2,
+    "pattern": "(?i)[\"'`](?:[\\s\\x0b]*?(?:(?:\\*.+(?:x?or|div|like|between|(?:an|i)d)[^0-9A-Z_a-z]*?[\"'`]|(?:x?or|div|like|between|and)[\\s\\x0b][^0-9]+[\\-0-9A-Z_a-z]+.*?)[0-9]|[^\\s\\x0b0-9\\?A-Z_a-z]+[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z]+[\\s\\x0b]*?[\"'`]|[^\\s\\x0b0-9A-Z_a-z]+[\\s\\x0b]*?[^A-Z_a-z].*?(?:#|--))|.*?\\*[\\s\\x0b]*?[0-9])|\\^[\"'`]|[%\\(-\\+\\-<>][\\-0-9A-Z_a-z]+[^\\s\\x0b0-9A-Z_a-z]+[\"'`][^,]",
+    "targets": [
+      "COOKIES",
+      "HEADERS:Referer",
+      "HEADERS:User-Agent",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942370 PL2: Detects classic SQL injection probings 2/3",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942380",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:having\\b(?:[\\s\\x0b]+(?:[0-9]{1,10}|'[^=]{1,10}')[\\s\\x0b]*?[<->]| ?(?:[0-9]{1,10} ?[<->]+|[\"'][^=]{1,10}[ \"'<-\\?\\[]+))|ex(?:ecute(?:\\(|[\\s\\x0b]{1,5}[\\$\\.0-9A-Z_a-z]{1,5}[\\s\\x0b]{0,3})|ists[\\s\\x0b]*?\\([\\s\\x0b]*?select\\b)|(?:create[\\s\\x0b]+?table.{0,20}?|like[^0-9A-Z_a-z]*?char[^0-9A-Z_a-z]*?)\\()|select.*?case|from.*?limit|order[\\s\\x0b]by|exists[\\s\\x0b](?:[\\s\\x0b]select|s(?:elect[^\\s\\x0b](?:if(?:null)?[\\s\\x0b]\\(|top|concat)|ystem[\\s\\x0b]\\()|\\bhaving\\b[\\s\\x0b]+[0-9]{1,10}|'[^=]{1,10}')",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942380 PL2: SQL Injection Attack",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942390",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:or\\b(?:[\\s\\x0b]?(?:[0-9]{1,10}|[\"'][^=]{1,10}[\"'])[\\s\\x0b]?[<->]+|[\\s\\x0b]+(?:[0-9]{1,10}|'[^=]{1,10}')(?:[\\s\\x0b]*?[<->])?)|xor\\b[\\s\\x0b]+(?:[0-9]{1,10}|'[^=]{1,10}')(?:[\\s\\x0b]*?[<->])?)|'[\\s\\x0b]+x?or[\\s\\x0b]+.{1,20}[!\\+\\-<->]",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942390 PL2: SQL Injection Attack",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942400",
+    "phase": 2,
+    "pattern": "(?i)\\band\\b(?:[\\s\\x0b]+(?:[0-9]{1,10}[\\s\\x0b]*?[<->]|'[^=]{1,10}')| ?(?:[0-9]{1,10}|[\"'][^=]{1,10}[\"']) ?[<->]+)",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942400 PL2: SQL Injection Attack",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942410",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:a(?:(?:b|co)s|dd(?:dat|tim)e|es_(?:de|en)crypt|s(?:in|cii(?:str)?)|tan2?|vg)|b(?:enchmark|i(?:n(?:_to_num)?|t_(?:and|count|length|x?or)))|c(?:ast|h(?:ar(?:(?:acter)?_length|set)?|r)|iel(?:ing)?|o(?:alesce|ercibility|(?:mpres)?s|n(?:cat(?:_ws)?|nection_id|v(?:ert(?:_tz)?)?)|(?:un)?t)|r32|ur(?:(?:dat|tim)e|rent_(?:date|time(?:stamp)?|user)))|d(?:a(?:t(?:abase|e(?:_(?:add|format|sub)|diff)?)|y(?:name|of(?:month|week|year))?)|count|e(?:code|(?:faul|s_(?:de|en)cryp)t|grees)|ump)|e(?:lt|nc(?:ode|rypt)|x(?:p(?:ort_set)?|tract(?:value)?))|f(?:i(?:eld(?:_in_set)?|nd_in_set)|loor|o(?:rmat|und_rows)|rom_(?:base64|days|unixtime))|g(?:et_(?:format|lock)|r(?:eates|oup_conca)t)|h(?:ex(?:toraw)?|our)|i(?:f(?:null)?|n(?:et6?_(?:aton|ntoa)|s(?:ert|tr)|terval)?|s(?:_(?:(?:free|used)_lock|ipv(?:4(?:_(?:compat|mapped))?|6)|n(?:ot(?:_null)?|ull))|null)?)|l(?:ast(?:_(?:day|insert_id))?|case|e(?:(?:as|f)t|ngth)|n|o(?:ad_file|ca(?:l(?:timestamp)?|te)|g(?:10|2)?|wer)|pad|trim)|m(?:a(?:ke(?:date|_set)|ster_pos_wait|x)|d5|i(?:(?:crosecon)?d|n(?:ute)?)|o(?:d|nth(?:name)?))|n(?:ame_const|o(?:t_in|w)|ullif)|o(?:ct(?:et_length)?|(?:ld_passwo)?rd)|p(?:assword|eriod_(?:add|diff)|g_sleep|i|o(?:sition|w(?:er)?)|rocedure_analyse)|qu(?:arter|ote)|r(?:a(?:dians|nd|wto(?:hex|nhex(?:toraw)?))|e(?:lease_lock|p(?:eat|lace)|verse)|ight|o(?:und|w_count)|pad|trim)|s(?:chema|e(?:c(?:ond|_to_time)|ssion_user)|ha[12]?|ig?n|leep|oundex|pace|qrt|t(?:d(?:dev(?:_(?:po|sam)p)?)?|r(?:cmp|_to_date))|u(?:b(?:(?:dat|tim)e|str(?:ing(?:_index)?)?)|m)|ys(?:date|tem_user))|t(?:an|ime(?:diff|_(?:format|to_sec)|stamp(?:add|diff)?)?|o_(?:base64|n?char|(?:day|second)s)|r(?:im|uncate))|u(?:case|n(?:compress(?:ed_length)?|hex|ix_timestamp)|p(?:datexml|per)|ser|tc_(?:date|time(?:stamp)?)|uid(?:_short)?)|v(?:a(?:lues|r(?:iance|_(?:po|sam)p))|ersion)|we(?:ek(?:day|ofyear)?|ight_string)|xmltype|year(?:week)?)[^0-9A-Z_a-z]*?\\(",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942410 PL2: SQL Injection Attack",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942430",
+    "phase": 2,
+    "pattern": "((?:[~!@#\\$%\\^&\\*\\(\\)\\-\\+=\\{\\}\\[\\]\\|:;\"'´’‘`<>][^~!@#\\$%\\^&\\*\\(\\)\\-\\+=\\{\\}\\[\\]\\|:;\"'´’‘`<>]*?){12})",
+    "targets": [
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "WARNING",
+    "action": "log",
+    "score": 3,
+    "description": "OWASP CRS 942430 PL2: Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942450",
+    "phase": 2,
+    "pattern": "(?i:\\b0x[a-f\\d]{3,})",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942450 PL2: SQL Hex Encoding Identified",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942470",
+    "phase": 2,
+    "pattern": "(?i)autonomous_transaction|(?:current_use|n?varcha|tbcreato)r|db(?:a_users|ms_java)|open(?:owa_util|query|rowset)|s(?:p_(?:(?:addextendedpro|sqlexe)c|execute(?:sql)?|help|is_srvrolemember|makewebtask|oacreate|p(?:assword|repare)|replwritetovarbin)|ql_(?:longvarchar|variant))|utl_(?:file|http)|xp_(?:availablemedia|(?:cmdshel|servicecontro)l|dirtree|e(?:numdsn|xecresultset)|filelist|loginconfig|makecab|ntsec(?:_enumdomains)?|reg(?:addmultistring|delete(?:key|value)|enum(?:key|value)s|re(?:ad|movemultistring)|write)|terminate(?:_process)?)",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942470 PL2: SQL Injection Attack",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942480",
+    "phase": 2,
+    "pattern": "(?i)\\b(?:(?:d(?:bms_[0-9A-Z_a-z]+\\.|elete\\b[^0-9A-Z_a-z]*?\\bfrom)|(?:group\\b.*?\\bby\\b.{1,100}?\\bhav|overlay\\b[^0-9A-Z_a-z]*?\\(.*?\\b[^0-9A-Z_a-z]*?plac)ing|in(?:ner\\b[^0-9A-Z_a-z]*?\\bjoin|sert\\b[^0-9A-Z_a-z]*?\\binto|to\\b[^0-9A-Z_a-z]*?\\b(?:dump|out)file)|load\\b[^0-9A-Z_a-z]*?\\bdata\\b.*?\\binfile|s(?:elect\\b.{1,100}?\\b(?:(?:.*?\\bdump\\b.*|(?:count|length)\\b.{1,100}?)\\bfrom|(?:data_typ|from\\b.{1,100}?\\bwher)e|instr|to(?:_(?:cha|numbe)r|p\\b.{1,100}?\\bfrom))|ys_context)|u(?:nion\\b.{1,100}?\\bselect|tl_inaddr))\\b|print\\b[^0-9A-Z_a-z]*?@@)|(?:collation[^0-9A-Z_a-z]*?\\(a|@@version|;[^0-9A-Z_a-z]*?\\b(?:drop|shutdown))\\b|'(?:dbo|msdasql|s(?:a|qloledb))'",
+    "targets": [
+      "COOKIES",
+      "HEADERS",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942480 PL2: SQL Injection Attack",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942510",
+    "phase": 2,
+    "pattern": "(?:`(?:(?:[\\w\\s=_\\-+{}()<@]){2,29}|(?:[A-Za-z0-9+/]{4})+(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?)`)",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942510 PL2: SQLi bypass attempt by ticks or backticks detected",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942520",
+    "phase": 2,
+    "pattern": "(?i)[\"'`][\\s\\x0b]*?(?:(?:is[\\s\\x0b]+not|not[\\s\\x0b]+(?:like|glob|(?:betwee|i)n|null|regexp|match)|mod|div|sounds[\\s\\x0b]+like)\\b|[%&\\*\\+\\-/<->\\^\\|]{1,3})",
+    "targets": [
+      "COOKIES",
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942520 PL2: Detects basic SQL authentication bypass attempts 4.0/4",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-942522",
+    "phase": 2,
+    "pattern": "(?:^|[&=\"]|:\\s*).*?\\x5c['\"`](?:.*?['\"`])?\\s*(?:and|or)\\b",
+    "targets": [
+      "ARGS",
+      "BODY"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 942522 PL2: Detects basic SQL authentication bypass attempts 4.1/4",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-944151",
+    "phase": 2,
+    "pattern": "(?i)(?:\\$|&dollar;?)(?:\\{|&l(?:brace|cub);?)(?:[^\\}]*(?:\\$|&dollar;?)(?:\\{|&l(?:brace|cub);?)|jndi|ctx)",
+    "targets": [
+      "URI",
+      "ARGS",
+      "BODY",
+      "COOKIES",
+      "HEADERS"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 944151 PL2: Potential Remote Command Execution: Log4j / Log4shell",
+    "transformations": [
+      "urlDecodeUni",
+      "htmlEntityDecode"
+    ]
+  },
+  {
+    "id": "crs-944200",
+    "phase": 2,
+    "pattern": "\\xac\\xed\\x00\\x05",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "COOKIES",
+      "HEADERS"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 944200 PL2: Magic bytes Detected, probable java serialization in use",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-944210",
+    "phase": 2,
+    "pattern": "(?:rO0ABQ|KztAAU|Cs7QAF)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "COOKIES",
+      "HEADERS"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 944210 PL2: Magic bytes Detected Base64 Encoded, probable java serialization in use",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  },
+  {
+    "id": "crs-944240",
+    "phase": 2,
+    "pattern": "(?:clonetransformer|forclosure|instantiatefactory|instantiatetransformer|invokertransformer|prototypeclonefactory|prototypeserializationfactory|whileclosure|getproperty|filewriter|xmldecoder)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "COOKIES",
+      "HEADERS"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 944240 PL2: Remote Command Execution: Java serialization (CVE-2015-4852)",
+    "transformations": [
+      "urlDecodeUni",
+      "lowercase"
+    ]
+  },
+  {
+    "id": "crs-944250",
+    "phase": 2,
+    "pattern": "java\\b.+(?:runtime|processbuilder)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "COOKIES",
+      "HEADERS"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 944250 PL2: Remote Command Execution: Suspicious Java method detected",
+    "transformations": [
+      "urlDecodeUni",
+      "lowercase"
+    ]
+  },
+  {
+    "id": "crs-944260",
+    "phase": 2,
+    "pattern": "(?:class\\.module\\.classLoader\\.resources\\.context\\.parent\\.pipeline|springframework\\.context\\.support\\.FileSystemXmlApplicationContext)",
+    "targets": [
+      "ARGS",
+      "BODY",
+      "COOKIES",
+      "HEADERS"
+    ],
+    "severity": "CRITICAL",
+    "action": "log",
+    "score": 5,
+    "description": "OWASP CRS 944260 PL2: Remote Command Execution: Malicious class-loading payload",
+    "transformations": [
+      "urlDecodeUni"
+    ]
+  }
+]
