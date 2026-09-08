@@ -6,7 +6,7 @@ from tqdm import tqdm
 # List of blocklist URLs and expected line formats
 blocklist_sources = {
     "Emerging Threats": "https://rules.emergingthreats.net/blockrules/compromised-ips.txt",
-    "CI Army List": "http://cinsscore.com/list/ci-badguys.txt",
+    "CI Army List": "https://cinsscore.com/list/ci-badguys.txt",
     "IPsum": "https://raw.githubusercontent.com/stamparm/ipsum/master/levels/1.txt",
     "BlockList.de": "https://www.blocklist.de/lists/all.txt",
     "Blocklist.de - SSH": "https://www.blocklist.de/lists/ssh.txt",
