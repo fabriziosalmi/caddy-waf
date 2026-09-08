@@ -37,6 +37,21 @@ export default defineConfig({
 
   sitemap: { hostname: site },
 
+  // Emit a per-page rel=canonical. VitePress ships none, and without it the
+  // custom domain, the github.io origin and any tracking-parameter variants
+  // read as separate URLs. relativePath is the page's source file; index.md
+  // maps to the site root, every other page to its cleanUrl path.
+  transformPageData(pageData) {
+    const path = pageData.relativePath === 'index.md'
+      ? ''
+      : pageData.relativePath.replace(/\.md$/, '')
+    pageData.frontmatter.head ??= []
+    pageData.frontmatter.head.push([
+      'link',
+      { rel: 'canonical', href: `${site}${path}` },
+    ])
+  },
+
   markdown: {
     // Shiki ships no Caddyfile grammar. nginx is the closest fit -- directive,
     // arguments, braces, '#' comments -- and the docs carry 13 Caddyfile
@@ -74,10 +89,41 @@ export default defineConfig({
     ['meta', { property: 'og:url', content: site }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:image', content: `${site}og.png` }],
+    // Let Google Discover show large image previews rather than a thumbnail.
+    // GitHub Pages cannot send an X-Robots-Tag header, so this lives in <head>.
+    [
+      'meta',
+      {
+        name: 'robots',
+        content: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+      },
+    ],
+    // Structured data so search engines and AI crawlers can identify the
+    // project as a piece of software rather than inferring it from prose.
+    [
+      'script',
+      { type: 'application/ld+json' },
+      JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'caddy-waf',
+        description:
+          'Web Application Firewall middleware for Caddy — regex rule engine with anomaly scoring, IP/DNS/ASN/country blacklists, rate limiting, and a JSON metrics endpoint.',
+        url: site,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Linux, macOS, Windows',
+        softwareVersion: wafVersion,
+        license: 'https://www.gnu.org/licenses/agpl-3.0.html',
+        author: { '@type': 'Person', name: 'Fabrizio Salmi' },
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      }),
+    ],
   ],
 
   themeConfig: {
-    logo: '/logo.svg',
+    // Object form so the nav-bar logo carries a real alt text; the bare string
+    // form renders alt="" and reads as an unlabelled image to crawlers.
+    logo: { src: '/logo.svg', alt: 'caddy-waf logo' },
 
     // Client-side index. No external search service is contacted, which keeps
     // the published site free of third-party requests.

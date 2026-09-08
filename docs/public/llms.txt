@@ -1,0 +1,36 @@
+# caddy-waf
+
+> Web Application Firewall middleware for Caddy. It runs inside the Caddy process — no sidecar and no cloud service in the request path — and inspects requests and responses across four phases with a regex rule engine (Go RE2, linear-time matching), anomaly scoring, IP/DNS/ASN/country blacklists, rate limiting, GeoIP, a Tor exit-node list, and a JSON metrics endpoint. Registered as the Caddy module `http.handlers.waf`. Licensed AGPL-3.0.
+
+## Docs
+
+- [Introduction](https://www.caddy-waf.com/introduction): what caddy-waf is, how it sits inside Caddy, and its design goals.
+- [Installation](https://www.caddy-waf.com/installation): building Caddy with the module via xcaddy.
+- [caddy add-package](https://www.caddy-waf.com/add-package-guide): installing the module with `caddy add-package`.
+- [Docker](https://www.caddy-waf.com/docker): running caddy-waf in a container.
+- [Configuration reference](https://www.caddy-waf.com/configuration): every Caddyfile directive and JSON field.
+- [Rules](https://www.caddy-waf.com/rules): the rule schema, scoring, and the anomaly threshold.
+- [Blacklists](https://www.caddy-waf.com/blacklists): IP/CIDR, DNS, country and ASN blacklist file formats.
+- [Rate limiting](https://www.caddy-waf.com/ratelimit): per-IP sliding-window limiter and path scoping.
+- [Country and ASN blocking](https://www.caddy-waf.com/geoblocking): MaxMind-backed geo and ASN filtering.
+- [Client IP and trusted proxies](https://www.caddy-waf.com/client-ip): resolving the real client IP behind proxies.
+- [Dynamic updates](https://www.caddy-waf.com/dynamicupdates): reloading rules and blacklists without a restart.
+
+## Observability
+
+- [Dashboard](https://www.caddy-waf.com/dashboard): the built-in status dashboard.
+- [Metrics](https://www.caddy-waf.com/metrics): the JSON metrics endpoint.
+- [Prometheus and Grafana](https://www.caddy-waf.com/prometheus): the native Prometheus endpoint and dashboards.
+- [ELK](https://www.caddy-waf.com/caddy-waf-elk): shipping logs to Elasticsearch/Kibana.
+
+## Reference
+
+- [Attack coverage](https://www.caddy-waf.com/attacks): the attack classes the bundled rules address.
+- [Security posture](https://www.caddy-waf.com/security): the module's security model and hardening notes.
+- [Testing](https://www.caddy-waf.com/testing): how the module is tested.
+
+## Optional
+
+- [Source repository](https://github.com/fabriziosalmi/caddy-waf): source code, issues, and releases.
+- [Caddy module page](https://caddyserver.com/docs/modules/http.handlers.waf): the module entry in the Caddy registry.
+- [Changelog](https://github.com/fabriziosalmi/caddy-waf/blob/main/CHANGELOG.md): release history.
