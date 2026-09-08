@@ -63,7 +63,7 @@ var ModuleVersion string
 // carry the git tag via ModuleVersion). Keep it a plain, single-line string
 // literal: the docs config (docs/.vitepress/config.mts) scrapes this constant
 // from the source, so a computed value would break the docs build.
-const wafVersionDefault = "v0.4.14"
+const wafVersionDefault = "v0.4.15"
 
 // wafVersion is the version the WAF reports in logs, metrics and build_info.
 // The release build injects ModuleVersion (from the git tag) which takes
