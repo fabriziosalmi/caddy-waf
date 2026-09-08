@@ -1,5 +1,7 @@
 ---
 layout: home
+title: caddy-waf — Web Application Firewall for Caddy
+titleTemplate: false
 
 hero:
   name: caddy-waf

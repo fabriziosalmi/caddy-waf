@@ -1,0 +1,5 @@
+Contact: https://github.com/fabriziosalmi/caddy-waf/security/advisories/new
+Policy: https://github.com/fabriziosalmi/caddy-waf/security/policy
+Preferred-Languages: en
+Canonical: https://www.caddy-waf.com/.well-known/security.txt
+Expires: 2027-09-08T00:00:00Z
