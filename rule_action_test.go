@@ -52,7 +52,7 @@ func TestRuleActionUnmarshalsFromJSON(t *testing.T) {
 	for _, phaseRules := range m.Rules {
 		for _, r := range phaseRules {
 			seen++
-			assert.Equalf(t, expected[r.ID], r.Action, "rule %q: Action must equal the file's \"action\" value", r.ID)
+			assert.Equalf(t, expected[r.ID], string(r.Action), "rule %q: Action must equal the file's \"action\" value", r.ID)
 		}
 	}
 	assert.Equal(t, len(expected), seen, "every rule in rules.json must load")
@@ -75,7 +75,7 @@ func TestRuleModeKeyStillAccepted(t *testing.T) {
 	}
 	got := map[string]string{}
 	for _, r := range rules {
-		got[r.ID] = r.Action
+		got[r.ID] = string(r.Action) // Action is now the named type RuleAction
 	}
 	assert.Equal(t, "block", got["legacy"], `"mode" must still populate Action`)
 	assert.Equal(t, "log", got["canonical"])

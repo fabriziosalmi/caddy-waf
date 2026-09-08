@@ -1,0 +1,41 @@
+name: Vulnerability Scan
+
+# Surfaces known advisories against the resolved dependency graph so new ones are
+# noticed (remediation for the dependency audit). govulncheck is reachability-aware:
+# advisories in code the WAF does not call are reported for visibility but do not
+# fail the job. It runs on pushes, pull requests, and a weekly schedule.
+#
+# It is informational (continue-on-error) on purpose: most open advisories here are
+# in Caddy's pinned transitive graph (see CHANGELOG "Not fixed, and why") and cannot
+# be cleared without a Caddy release, so blocking merges on them would be wrong.
+# Triage the summary: a *reachable* first-party advisory, or a stdlib advisory, means
+# bump the dependency or the Go toolchain.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.25"
+          check-latest: true
+
+      - name: Run govulncheck
+        continue-on-error: true
+        run: |
+          go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...

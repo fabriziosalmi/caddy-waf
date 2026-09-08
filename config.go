@@ -128,6 +128,14 @@ func (cl *ConfigLoader) parseRateLimit(d *caddyfile.Dispenser, m *Middleware) er
 			rl.MatchAllPaths = matchAllPaths
 			cl.logger.Debug("Rate limit match_all_paths set", zap.Bool("match_all_paths", rl.MatchAllPaths))
 
+		case "max_entries":
+			maxEntries, err := cl.parsePositiveInteger(d, "max_entries")
+			if err != nil {
+				return err
+			}
+			rl.MaxEntries = maxEntries
+			cl.logger.Debug("Rate limit max_entries set", zap.Int("max_entries", rl.MaxEntries))
+
 		default:
 			return d.Errf("unrecognized rate_limit option: %s", option)
 		}
@@ -162,41 +170,44 @@ func (cl *ConfigLoader) UnmarshalCaddyfile(d *caddyfile.Dispenser, m *Middleware
 	// Set default values
 	m.LogSeverity = "info"
 	m.LogJSON = false
-	m.AnomalyThreshold = 5
+	m.AnomalyThreshold = defaultAnomalyThreshold // shared with the JSON Provision fallback so both sources agree
 	m.CountryBlacklist.Enabled = false
 	m.CountryWhitelist.Enabled = false
 	m.LogFilePath = "debug.json"
-	m.RedactSensitiveData = false
+	// RedactSensitiveData is left nil here so it defaults ON via redactEnabled(),
+	// consistently for both the Caddyfile and JSON sources; `redact_sensitive_data off` disables it.
 	m.LogBuffer = 1000
 	m.BlockASNs.Enabled = false // Default to false
 
 	directiveHandlers := map[string]func(d *caddyfile.Dispenser, m *Middleware) error{
-		"metrics_endpoint":       cl.parseMetricsEndpoint,
-		"dashboard":              cl.parseDashboard,
-		"prometheus_endpoint":    cl.parsePrometheusEndpoint,
-		"log_path":               cl.parseLogPath,
-		"rate_limit":             cl.parseRateLimit,
-		"block_countries":        cl.parseCountryBlockDirective(true),  // Use directive-specific helper
-		"whitelist_countries":    cl.parseCountryBlockDirective(false), // Use directive-specific helper
-		"block_asns":             cl.parseBlockASNsDirective,           // Add ASN block directive
-		"geoip_fail_open":        cl.parseGeoIPFailOpen,
-		"log_severity":           cl.parseLogSeverity,
-		"log_json":               cl.parseLogJSON,
-		"rule_file":              cl.parseRuleFile,
-		"ip_blacklist_file":      cl.parseBlacklistFileDirective(true), // Use directive-specific helper
-		"whitelist_ip":           cl.parseWhitelistIP,
-		"whitelist_file":         cl.parseWhitelistFile,
-		"trusted_proxies":        cl.parseTrustedProxies,
-		"client_ip_header":       cl.parseClientIPHeader,
-		"dns_blacklist_file":     cl.parseBlacklistFileDirective(false), // Use directive-specific helper
-		"anomaly_threshold":      cl.parseAnomalyThreshold,
-		"custom_response":        cl.parseCustomResponse,
-		"redact_sensitive_data":  cl.parseRedactSensitiveData,
-		"log_scores_block":       cl.parseLogScoresBlock,
-		"tor":                    cl.parseTorBlock,
-		"log_buffer":             cl.parseLogBuffer,
-		"max_request_body_size":  cl.parseMaxRequestBodySize,
-		"max_response_body_size": cl.parseMaxResponseBodySize,
+		"metrics_endpoint":            cl.parseMetricsEndpoint,
+		"dashboard":                   cl.parseDashboard,
+		"prometheus_endpoint":         cl.parsePrometheusEndpoint,
+		"log_path":                    cl.parseLogPath,
+		"rate_limit":                  cl.parseRateLimit,
+		"block_countries":             cl.parseCountryBlockDirective(true),  // Use directive-specific helper
+		"whitelist_countries":         cl.parseCountryBlockDirective(false), // Use directive-specific helper
+		"block_asns":                  cl.parseBlockASNsDirective,           // Add ASN block directive
+		"geoip_fail_open":             cl.parseGeoIPFailOpen,
+		"log_severity":                cl.parseLogSeverity,
+		"log_json":                    cl.parseLogJSON,
+		"rule_file":                   cl.parseRuleFile,
+		"ip_blacklist_file":           cl.parseBlacklistFileDirective(true), // Use directive-specific helper
+		"whitelist_ip":                cl.parseWhitelistIP,
+		"whitelist_file":              cl.parseWhitelistFile,
+		"trusted_proxies":             cl.parseTrustedProxies,
+		"client_ip_header":            cl.parseClientIPHeader,
+		"dns_blacklist_file":          cl.parseBlacklistFileDirective(false), // Use directive-specific helper
+		"anomaly_threshold":           cl.parseAnomalyThreshold,
+		"custom_response":             cl.parseCustomResponse,
+		"redact_sensitive_data":       cl.parseRedactSensitiveData,
+		"log_scores_block":            cl.parseLogScoresBlock,
+		"tor":                         cl.parseTorBlock,
+		"log_buffer":                  cl.parseLogBuffer,
+		"max_request_body_size":       cl.parseMaxRequestBodySize,
+		"max_response_body_size":      cl.parseMaxResponseBodySize,
+		"block_oversize_request_body": cl.parseBlockOversizeRequestBody,
+		"metrics_allow_from":          cl.parseMetricsAllowFrom,
 	}
 
 	for d.Next() {
@@ -492,9 +503,58 @@ func (cl *ConfigLoader) parseLogScoresBlock(d *caddyfile.Dispenser, m *Middlewar
 	return nil
 }
 
+// parseRedactSensitiveData toggles redaction of sensitive values in logs. It is
+// on by default; this directive accepts an optional boolean so an operator can
+// disable it (`redact_sensitive_data off`) or set it explicitly, mirroring
+// geoip_fail_open. A bare directive enables it.
 func (cl *ConfigLoader) parseRedactSensitiveData(d *caddyfile.Dispenser, m *Middleware) error {
-	m.RedactSensitiveData = true
-	cl.logger.Debug("Redact sensitive data enabled", zap.String("file", d.File()), zap.Int("line", d.Line()))
+	value := true
+	if d.NextArg() {
+		switch strings.ToLower(d.Val()) {
+		case "true", "on", "yes", "1":
+			value = true
+		case "false", "off", "no", "0":
+			value = false
+		default:
+			return d.Errf("invalid redact_sensitive_data value '%s': expected true/false (also accepts on/off, yes/no, 1/0)", d.Val())
+		}
+	}
+	m.RedactSensitiveData = &value
+	cl.logger.Debug("Redact sensitive data set", zap.Bool("enabled", value), zap.String("file", d.File()), zap.Int("line", d.Line()))
+	return nil
+}
+
+// parseBlockOversizeRequestBody toggles fail-closed handling of request bodies
+// larger than max_request_body_size. Off by default (the oversize tail is
+// forwarded un-inspected, preserving streaming of large legitimate bodies); on,
+// such a request is blocked. Accepts an optional boolean; a bare directive enables it.
+func (cl *ConfigLoader) parseBlockOversizeRequestBody(d *caddyfile.Dispenser, m *Middleware) error {
+	value := true
+	if d.NextArg() {
+		switch strings.ToLower(d.Val()) {
+		case "true", "on", "yes", "1":
+			value = true
+		case "false", "off", "no", "0":
+			value = false
+		default:
+			return d.Errf("invalid block_oversize_request_body value '%s': expected true/false (also accepts on/off, yes/no, 1/0)", d.Val())
+		}
+	}
+	m.BlockOversizeRequestBody = value
+	cl.logger.Debug("Block oversize request body set", zap.Bool("enabled", value), zap.String("file", d.File()), zap.Int("line", d.Line()))
+	return nil
+}
+
+// parseMetricsAllowFrom restricts the dashboard/metrics/prometheus endpoints to
+// the given IPs/CIDRs (or the private_ranges token). With no allow-list the
+// endpoints carry no built-in restriction and the operator must front them.
+func (cl *ConfigLoader) parseMetricsAllowFrom(d *caddyfile.Dispenser, m *Middleware) error {
+	entries := d.RemainingArgs()
+	if len(entries) == 0 {
+		return d.Err("metrics_allow_from requires at least one IP, CIDR range, or the token private_ranges")
+	}
+	m.MetricsAllowFrom = append(m.MetricsAllowFrom, entries...)
+	cl.logger.Debug("Metrics allow-from configured", zap.Strings("entries", entries), zap.String("file", d.File()), zap.Int("line", d.Line()))
 	return nil
 }
 

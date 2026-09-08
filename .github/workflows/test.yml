@@ -58,12 +58,15 @@ jobs:
       run: |
         wget https://github.com/P3TERX/GeoLite.mmdb/releases/latest/download/GeoLite2-Country.mmdb
 
-    # Commented bits below were useful to allow the job to continue
-    # even if the tests fail, so we can publish the report separately
-    # For info about set-output, see https://stackoverflow.com/questions/57850553/github-actions-check-steps-status
-    - name: Run tests
+    # The suite runs under the race detector: the middleware is concurrent
+    # (atomic counters, a sync.Map of rule hits, a mutex-guarded metrics map,
+    # file-watcher goroutines) and ships metrics_concurrency_test.go, so the gate
+    # must exercise those under -race, not only functionally. -race requires cgo.
+    - name: Run tests (race detector)
+      env:
+        CGO_ENABLED: "1"
       run: |
-        go test -v -failfast ./... -tags=it
+        go test -race -v -failfast ./... -tags=it
 
     - name: Run rule-translator unit tests
       run: |

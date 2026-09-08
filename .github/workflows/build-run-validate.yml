@@ -102,7 +102,7 @@ jobs:
       - name: Build Caddy with caddy-waf
         run: |
           cd caddy-waf
-          go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+          go install github.com/caddyserver/xcaddy/cmd/xcaddy@v0.4.7
           xcaddy build --with github.com/fabriziosalmi/caddy-waf=./
 
       - name: Validate Build

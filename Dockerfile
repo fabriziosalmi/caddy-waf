@@ -15,8 +15,10 @@ FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS builder
 # the toolchain here has to be at least that. It was pinned to 1.24 and only
 # worked because GOTOOLCHAIN=auto silently downloaded a newer one mid-build.
 
-RUN apk add --no-cache git wget && \
-    go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+# xcaddy is pinned so the tool that assembles the artefact is fixed; bump it via
+# a tracked change rather than resolving @latest at build time.
+RUN apk add --no-cache git && \
+    go install github.com/caddyserver/xcaddy/cmd/xcaddy@v0.4.7
 
 WORKDIR /src
 
@@ -27,17 +29,21 @@ RUN go mod download
 
 COPY . .
 
-# GeoLite2 is optional at runtime, and this URL is a community mirror of
-# uncertain freshness (see docs/geoblocking.md). It is baked in so the country
-# and ASN examples work out of the box.
-RUN wget -q https://git.io/GeoLite2-Country.mmdb
+# GeoLite2 is NOT baked into the image: it was fetched from a community mirror of
+# uncertain freshness at build time, which made the artefact vary by build date
+# and embedded a data file of unknown provenance. Country/ASN filtering is
+# optional; mount an operator-supplied, versioned GeoLite2 database at runtime
+# instead (see docs/geoblocking.md and docs/docker.md).
 
 ARG TARGETARCH
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
     xcaddy build --with github.com/fabriziosalmi/caddy-waf=/src
 
 # --- Runtime ---
-FROM alpine:latest
+# Pin the runtime base so the shipped image's base layer is part of what the
+# commit describes; bump deliberately. For stronger reproducibility pin by digest
+# (FROM alpine:3.21@sha256:...).
+FROM alpine:3.21
 
 RUN apk add --no-cache ca-certificates && \
     addgroup -S caddy && adduser -S -G caddy caddy
@@ -45,7 +51,6 @@ RUN apk add --no-cache ca-certificates && \
 WORKDIR /app
 
 COPY --from=builder /src/caddy /usr/bin/caddy
-COPY --from=builder /src/GeoLite2-Country.mmdb /app/
 COPY --from=builder /src/rules.json /app/
 COPY --from=builder /src/ip_blacklist.txt /app/
 COPY --from=builder /src/dns_blacklist.txt /app/

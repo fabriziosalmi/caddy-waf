@@ -70,7 +70,7 @@ func TestCRSBundlesAreLoadable(t *testing.T) {
 				t.Fatalf("%s: rule %s is also defined in %s", path, r.ID, prev)
 			}
 			seen[r.ID] = path
-			require.Equalf(t, "log", r.Action, "%s: %s must be a log rule", path, r.ID)
+			require.Equalf(t, "log", string(r.Action), "%s: %s must be a log rule", path, r.ID)
 			require.NotNilf(t, r.Transformations, "%s: %s must set an explicit transformations chain", path, r.ID)
 			require.NoErrorf(t, validateRule(&r), "%s: %s", path, r.ID)
 			require.Containsf(t, []int{2, 3, 4, 5}, r.Score, "%s: %s score must derive from a CRS severity", path, r.ID)

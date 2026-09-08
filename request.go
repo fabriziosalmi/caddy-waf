@@ -219,6 +219,11 @@ func (rve *RequestValueExtractor) logIfEmpty(value string, target string, messag
 // still needs.
 type bodyBufferKey struct{}
 
+// bodyOverflowKey carries a bool in the request context indicating the request
+// body exceeded the inspection window (only its prefix was inspected). ServeHTTP
+// reads it to fail closed when block_oversize_request_body is set.
+type bodyOverflowKey struct{}
+
 // bufferRequestBody reads up to limit bytes of the request body for inspection
 // and rebuilds r.Body so the full body still reaches downstream and the upstream
 // proxy. It returns the inspection window (at most limit bytes).
@@ -234,39 +239,42 @@ type bodyBufferKey struct{}
 // while r.ContentLength kept its original value, so the upstream saw
 // "ContentLength=N with Body length 0", broke the connection, and every POST
 // carrying a body failed with a 502.
-func bufferRequestBody(r *http.Request, limit int64) ([]byte, error) {
+func bufferRequestBody(r *http.Request, limit int64) (bodyBytes []byte, overflow bool, err error) {
 	// Read the inspection window plus one byte, to learn whether the body
 	// exceeded the window without discarding the overflow.
 	buf, err := io.ReadAll(io.LimitReader(r.Body, limit+1))
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if int64(len(buf)) <= limit {
-		bodyBytes := buf
 		_ = r.Body.Close()
-		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		r.Body = io.NopCloser(bytes.NewReader(buf))
 		r.GetBody = func() (io.ReadCloser, error) {
-			return io.NopCloser(bytes.NewReader(bodyBytes)), nil
+			return io.NopCloser(bytes.NewReader(buf)), nil
 		}
-		return bodyBytes, nil
+		return buf, false, nil
 	}
-	// Body exceeds the inspection window: forward prefix + remainder, inspect the
-	// prefix only. The original body keeps streaming after the buffered bytes,
-	// and its Closer is preserved.
-	prefix := buf[:limit]
+	// Body exceeds the inspection window: forward the full body (buffered prefix +
+	// un-read remainder) but inspect only the window, and report the overflow so
+	// the caller can fail closed if the operator set block_oversize_request_body.
+	// The original body keeps streaming after the buffered bytes, and its Closer
+	// is preserved.
+	inspected := buf[:limit]
 	original := r.Body
 	r.Body = struct {
 		io.Reader
 		io.Closer
 	}{io.MultiReader(bytes.NewReader(buf), original), original}
-	return prefix, nil
+	return inspected, true, nil
 }
 
 // readAndRestoreBody buffers the body against the extractor's maxBodySize. It is
 // the fallback for extraction paths that were not pre-buffered by ServeHTTP
-// (e.g. a direct unit test).
+// (e.g. a direct unit test). The overflow flag is not surfaced on this path;
+// ServeHTTP's captureRequestBody handles the fail-closed policy.
 func (rve *RequestValueExtractor) readAndRestoreBody(r *http.Request) ([]byte, error) {
-	return bufferRequestBody(r, rve.maxBodySize)
+	buf, _, err := bufferRequestBody(r, rve.maxBodySize)
+	return buf, err
 }
 
 func (rve *RequestValueExtractor) extractBody(r *http.Request, target string) (string, error) {
@@ -448,14 +456,37 @@ func (rve *RequestValueExtractor) extractValueForJSONPath(r *http.Request, jsonP
 
 // Helper function to redact value if target is sensitive
 func (rve *RequestValueExtractor) RedactValueIfSensitive(target string, value string) string {
-	if rve.redactSensitiveData {
-		for _, sensitive := range sensitiveTargets {
-			if strings.Contains(strings.ToLower(target), sensitive) {
-				return "REDACTED"
-			}
+	if !rve.redactSensitiveData {
+		return value
+	}
+	lowerTarget := strings.ToLower(target)
+	for _, sensitive := range sensitiveTargets {
+		if strings.Contains(lowerTarget, sensitive) {
+			return "REDACTED"
 		}
 	}
+	// The target name alone misses secrets that ride inside a generic target (a
+	// token in ARGS, a password in BODY, an Authorization header inside the full
+	// HEADERS blob), so also redact when the value itself carries a sensitive key.
+	if valueLooksSensitive(value) {
+		return "REDACTED"
+	}
 	return value
+}
+
+// valueLooksSensitive reports whether value carries a secret regardless of the
+// target it came from: one of the sensitive key names immediately followed by an
+// assignment/separator (e.g. "password=", "token:", or the JSON form
+// "\"apikey\":"). It errs toward redacting the whole value once such a marker is
+// present rather than leaking part of it.
+func valueLooksSensitive(value string) bool {
+	lower := strings.ToLower(value)
+	for _, key := range sensitiveTargets {
+		if strings.Contains(lower, key+"=") || strings.Contains(lower, key+":") {
+			return true
+		}
+	}
+	return false
 }
 
 // Helper function to extract all cookies

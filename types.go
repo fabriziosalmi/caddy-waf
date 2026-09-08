@@ -70,16 +70,36 @@ type ASNRecord struct {
 	AutonomousSystemNumber       uint   `maxminddb:"autonomous_system_number"`
 }
 
+// RuleAction is the closed set of actions a rule may take. It is a named type
+// rather than a bare string so the domain concept is explicit and comparisons
+// go through the constants below; load-time validation (Rule validation in
+// rules.go) rejects any value other than the two constants.
+type RuleAction string
+
+const (
+	// RuleActionBlock blocks the request on the first match.
+	RuleActionBlock RuleAction = "block"
+	// RuleActionLog records the match (and contributes its score) without blocking.
+	RuleActionLog RuleAction = "log"
+)
+
+// Valid reports whether a is one of the recognised actions. An empty action is
+// treated as valid here (it defaults to score-only/log behaviour downstream);
+// Rule validation enforces the block/log set for non-empty values.
+func (a RuleAction) Valid() bool {
+	return a == "" || a == RuleActionBlock || a == RuleActionLog
+}
+
 // Rule struct
 type Rule struct {
-	ID          string   `json:"id"`
-	Phase       int      `json:"phase"`
-	Pattern     string   `json:"pattern"`
-	Targets     []string `json:"targets"`
-	Severity    string   `json:"severity"` // Used for logging only
-	Score       int      `json:"score"`
-	Action      string   `json:"action"` // "block" or "log"; "mode" is accepted as an alias, see UnmarshalJSON
-	Description string   `json:"description"`
+	ID          string     `json:"id"`
+	Phase       int        `json:"phase"`
+	Pattern     string     `json:"pattern"`
+	Targets     []string   `json:"targets"`
+	Severity    string     `json:"severity"` // Used for logging only
+	Score       int        `json:"score"`
+	Action      RuleAction `json:"action"` // block or log; "mode" is accepted as an alias, see UnmarshalJSON
+	Description string     `json:"description"`
 	// Transformations is an optional per-rule ModSecurity/CRS-style pipeline
 	// (e.g. ["urlDecodeUni","removeNulls","replaceComments"]) applied to the
 	// extracted value before matching. A pointer so JSON can distinguish an
@@ -108,9 +128,9 @@ func (r *Rule) UnmarshalJSON(data []byte) error {
 	}
 	switch {
 	case aux.Action != nil:
-		r.Action = *aux.Action
+		r.Action = RuleAction(*aux.Action)
 	case aux.Mode != nil:
-		r.Action = *aux.Mode
+		r.Action = RuleAction(*aux.Mode)
 	}
 	return nil
 }
@@ -208,13 +228,28 @@ type Middleware struct {
 	geoIPCacheTTL               time.Duration
 	geoIPLookupFallbackBehavior string
 
-	CustomResponses     map[int]CustomBlockResponse `json:"custom_responses,omitempty"`
-	LogFilePath         string
-	LogBuffer           int   `json:"log_buffer,omitempty"` // Add the LogBuffer field
-	RedactSensitiveData bool  `json:"redact_sensitive_data,omitempty"`
+	CustomResponses map[int]CustomBlockResponse `json:"custom_responses,omitempty"`
+	LogFilePath     string
+	LogBuffer       int `json:"log_buffer,omitempty"` // Add the LogBuffer field
+	// RedactSensitiveData controls redaction of sensitive values in logs. A
+	// pointer so an omitted value (nil) can default to ON for both the Caddyfile
+	// and JSON sources without the two diverging; resolve it via redactEnabled().
+	// Set false explicitly (`redact_sensitive_data off` / JSON false) to disable.
+	RedactSensitiveData *bool `json:"redact_sensitive_data,omitempty"`
 	MaxRequestBodySize  int64 `json:"max_request_body_size,omitempty"`
 	MaxResponseBodySize int64 `json:"max_response_body_size,omitempty"`
 	GeoIPFailOpen       bool  `json:"geoip_fail_open,omitempty"`
+	// BlockOversizeRequestBody, when true, blocks a request whose body exceeds
+	// MaxRequestBodySize instead of forwarding the un-inspected tail. Off by
+	// default so large legitimate bodies keep streaming; on, it closes the
+	// inspection-window evasion where a payload is placed past the window.
+	BlockOversizeRequestBody bool `json:"block_oversize_request_body,omitempty"`
+	// MetricsAllowFrom optionally restricts the dashboard/metrics/prometheus
+	// endpoints to a set of client IPs/CIDRs (or the private_ranges token). Empty
+	// means no built-in restriction (the operator must front them). Compiled into
+	// metricsAllowTrie at Provision.
+	MetricsAllowFrom []string     `json:"metrics_allow_from,omitempty"`
+	metricsAllowTrie *iptrie.Trie `json:"-"`
 
 	ruleHits        sync.Map `json:"-"`
 	MetricsEndpoint string   `json:"metrics_endpoint,omitempty"`
@@ -266,6 +301,12 @@ type Middleware struct {
 
 	logChan chan LogEntry // Buffered channel for log entries
 	logDone chan struct{} // Signal to stop the logging worker
+
+	// watcherStop is closed in Shutdown to stop the per-file fsnotify watcher
+	// goroutines started in Provision; watcherWG waits for them to exit, so a
+	// Caddy reload does not leak the old module's watchers or their inotify handles.
+	watcherStop chan struct{}
+	watcherWG   sync.WaitGroup
 
 	ruleCache *RuleCache // New field for RuleCache
 

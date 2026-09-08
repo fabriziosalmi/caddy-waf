@@ -94,8 +94,9 @@ func TestRedactQueryParams(t *testing.T) {
 }
 
 func TestPrepareLogFields(t *testing.T) {
+	redact := true
 	m := &Middleware{
-		RedactSensitiveData: true,
+		RedactSensitiveData: &redact,
 		logger:              zaptest.NewLogger(t),
 	}
 

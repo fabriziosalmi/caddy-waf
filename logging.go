@@ -141,7 +141,7 @@ func (m *Middleware) prepareLogFields(r *http.Request, fields []zap.Field) []zap
 		requestPath = r.URL.Path
 		queryParams = r.URL.RawQuery
 	}
-	if m.RedactSensitiveData {
+	if m.redactEnabled() {
 		queryParams = m.redactQueryParams(queryParams)
 	}
 

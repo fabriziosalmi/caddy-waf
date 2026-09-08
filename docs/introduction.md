@@ -37,7 +37,7 @@ If the configured `metrics_endpoint` matches the request path, the middleware se
 - It does not modify request bodies; it only inspects them. The body is read through `io.LimitReader` and re-attached with `io.MultiReader` so downstream handlers receive the full body.
 - It does not perform TLS termination, HTTP routing, or response generation beyond the metrics endpoint and block responses; those remain the responsibility of Caddy and downstream handlers.
 - It does not learn or self-tune; rules are static JSON files reloaded on change.
-- It does not emit Prometheus directly; it exposes JSON that an external exporter can convert (see [prometheus.md](prometheus.md)).
+- It exposes metrics on two surfaces: a JSON document (`metrics_endpoint`) and a native Prometheus text-exposition endpoint (`prometheus_endpoint`, including a request-duration histogram) — scrape the latter directly, no external exporter needed (see [prometheus.md](prometheus.md) and [metrics.md](metrics.md)).
 
 ## Next step
 
