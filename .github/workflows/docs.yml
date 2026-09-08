@@ -47,6 +47,10 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         with:
           path: docs/.vitepress/dist
+          # Ship dot-prefixed paths too: without this the action tars with
+          # --exclude=.[^/]* and drops /.well-known/security.txt and .nojekyll,
+          # so they 404 on the published site.
+          include-hidden-files: true
 
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
