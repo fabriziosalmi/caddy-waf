@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -137,12 +138,39 @@ func (t *TorConfig) readExistingBlacklist() ([]string, error) {
 	return strings.Split(string(data), "\n"), nil
 }
 
-// writeBlacklist writes the updated IP blacklist to the file.
+// writeBlacklist writes the updated IP blacklist to the file atomically: it
+// writes to a temp file in the same directory, fsyncs it, then renames it over
+// the target. Rename is atomic within a filesystem, so a crash can never leave a
+// half-written (truncated) blacklist that loads as valid-but-shorter -- a reader
+// ever sees only the old complete file or the new complete file.
 func (t *TorConfig) writeBlacklist(ips []string) error {
 	data := strings.Join(ips, "\n")
-	err := os.WriteFile(t.TORIPBlacklistFile, []byte(data), 0o600)
+	dir := filepath.Dir(t.TORIPBlacklistFile)
+
+	tmp, err := os.CreateTemp(dir, ".tor-blacklist-*.tmp")
 	if err != nil {
-		return fmt.Errorf("failed to write IP blacklist file %s: %w", t.TORIPBlacklistFile, err) // Improved error message with filename
+		return fmt.Errorf("failed to create temp file for IP blacklist in %s: %w", dir, err)
+	}
+	tmpName := tmp.Name()
+	// Best-effort cleanup if we return before the rename succeeds.
+	defer func() { _ = os.Remove(tmpName) }()
+
+	if _, err := tmp.Write([]byte(data)); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("failed to write temp IP blacklist file %s: %w", tmpName, err)
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("failed to fsync temp IP blacklist file %s: %w", tmpName, err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("failed to close temp IP blacklist file %s: %w", tmpName, err)
+	}
+	if err := os.Chmod(tmpName, 0o600); err != nil {
+		return fmt.Errorf("failed to set permissions on temp IP blacklist file %s: %w", tmpName, err)
+	}
+	if err := os.Rename(tmpName, t.TORIPBlacklistFile); err != nil {
+		return fmt.Errorf("failed to atomically replace IP blacklist file %s: %w", t.TORIPBlacklistFile, err)
 	}
 	t.logger.Debug("Blacklist file updated", zap.String("path", t.TORIPBlacklistFile), zap.Int("entry_count", len(ips))) // Debug log for file update
 	return nil

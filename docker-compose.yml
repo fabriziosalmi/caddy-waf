@@ -16,8 +16,10 @@ services:
       - ./ip_blacklist.txt:/app/ip_blacklist.txt
       - ./dns_blacklist.txt:/app/dns_blacklist.txt
     restart: unless-stopped
-    environment:
-      - CADDY_ADMIN=0.0.0.0:2019
+    # Caddy's admin API (:2019) is unauthenticated and can reconfigure or stop the
+    # server. It is left at Caddy's default localhost:2019 bind so it is not
+    # reachable from other containers on this network. If you must expose it,
+    # bind it to a dedicated internal address and put auth/mTLS in front.
     networks:
       - caddy-waf-net
 

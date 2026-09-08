@@ -74,6 +74,7 @@ type responseRecorder struct {
 	limit       int64 // Maximum number of bytes retained in body for inspection.
 	passthrough bool  // True once writes go straight to the underlying writer.
 	partial     bool  // True if bytes reached the client before inspection completed.
+	headerSent  bool  // True once the status line has actually been forwarded to the client.
 }
 
 // NewResponseRecorder creates a new responseRecorder that buffers up to
@@ -101,10 +102,29 @@ func NewResponseRecorderWithLimit(w http.ResponseWriter, limit int64, inspect bo
 	}
 }
 
-// WriteHeader captures the response status code.
+// WriteHeader captures the response status code. In pass-through mode (no
+// response-phase inspection) it forwards the status to the client immediately.
+// In inspect mode it only records the status: the status line is held until the
+// WAF finishes Phase 3/4 evaluation, so a response-phase block can still set the
+// status. release() / copyResponse forwards it once inspection is done. Before
+// this, the upstream status was committed here immediately and a Phase 3/4 block
+// surfaced with the upstream's status (typically 200) instead of the block code.
 func (r *responseRecorder) WriteHeader(statusCode int) {
 	r.statusCode = statusCode
-	r.ResponseWriter.WriteHeader(statusCode)
+	if r.passthrough {
+		r.forwardHeader(statusCode)
+	}
+}
+
+// forwardHeader writes the status line to the underlying writer exactly once.
+// It is idempotent, so both the inspect path (copyResponse / block handling) and
+// the pass-through path can call it without risking a superfluous WriteHeader.
+func (r *responseRecorder) forwardHeader(code int) {
+	if r.headerSent {
+		return
+	}
+	r.headerSent = true
+	r.ResponseWriter.WriteHeader(code)
 }
 
 // Header returns the response headers.
@@ -179,6 +199,9 @@ func (r *responseRecorder) Flush() {
 func (r *responseRecorder) release() error {
 	r.partial = true
 	r.passthrough = true
+	// Send the held status before streaming: once bytes are on the wire the
+	// status can no longer change (Partial() reflects this).
+	r.forwardHeader(r.StatusCode())
 	if r.body.Len() == 0 {
 		return nil
 	}

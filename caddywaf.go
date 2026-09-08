@@ -50,8 +50,37 @@ var (
 	_ caddy.Validator             = (*Middleware)(nil) // Assicurati che anche questa sia presente se hai un metodo Validate()
 )
 
-// Add or update the version constant as needed
-const wafVersion = "v0.4.14" // update this value to the new release version when tagging
+// ModuleVersion is injected at release build time via
+//
+//	-ldflags "-X 'github.com/fabriziosalmi/caddy-waf.ModuleVersion=<tag>'"
+//
+// (see .github/workflows/release.yml). It is empty for ordinary/dev builds. It
+// lives in this package so the -X path resolves to a real string variable
+// instead of being silently dropped by the linker.
+var ModuleVersion string
+
+// wafVersionDefault is the fallback version for non-release builds (releases
+// carry the git tag via ModuleVersion). Keep it a plain, single-line string
+// literal: the docs config (docs/.vitepress/config.mts) scrapes this constant
+// from the source, so a computed value would break the docs build.
+const wafVersionDefault = "v0.4.14"
+
+// wafVersion is the version the WAF reports in logs, metrics and build_info.
+// The release build injects ModuleVersion (from the git tag) which takes
+// precedence; otherwise wafVersionDefault is used.
+var wafVersion = func() string {
+	if ModuleVersion != "" {
+		return ModuleVersion
+	}
+	return wafVersionDefault
+}()
+
+// defaultAnomalyThreshold is the single source of truth for the cumulative
+// anomaly score at which a request is blocked when the operator does not set
+// anomaly_threshold. Both the Caddyfile adapter (config.go) and the JSON
+// Provision fallback (below) use it, so the two configuration sources cannot
+// silently diverge (they previously defaulted to 5 and 20 respectively).
+const defaultAnomalyThreshold = 5
 
 // ==================== Initialization and Setup ====================
 
@@ -159,7 +188,7 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 
 	// ADDED: Set default anomaly threshold if not provided or invalid
 	if m.AnomalyThreshold <= 0 {
-		m.AnomalyThreshold = 20 // Use a reasonable default value
+		m.AnomalyThreshold = defaultAnomalyThreshold // shared with the Caddyfile default so JSON and Caddyfile configs agree
 		m.logger.Info("Using default anomaly threshold", zap.Int("anomaly_threshold", m.AnomalyThreshold))
 	} else {
 		m.logger.Info("Using configured anomaly threshold", zap.Int("anomaly_threshold", m.AnomalyThreshold))
@@ -179,8 +208,11 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 	// Log the current version of the middleware
 	m.logVersion()
 
-	// Start file watchers for rule files and blacklist files
-	// Context cancellation could be added in the future to gracefully stop watchers.
+	// Start file watchers for rule files and blacklist files. Each watcher
+	// goroutine is bound to this module instance via m.watcherStop and torn down
+	// in Shutdown (m.watcherWG), so a Caddy reload does not leak the old module's
+	// watchers or their inotify handles.
+	m.watcherStop = make(chan struct{})
 	m.startFileWatcher(m.RuleFiles)
 	m.startFileWatcher([]string{m.IPBlacklistFile, m.DNSBlacklistFile, m.IPWhitelistFile})
 
@@ -258,7 +290,7 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 	m.configLoader = NewConfigLoader(m.logger)
 	m.blacklistLoader = NewBlacklistLoader(m.logger)
 	m.geoIPHandler = NewGeoIPHandler(m.logger)
-	m.requestValueExtractor = NewRequestValueExtractor(m.logger, m.RedactSensitiveData, m.MaxRequestBodySize)
+	m.requestValueExtractor = NewRequestValueExtractor(m.logger, m.redactEnabled(), m.MaxRequestBodySize)
 
 	// Configure GeoIP handler
 	m.geoIPHandler.WithGeoIPCache(m.geoIPCacheTTL)
@@ -315,6 +347,18 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 			zap.String("client_ip_header", m.ClientIPHeader))
 	}
 
+	// Build the optional allow-list for the internal dashboard/metrics/prometheus
+	// endpoints. When set, only these client IPs/CIDRs may reach those endpoints;
+	// unset means no built-in restriction (the operator must front them).
+	if len(m.MetricsAllowFrom) > 0 {
+		trie, expanded, err := buildIPTrie(m.MetricsAllowFrom, "metrics_allow_from")
+		if err != nil {
+			return err
+		}
+		m.metricsAllowTrie = trie
+		m.logger.Info("Metrics/dashboard endpoints restricted", zap.Int("allow_entries", len(expanded)))
+	}
+
 	// Load DNS blacklist
 	if m.DNSBlacklistFile != "" {
 		m.dnsBlacklist = make(map[string]struct{})
@@ -340,6 +384,15 @@ func (m *Middleware) Provision(ctx caddy.Context) error {
 func (m *Middleware) Shutdown(ctx context.Context) error {
 	m.logger.Info("Starting WAF middleware shutdown procedures")
 	m.isShuttingDown = true
+
+	// Stop the file watchers started in Provision and wait for them to exit, so a
+	// reload does not leave the old module's watcher goroutines (and their inotify
+	// handles) running against stale files.
+	if m.watcherStop != nil {
+		close(m.watcherStop)
+		m.watcherWG.Wait()
+		m.watcherStop = nil
+	}
 
 	// Stop the rate limiter cleanup
 	if m.rateLimiter != nil {
@@ -433,6 +486,46 @@ func (m *Middleware) logVersion() {
 	m.logger.Info("WAF middleware version", zap.String("version", wafVersion))
 }
 
+// redactEnabled resolves the RedactSensitiveData pointer: redaction is ON when
+// the operator did not set it (nil) or set it true, and only OFF when explicitly
+// disabled. Keeping the default in one place means the Caddyfile and JSON sources
+// cannot diverge (they both default ON).
+func (m *Middleware) redactEnabled() bool {
+	return m.RedactSensitiveData == nil || *m.RedactSensitiveData
+}
+
+// countLoadedRules returns the total number of rules currently loaded across all
+// phases. It backs the rules_loaded metric (JSON and Prometheus) so operators
+// can alert on rules_loaded == 0 -- an inert WAF, otherwise indistinguishable
+// from clean traffic in the other counters.
+func (m *Middleware) countLoadedRules() int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	n := 0
+	for _, rs := range m.Rules {
+		n += len(rs)
+	}
+	return n
+}
+
+// internalEndpointAllowed reports whether the request may reach the built-in
+// dashboard/metrics/prometheus endpoints. When metrics_allow_from is unset
+// (metricsAllowTrie == nil) it returns true and the endpoints behave as before
+// (the operator must front them). When set, only clients whose resolved IP is in
+// the allow-list are served; others fall through to normal handling, hiding the
+// telemetry rather than exposing it.
+func (m *Middleware) internalEndpointAllowed(r *http.Request) bool {
+	if m.metricsAllowTrie == nil {
+		return true
+	}
+	ip := m.clientIP(r)
+	addr, err := netip.ParseAddr(ip)
+	if err != nil {
+		return false
+	}
+	return m.metricsAllowTrie.Contains(addr)
+}
+
 // isRuleFile reports whether path is one of the configured rule files, so the
 // watcher can pick ReloadRules vs ReloadConfig by identity rather than by a
 // "rule" substring match (which would misroute a blacklist/whitelist file whose
@@ -463,8 +556,9 @@ func (m *Middleware) startFileWatcher(filePaths []string) {
 			continue
 		}
 
-		// Note: In future, a context may be used here for cancellation.
+		m.watcherWG.Add(1)
 		go func(file string) {
+			defer m.watcherWG.Done()
 			watcher, err := fsnotify.NewWatcher()
 			if err != nil {
 				m.logger.Error("Failed to start file watcher", zap.Error(err))
@@ -488,6 +582,9 @@ func (m *Middleware) startFileWatcher(filePaths []string) {
 
 			for {
 				select {
+				case <-m.watcherStop:
+					// Module is shutting down; the deferred watcher.Close() runs on return.
+					return
 				case event, ok := <-watcher.Events:
 					if !ok {
 						return
@@ -734,6 +831,7 @@ func (m *Middleware) handleMetricsRequest(w http.ResponseWriter, r *http.Request
 		"dns_blacklist_hits":            dnsBlacklistHits,
 		"rate_limiter_requests":         rateLimiterTotalRequests,
 		"rate_limiter_blocked_requests": rateLimiterBlockedRequests,
+		"rules_loaded":                  m.countLoadedRules(),
 		"version":                       wafVersion,
 	}
 	for k, v := range m.observabilitySnapshot() {

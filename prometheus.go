@@ -118,6 +118,11 @@ func (m *Middleware) renderPrometheus() string {
 	// Build info.
 	fmt.Fprintf(&b, "# HELP caddywaf_build_info Build information.\n# TYPE caddywaf_build_info gauge\ncaddywaf_build_info{version=\"%s\"} 1\n", promLabel(wafVersion))
 
+	// Loaded-rule gauge: rules_loaded == 0 means the WAF is inert (no rules
+	// loaded), which is otherwise indistinguishable from clean traffic in the
+	// other counters. Alert on caddywaf_rules_loaded == 0.
+	fmt.Fprintf(&b, "# HELP caddywaf_rules_loaded Number of rules currently loaded across all phases.\n# TYPE caddywaf_rules_loaded gauge\ncaddywaf_rules_loaded %d\n", m.countLoadedRules())
+
 	return b.String()
 }
 

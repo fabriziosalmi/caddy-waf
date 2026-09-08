@@ -38,7 +38,7 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: |
-          GOOS=${GOOS} GOARCH=${GOARCH} go build -ldflags "-X 'github.com/fabriziosalmi/caddy-waf/middleware.ModuleVersion=${{ steps.extract_tag.outputs.TAG_NAME }}'" -o caddy-waf-${GOOS}-${GOARCH}
+          GOOS=${GOOS} GOARCH=${GOARCH} go build -ldflags "-X 'github.com/fabriziosalmi/caddy-waf.ModuleVersion=${{ steps.extract_tag.outputs.TAG_NAME }}'" -o caddy-waf-${GOOS}-${GOARCH}
           tar czf caddy-waf-${GOOS}-${GOARCH}.tar.gz caddy-waf-${GOOS}-${GOARCH}
 
       - name: Upload artifact

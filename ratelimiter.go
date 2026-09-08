@@ -22,7 +22,16 @@ type RateLimit struct {
 	Paths           []string         `json:"paths,omitempty"` // Optional paths to apply rate limit
 	PathRegexes     []*regexp.Regexp `json:"-"`               // Compiled regexes for the given paths
 	MatchAllPaths   bool             `json:"match_all_paths,omitempty"`
+	// MaxEntries caps the number of distinct (IP, path) keys tracked at once, so
+	// a flood of unique source IPs cannot grow the map without bound between
+	// cleanup passes. <= 0 uses defaultRateLimiterMaxEntries.
+	MaxEntries int `json:"max_entries,omitempty"`
 }
+
+// defaultRateLimiterMaxEntries bounds the rate-limiter key table when the
+// operator does not set max_entries, so memory stays bounded by default rather
+// than growing with attacker-controlled source-IP cardinality.
+const defaultRateLimiterMaxEntries = 1_000_000
 
 // RateLimiter struct
 type RateLimiter struct {
@@ -30,6 +39,8 @@ type RateLimiter struct {
 	requests        map[string]map[string]*requestCounter // Nested map for path-based rate limiting
 	config          RateLimit
 	stopCleanup     chan struct{} // Channel to signal cleanup goroutine to stop
+	entryCount      int           // Number of tracked (IP, path) keys; bounded by maxEntries
+	maxEntries      int           // Cap on entryCount (0 means the default is applied in NewRateLimiter)
 	totalRequests   int64         // Total requests received by this rate limiter
 	blockedRequests int64         // Total requests blocked by this rate limiter
 	muMetrics       sync.RWMutex  // Mutex to protect metrics access
@@ -60,9 +71,15 @@ func NewRateLimiter(config RateLimit) (*RateLimiter, error) {
 		}
 	}
 
+	maxEntries := config.MaxEntries
+	if maxEntries <= 0 {
+		maxEntries = defaultRateLimiterMaxEntries
+	}
+
 	return &RateLimiter{
 		requests:    make(map[string]map[string]*requestCounter),
 		config:      config,
+		maxEntries:  maxEntries,
 		stopCleanup: make(chan struct{}), // Initialize the stopCleanup channel
 	}, nil
 }
@@ -104,31 +121,38 @@ func (rl *RateLimiter) isRateLimited(ip, path string) bool {
 
 	rl.incrementTotalRequestsMetric() // Metric under lock to ensure consistency (or use atomic outside)
 
-	// Initialize the nested map if it doesn't exist
-	if _, exists := rl.requests[ip]; !exists {
-		rl.requests[ip] = make(map[string]*requestCounter)
-	}
-
-	// Get or create the counter for the specific key (path + ip)
-	counter, exists := rl.requests[ip][key]
-	if exists {
-		if now.Sub(counter.window) > rl.config.Window {
-			// Window expired, reset the counter
-			rl.requests[ip][key] = &requestCounter{count: 1, window: now}
+	// Existing (IP, path) key: update it in place (no new entry).
+	if inner, ok := rl.requests[ip]; ok {
+		if counter, exists := inner[key]; exists {
+			if now.Sub(counter.window) > rl.config.Window {
+				// Window expired, reset the counter (same key, entry count unchanged).
+				counter.count = 1
+				counter.window = now
+				return false
+			}
+			// Window not expired, increment the counter.
+			counter.count++
+			if counter.count > rl.config.Requests {
+				rl.incrementBlockedRequestsMetric() // Increment if the request is going to be blocked.
+				return true
+			}
 			return false
 		}
-
-		// Window not expired, increment the counter
-		counter.count++
-		if counter.count > rl.config.Requests {
-			rl.incrementBlockedRequestsMetric() // Increment if the request is going to be blocked.
-			return true
-		}
-		return false
 	}
 
-	// IP and path combination doesn't exist, add it
-	rl.requests[ip][key] = &requestCounter{count: 1, window: now}
+	// A new (IP, path) key. Bound the table so a flood of distinct sources cannot
+	// grow it without limit between cleanup passes: once at capacity, stop
+	// tracking new keys (they are not rate-limited by this instance, but memory
+	// stays bounded) rather than admitting unbounded growth.
+	if rl.entryCount >= rl.maxEntries {
+		return false
+	}
+	if _, ok := rl.requests[ip]; !ok {
+		rl.requests[ip] = make(map[string]*requestCounter)
+	}
+	newCounter := &requestCounter{count: 1, window: now}
+	rl.requests[ip][key] = newCounter
+	rl.entryCount++
 	return false
 }
 
@@ -143,6 +167,7 @@ func (rl *RateLimiter) cleanupExpiredEntries() {
 		for path, counter := range pathCounters {
 			if now.Sub(counter.window) > rl.config.Window {
 				delete(pathCounters, path)
+				rl.entryCount--
 			}
 		}
 		if len(pathCounters) == 0 {

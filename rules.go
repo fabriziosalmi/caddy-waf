@@ -68,7 +68,7 @@ func (m *Middleware) processRuleMatch(w http.ResponseWriter, r *http.Request, ru
 	// Debug the actual action field value to verify what's being used
 	m.logger.Debug("Rule action/mode check",
 		zap.String("rule_id", rule.ID),
-		zap.String("action_field", rule.Action),
+		zap.String("action_field", string(rule.Action)),
 		zap.Int("score", rule.Score),
 		zap.Int("threshold", m.AnomalyThreshold),
 		zap.Int("total_score", state.TotalScore))
@@ -116,7 +116,7 @@ func (m *Middleware) processRuleMatch(w http.ResponseWriter, r *http.Request, ru
 		m.logRequest(zapcore.DebugLevel, "Rule action: No Block", r,
 			zap.String("log_id", logID),
 			zap.String("rule_id", rule.ID),
-			zap.String("action", rule.Action),
+			zap.String("action", string(rule.Action)),
 			zap.Int("total_score", state.TotalScore),
 			zap.Int("anomaly_threshold", m.AnomalyThreshold),
 		)
@@ -195,7 +195,7 @@ func (m *Middleware) loadRules(paths []string) error {
 		if err != nil {
 			m.logger.Error("Failed to load rule file", zap.String("file", path), zap.Error(err))
 			invalidFiles = append(invalidFiles, path)
-			continue // Skip to the next file if loading fails
+			continue // record the failure; a partial initial load is rejected below (fail closed)
 		}
 
 		if len(fileInvalidRules) > 0 {
@@ -233,6 +233,15 @@ func (m *Middleware) loadRules(paths []string) error {
 	for _, rs := range m.Rules {
 		prevRuleCount += len(rs)
 	}
+	// Initial load (no rules held yet) must fail closed if any configured rule
+	// file could not be loaded: coming up with a partial rule set is silently
+	// reduced protection that only shows as one Error line in the startup log.
+	// The reload case (prevRuleCount > 0) is handled by the fail-safe below, which
+	// keeps the previously-loaded set.
+	if len(invalidFiles) > 0 && prevRuleCount == 0 {
+		return fmt.Errorf("initial rule load failed: %d rule file(s) could not be loaded (%v); refusing to start with a partial rule set", len(invalidFiles), invalidFiles)
+	}
+
 	loadFailed := len(invalidFiles) > 0 || (totalRules == 0 && len(paths) > 0)
 	if loadFailed && prevRuleCount > 0 {
 		return fmt.Errorf("rule reload failed (%d invalid file(s), %d rules parsed); keeping %d previously loaded rules", len(invalidFiles), totalRules, prevRuleCount)

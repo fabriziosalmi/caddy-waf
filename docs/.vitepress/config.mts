@@ -13,8 +13,8 @@ const wafVersion = (() => {
     fileURLToPath(new URL('../../caddywaf.go', import.meta.url)),
     'utf8',
   )
-  const m = src.match(/wafVersion\s*=\s*"(v[^"]+)"/)
-  if (!m) throw new Error('could not read wafVersion from caddywaf.go')
+  const m = src.match(/wafVersionDefault\s*=\s*"(v[^"]+)"/)
+  if (!m) throw new Error('could not read wafVersionDefault from caddywaf.go')
   return m[1]
 })()
 

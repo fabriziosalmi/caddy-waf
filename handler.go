@@ -76,6 +76,19 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	// Initialize WAF state for this request
 	state := m.initializeWAFState()
 
+	// Fail closed on an oversize request body when the operator opted in: only the
+	// inspection window was scanned, so forwarding the un-inspected tail would let
+	// a payload placed past the window evade body rules. Off by default so large
+	// legitimate bodies keep streaming.
+	if m.BlockOversizeRequestBody {
+		if overflow, _ := r.Context().Value(bodyOverflowKey{}).(bool); overflow {
+			m.blockRequest(w, r, state, http.StatusRequestEntityTooLarge, "oversize_request_body", "",
+				zap.Int64("max_request_body_size", m.MaxRequestBodySize))
+			m.logRequestCompletion(logID, state)
+			return nil
+		}
+	}
+
 	// Phase 1: Pre-request checks and blocking
 	if m.isPhaseBlocked(w, r, 1, state) {
 		return nil // Request blocked, short-circuit
@@ -99,19 +112,19 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	//
 	// It sits after Phase 1 and 2 on purpose: the IP blacklist, the rate limiter
 	// and the request rules still apply, so the endpoint can be protected.
-	if m.isPrometheusRequest(r) {
+	if m.isPrometheusRequest(r) && m.internalEndpointAllowed(r) {
 		m.incrementAllowedRequestsMetric()
 		m.logRequestCompletion(logID, state)
 		return m.handlePrometheusRequest(w, r)
 	}
 
-	if m.isDashboardRequest(r) {
+	if m.isDashboardRequest(r) && m.internalEndpointAllowed(r) {
 		m.incrementAllowedRequestsMetric()
 		m.logRequestCompletion(logID, state)
 		return m.serveDashboard(w, r)
 	}
 
-	if m.isMetricsRequest(r) {
+	if m.isMetricsRequest(r) && m.internalEndpointAllowed(r) {
 		m.incrementAllowedRequestsMetric()
 		m.logRequestCompletion(logID, state)
 		return m.handleMetricsRequest(w, r)
@@ -134,10 +147,25 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	if state.Blocked {
 		// Metrics and response handling if blocked after headers phase
 		m.incrementBlockedRequestsMetric()
-		// Write to w, not to the recorder: the recorder's buffer is discarded on
-		// the blocked path, so a custom body written into it would never reach
-		// the client.
-		m.writeCustomResponse(w, state.StatusCode)
+		// In inspect mode the recorder held the status, so a Phase 3/4 block can
+		// still set it here. forwardHeader guards against a double WriteHeader when
+		// the recorder already streamed (passthrough), in which case the status was
+		// committed upstream and cannot be changed. The recorder's buffered body is
+		// discarded on the blocked path, so the block body is written straight to w.
+		if custom, ok := m.CustomResponses[state.StatusCode]; ok {
+			for k, v := range custom.Headers {
+				w.Header().Set(k, v)
+			}
+			recorder.forwardHeader(custom.StatusCode)
+			if _, err := w.Write([]byte(custom.Body)); err != nil {
+				m.logger.Error("Failed to write custom response body", zap.Error(err))
+			}
+		} else {
+			recorder.forwardHeader(state.StatusCode)
+			if _, err := w.Write([]byte("Request blocked by WAF.")); err != nil {
+				m.logger.Error("Failed to write blocked response body", zap.Error(err))
+			}
+		}
 		return nil
 	}
 
@@ -150,6 +178,20 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	m.logRequestCompletion(logID, state)
 
 	return err // Return any error from the next handler
+}
+
+// dispatchRuleMatch applies a matched rule via processRuleMatch. In the response
+// phases (3/4) it passes the response recorder as the writer so a response-phase
+// block records against it; otherwise it uses the original writer. It returns
+// processRuleMatch's shouldContinue value. Extracted from handlePhase to keep
+// that function's control flow within reach.
+func (m *Middleware) dispatchRuleMatch(w http.ResponseWriter, r *http.Request, rule *Rule, target, value string, phase int, state *WAFState) bool {
+	if phase == 3 || phase == 4 {
+		if recorder, ok := w.(*responseRecorder); ok {
+			return m.processRuleMatch(recorder, r, rule, target, value, state)
+		}
+	}
+	return m.processRuleMatch(w, r, rule, target, value, state)
 }
 
 // isPhaseBlocked encapsulates the phase handling and blocking check logic.
@@ -254,10 +296,19 @@ func (m *Middleware) captureRequestBody(r *http.Request) *http.Request {
 	if limit <= 0 {
 		limit = 10 * 1024 * 1024 // 10MB, matching the extractor default
 	}
-	buf, err := bufferRequestBody(r, limit)
+	buf, overflow, err := bufferRequestBody(r, limit)
 	if err != nil {
 		m.logger.Warn("Failed to buffer request body; leaving it untouched", zap.Error(err))
 		return r
+	}
+	if overflow {
+		// The body is larger than the inspection window, so only its prefix is
+		// scanned. Always surface it; ServeHTTP blocks the request only when the
+		// operator set block_oversize_request_body.
+		m.logger.Warn("Request body exceeds inspection window; only the first bytes are inspected",
+			zap.Int64("max_request_body_size", limit),
+			zap.Bool("block_oversize_request_body", m.BlockOversizeRequestBody))
+		r = r.WithContext(context.WithValue(r.Context(), bodyOverflowKey{}, true))
 	}
 	return r.WithContext(context.WithValue(r.Context(), bodyBufferKey{}, buf))
 }
@@ -354,6 +405,9 @@ func (m *Middleware) copyResponse(w http.ResponseWriter, recorder *responseRecor
 	if logID == "unknown" {
 		m.logger.Error("Log ID not found in context during response copy")
 	}
+	// In inspect mode the recorder held the status until now so a Phase 3/4 block
+	// could still set it; forward the (unblocked) status before the body.
+	recorder.forwardHeader(recorder.StatusCode())
 	_, err := w.Write(recorder.body.Bytes())
 	if err != nil {
 		m.logger.Error("Failed to write recorded response body to client", zap.Error(err), zap.String("log_id", logID))
@@ -606,7 +660,12 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		// every rule on the hot path).
 
 		for _, target := range rule.Targets {
-			m.logger.Debug("Extracting value for target", zap.String("target", target), zap.String("rule_id", rule.ID))
+			// Use Check/Write so the zap.Field slice is not built on the hot path
+			// (once per rule*target) when debug logging is disabled, which is the
+			// default (info) level.
+			if ce := m.logger.Check(zapcore.DebugLevel, "Extracting value for target"); ce != nil {
+				ce.Write(zap.String("target", target), zap.String("rule_id", rule.ID))
+			}
 			value, err := extract(target)
 			if err != nil {
 				m.logger.Debug("Failed to extract value for target, skipping rule for this target",
@@ -642,17 +701,9 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 					zap.String("value", redactedValue),
 				)
 
-				// FIXED: Correctly interpret processRuleMatch return value
-				var shouldContinue bool
-				if phase == 3 || phase == 4 {
-					if recorder, ok := w.(*responseRecorder); ok {
-						shouldContinue = m.processRuleMatch(recorder, r, &rule, target, value, state)
-					} else {
-						shouldContinue = m.processRuleMatch(w, r, &rule, target, value, state)
-					}
-				} else {
-					shouldContinue = m.processRuleMatch(w, r, &rule, target, value, state)
-				}
+				// Dispatch the match. In the response phases (3/4) the recorder is
+				// the writer to record against; see dispatchRuleMatch.
+				shouldContinue := m.dispatchRuleMatch(w, r, &rule, target, value, phase, state)
 
 				// If processRuleMatch returned false or state is now blocked, stop processing
 				if !shouldContinue || state.Blocked || state.ResponseWritten {
