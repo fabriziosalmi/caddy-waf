@@ -43,7 +43,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
 # Pin the runtime base so the shipped image's base layer is part of what the
 # commit describes; bump deliberately. For stronger reproducibility pin by digest
 # (FROM alpine:3.21@sha256:...).
-FROM alpine:3.21
+FROM alpine:3.24
 
 RUN apk add --no-cache ca-certificates && \
     addgroup -S caddy && adduser -S -G caddy caddy
