@@ -8,7 +8,7 @@ A Web Application Firewall middleware for the [Caddy](https://caddyserver.com/) 
 
 - **Module ID**: `http.handlers.waf` — [registered in Caddy's package registry](https://caddyserver.com/docs/modules/http.handlers.waf), so the module is selectable on the [download page](https://caddyserver.com/download?package=github.com%2Ffabriziosalmi%2Fcaddy-waf)
 - **Go module path**: `github.com/fabriziosalmi/caddy-waf`
-- **Current version**: `v0.4.14` (see [`caddywaf.go`](caddywaf.go) — `const wafVersion`)
+- **Current version**: `v0.4.15` (see [`caddywaf.go`](caddywaf.go) — `const wafVersionDefault`)
 - **License**: AGPL-3.0 — note this is a copyleft licence; check it suits your deployment before integrating
 
 ---
@@ -34,7 +34,7 @@ The middleware is implemented as a single Caddy module registered under the ID `
 | Tor exit-node block | Periodic fetch from `https://check.torproject.org/torbulkexitlist`. |
 | Rate limiting | Per-IP, sliding-window, optional per-path matching with regex patterns. |
 | Custom block responses | Per-status-code response with custom Content-Type, headers, and body (inline or from file). |
-| Sensitive data redaction | Optional redaction of sensitive query parameters and log fields. |
+| Sensitive data redaction | Redaction of sensitive values in logs (by key name and by value content), **on by default**; disable with `redact_sensitive_data off`. |
 | Hot reload | `fsnotify` watchers on rule files, IP blacklist, and DNS blacklist. |
 | Metrics endpoint | JSON document exposed at the configured `metrics_endpoint` path. |
 | Asynchronous logging | Buffered log channel with synchronous fallback when the buffer is full. |
@@ -65,9 +65,9 @@ The script ensures Go and `xcaddy` are installed, clones the repository, downloa
 A representative provisioning log:
 
 ```
-INFO  Provisioning WAF middleware     {"log_level":"info","log_path":"debug.json","log_json":true,"anomaly_threshold":20}
+INFO  Provisioning WAF middleware     {"log_level":"info","log_path":"debug.json","log_json":true,"anomaly_threshold":5}
 INFO  http.handlers.waf  Tor exit nodes updated  {"count":1093}
-INFO  WAF middleware version  {"version":"v0.4.14"}
+INFO  WAF middleware version  {"version":"v0.4.15"}
 INFO  Rate limit configuration  {"requests":100,"window":10,"cleanup_interval":300,"paths":["/api/v1/.*"],"match_all_paths":false}
 WARN  GeoIP database not found. Country blacklisting/whitelisting will be disabled  {"path":"GeoLite2-Country.mmdb"}
 INFO  IP blacklist loaded     {"path":"ip_blacklist.txt","valid_entries":223770,"invalid_entries":0,"total_lines":223770}

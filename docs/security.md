@@ -117,7 +117,7 @@ error blocks by default.
 | Setting | Default | Notes |
 |---|---|---|
 | Blocking | **on** | The WAF blocks when a request's score reaches `anomaly_threshold` or a matched rule has `mode: block`. There is no global detection-only switch; use per-rule `mode: log` to observe without blocking. |
-| `anomaly_threshold` | **5** (Caddyfile) | Lower = stricter. Raw-JSON configs with the value unset fall back to 20. |
+| `anomaly_threshold` | **5** | Lower = stricter. The same default (`5`) applies whether configured via the Caddyfile or raw JSON. |
 | `max_request_body_size` | **10 MB** | Caps the body scanned by matchers (see [ReDoS residual cost](#residual-cost-is-linear-and-bounded-by-request-size)). |
 | `max_response_body_size` | **10 MB** | Same, for response-phase rules. |
 | `geoip_fail_open` | **false** (fail-closed) | A GeoIP lookup error blocks unless this is set. |
