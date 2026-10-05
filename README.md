@@ -82,7 +82,7 @@ INFO  WAF middleware provisioned successfully
 
 ### Requirements
 
-- Go **1.25.1** or newer ([`go.mod`](go.mod) declares `go 1.25.1`, propagated from `caddy/v2` which requires it)
+- Go **1.26.0** or newer ([`go.mod`](go.mod) declares `go 1.26.0`, propagated from `caddy/v2` which requires it)
 - Caddy **v2.11.x** or newer (current build uses `github.com/caddyserver/caddy/v2 v2.11.4`)
 - [`xcaddy`](https://github.com/caddyserver/xcaddy) for building Caddy with plugins
 

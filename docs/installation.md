@@ -4,7 +4,7 @@
 
 | Component | Minimum version | Source of truth |
 |---|---|---|
-| Go | **1.25.1** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `go 1.25.1`, propagated from `caddy/v2` |
+| Go | **1.26.0** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `go 1.26.0`, propagated from `caddy/v2` |
 | Caddy | **v2.11.x** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `github.com/caddyserver/caddy/v2 v2.11.4` |
 | `xcaddy` | latest | [github.com/caddyserver/xcaddy](https://github.com/caddyserver/xcaddy) |
 | MaxMind GeoLite2 Country MMDB | optional, only when using country block / whitelist | [maxmind.com](https://www.maxmind.com/) |
@@ -29,7 +29,7 @@ curl -fsSL -H "Pragma: no-cache" \
   https://raw.githubusercontent.com/fabriziosalmi/caddy-waf/refs/heads/main/install.sh | bash
 ```
 
-The script targets Go `1.25.11` for new installs and refuses to proceed if a present Go installation is older than `1.25.0`. Review the [source](https://github.com/fabriziosalmi/caddy-waf/blob/main/install.sh) before piping it into a shell.
+The script targets Go `1.26.8` for new installs and refuses to proceed if a present Go installation is older than `1.26.0`. Review the [source](https://github.com/fabriziosalmi/caddy-waf/blob/main/install.sh) before piping it into a shell.
 
 A representative provisioning log:
 

@@ -11,7 +11,7 @@
 
 FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS builder
 
-# go.mod declares go 1.25.1 (propagated from caddy/v2, which requires it), so
+# go.mod declares go 1.26.0 (propagated from caddy/v2, which requires it), so
 # the toolchain here has to be at least that. It was pinned to 1.24 and only
 # worked because GOTOOLCHAIN=auto silently downloaded a newer one mid-build.
 
