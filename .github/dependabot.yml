@@ -23,6 +23,16 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # The OpenTelemetry *log* trio is an indirect dependency pulled in
+      # lockstep by Caddy's contrib/exporters/autoexport. Dependabot bumps one
+      # of the three on its own, which leaves the others behind and breaks the
+      # build (undefined: api.KeyValue). They are not imported directly here —
+      # the Caddy module graph governs them, and `go mod tidy` moves them
+      # together when Caddy updates. See closed PRs #215 and #218.
+      - dependency-name: "go.opentelemetry.io/otel/log"
+      - dependency-name: "go.opentelemetry.io/otel/sdk/log"
+      - dependency-name: "go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 
   - package-ecosystem: "docker"
     directory: "/"
