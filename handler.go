@@ -415,11 +415,20 @@ func (m *Middleware) copyResponse(w http.ResponseWriter, recorder *responseRecor
 }
 
 func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase int, state *WAFState) {
-	m.logger.Debug("Starting phase evaluation",
-		zap.Int("phase", phase),
-		zap.String("source_ip", r.RemoteAddr),
-		zap.String("user_agent", r.UserAgent()),
-	)
+	// m.logger.Debug(msg, fields...) heap-allocates the []zap.Field slice on
+	// every call regardless of level (Go builds the variadic before the call),
+	// so the per-phase / per-rule / per-target Debug logs below are guarded by
+	// a single level check instead of paying that allocation when debug is off,
+	// which is the default (#240). Output is unchanged when debug is enabled.
+	debugOn := m.logger.Core().Enabled(zapcore.DebugLevel)
+
+	if debugOn {
+		m.logger.Debug("Starting phase evaluation",
+			zap.Int("phase", phase),
+			zap.String("source_ip", r.RemoteAddr),
+			zap.String("user_agent", r.UserAgent()),
+		)
+	}
 
 	if phase == 1 {
 		// A whitelisted peer is exempt from the IP-reputation controls: the IP
@@ -436,7 +445,9 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		}
 
 		// IP blacklisting - the highest priority
-		m.logger.Debug("Checking for IP blacklisting", zap.String("remote_addr", r.RemoteAddr)) // Added log for checking before to isIPBlacklisted call
+		if debugOn {
+			m.logger.Debug("Checking for IP blacklisting", zap.String("remote_addr", r.RemoteAddr))
+		}
 		// Check the peer address FIRST and unconditionally.
 		//
 		// This used to consult X-Forwarded-For *instead of* r.RemoteAddr
@@ -614,12 +625,16 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 
 	rules, ok := m.Rules[phase]
 	if !ok {
-		m.logger.Debug("No rules found for phase", zap.Int("phase", phase))
+		if debugOn {
+			m.logger.Debug("No rules found for phase", zap.Int("phase", phase))
+		}
 		// Don't block on empty rules. There may be no rules specified
 		// return
 	}
 
-	m.logger.Debug("Starting rule evaluation for phase", zap.Int("phase", phase), zap.Int("rule_count", len(rules)))
+	if debugOn {
+		m.logger.Debug("Starting rule evaluation for phase", zap.Int("phase", phase), zap.Int("rule_count", len(rules)))
+	}
 
 	// Cache extracted target values for the duration of this phase. Many rules
 	// name the same target (e.g. HEADERS, URI, ARGS) and extraction is not free
@@ -652,7 +667,9 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 	}
 
 	for _, rule := range rules {
-		m.logger.Debug("Processing rule", zap.String("rule_id", rule.ID), zap.Int("target_count", len(rule.Targets)))
+		if debugOn {
+			m.logger.Debug("Processing rule", zap.String("rule_id", rule.ID), zap.Int("target_count", len(rule.Targets)))
+		}
 
 		// The rule ID is passed explicitly to every log/block call below via
 		// rule.ID; nothing reads it back out of the request context, so we do not
@@ -668,11 +685,13 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 			}
 			value, err := extract(target)
 			if err != nil {
-				m.logger.Debug("Failed to extract value for target, skipping rule for this target",
-					zap.String("target", target),
-					zap.String("rule_id", rule.ID),
-					zap.Error(err),
-				)
+				if debugOn {
+					m.logger.Debug("Failed to extract value for target, skipping rule for this target",
+						zap.String("target", target),
+						zap.String("rule_id", rule.ID),
+						zap.Error(err),
+					)
+				}
 				continue
 			}
 
@@ -738,7 +757,9 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		}
 	}
 
-	m.logger.Debug("Rule evaluation completed for phase", zap.Int("phase", phase))
+	if debugOn {
+		m.logger.Debug("Rule evaluation completed for phase", zap.Int("phase", phase))
+	}
 
 	if phase == 3 {
 		m.logger.Debug("Starting response headers phase")
@@ -754,11 +775,13 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 		}
 	}
 
-	m.logger.Debug("Completed phase evaluation",
-		zap.Int("phase", phase),
-		zap.Int("total_score", state.TotalScore),
-		zap.Int("anomaly_threshold", m.AnomalyThreshold),
-	)
+	if debugOn {
+		m.logger.Debug("Completed phase evaluation",
+			zap.Int("phase", phase),
+			zap.Int("total_score", state.TotalScore),
+			zap.Int("anomaly_threshold", m.AnomalyThreshold),
+		)
+	}
 
 	m.allowRequest(state)
 }
