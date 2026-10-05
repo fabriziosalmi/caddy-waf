@@ -39,7 +39,7 @@ Two stages:
 3. Downloads the GeoLite2 Country database from `https://git.io/GeoLite2-Country.mmdb` (a community mirror — see [geoblocking.md](geoblocking.md)).
 4. Cross-compiles with `GOARCH=$TARGETARCH` on the build platform, so an arm64 image costs no emulated compile.
 
-The builder image must be at least the Go version `go.mod` declares (`1.25.1`, propagated from `caddy/v2`). It was pinned to `1.24` until v0.4.0 and only worked because `GOTOOLCHAIN=auto` downloaded a newer toolchain mid-build.
+The builder image must be at least the Go version `go.mod` declares (`1.26.0`, propagated from `caddy/v2`). It was pinned to `1.24` until v0.4.0 and only worked because `GOTOOLCHAIN=auto` downloaded a newer toolchain mid-build.
 
 ### Stage 2 — runtime (`alpine:latest`)
 

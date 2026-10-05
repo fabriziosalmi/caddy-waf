@@ -142,11 +142,11 @@ It is also selectable on [caddyserver.com/download](https://caddyserver.com/down
 Images are published to GitHub Container Registry on every release tag, for `linux/amd64` and `linux/arm64`:
 
 ```bash
-docker pull ghcr.io/fabriziosalmi/caddy-waf:0.4.14
-docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.14
+docker pull ghcr.io/fabriziosalmi/caddy-waf:0.4.16
+docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.16
 ```
 
-Tags are `0.4.14`, `0.4` and `latest` — note there is **no `v` prefix**, unlike the Go module version. Pin an exact version in anything you deploy. See [`docs/docker.md`](docs/docker.md) for volumes, Compose, and hot reload.
+Tags are `0.4.16`, `0.4` and `latest` — note there is **no `v` prefix**, unlike the Go module version. Pin an exact version in anything you deploy. See [`docs/docker.md`](docs/docker.md) for volumes, Compose, and hot reload.
 
 ---
 
