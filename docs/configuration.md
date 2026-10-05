@@ -84,6 +84,7 @@ The full list is the `directiveHandlers` map in [`config.go`](https://github.com
 | Directive | Arguments | Default | Description |
 |---|---|---|---|
 | `metrics_endpoint` | `<path>` | unset | URL path for the JSON metrics document (must start with `/`). When unset, no metrics endpoint is exposed. |
+| `metrics_allow_from` | `<entry> [<entry> …]` | unset (no restriction) | IP/CIDR allow-list (or the token `private_ranges`) restricting who may reach the dashboard, metrics, and Prometheus endpoints. When unset there is no built-in restriction — protect them with Caddy auth or an internal listener as before. Repeatable. |
 | `prometheus_endpoint` | `<path>` | unset | URL path serving the WAF counters and a request-duration histogram in the **Prometheus** text exposition format (must start with `/`). Scrape it directly — no exporter needed. See [Prometheus](/prometheus). |
 | `log_path` | `<file>` | `debug.json` (Caddyfile) / `log.json` (Provision fallback) | File path for the JSON log sink. The middleware always writes to stdout in addition. |
 | `log_severity` | `debug` \| `info` \| `warn` \| `error` | `info` | Minimum log level for the WAF logger. |
@@ -96,16 +97,17 @@ The full list is the `directiveHandlers` map in [`config.go`](https://github.com
 | `whitelist_file` | `<file>` | unset | Path to a file of IPs/CIDR ranges (one per line, `#` comments allowed) exempt from the **IP-reputation** checks. Hot-reloaded on change — the whitelist counterpart to `ip_blacklist_file`. See [IP whitelist](#ip-whitelist). |
 | `trusted_proxies` | `<entry> [<entry> …]` | unset | Peers allowed to speak for their clients via `X-Forwarded-For` / `client_ip_header`: bare IPs, CIDR ranges, or `private_ranges`. Repeatable. Empty = ignore forwarding headers. See [Client IP & trusted proxies](/client-ip). |
 | `client_ip_header` | `<name>` | unset | A single-IP header (e.g. `CF-Connecting-IP`, `True-Client-IP`, `X-Real-IP`) read for the client IP once the peer is a trusted proxy, instead of `X-Forwarded-For`. |
-| `anomaly_threshold` | `<positive int>` | `5` (Caddyfile) / `20` (Provision fallback) | Score at which a request is blocked. Lower values are stricter. |
+| `anomaly_threshold` | `<positive int>` | `5` | Score at which a request is blocked. Lower values are stricter. The same default (`5`) applies to both the Caddyfile and JSON (Provision) sources. |
 | `log_scores_block` | (flag) | off | When present, `log`-mode rule scores count toward `anomaly_threshold` (legacy accumulation). Off by default: `log` rules are advisory and never block on their own. |
 | `max_request_body_size` | `<bytes>` | `10485760` (10 MiB) | Upper bound for request body reads via `io.LimitReader`. `0` means "use the default". |
+| `block_oversize_request_body` | `[on\|off]` | off | When a request body exceeds `max_request_body_size`, only its prefix is inspected. Off (default), the oversize case is logged and the request is forwarded; on, it fails closed (blocked) so a payload placed past the inspection window cannot evade body rules. A bare directive enables it. |
 | `max_response_body_size` | `<bytes>` | `10485760` (10 MiB) | Upper bound on how much of the response body is held in memory for Phase 4 inspection. `0` means "use the default". See [Response body buffering](#response-body-buffering). |
 | `block_countries` | `<mmdb> <ISO> [<ISO> …]` | disabled | Block requests whose source country (per the GeoLite2 Country MMDB) is in the list. |
 | `whitelist_countries` | `<mmdb> <ISO> [<ISO> …]` | disabled | Allow only requests whose source country is in the list. |
 | `block_asns` | `<mmdb> <ASN> [<ASN> …]` | disabled | Block requests whose source IP belongs to one of the listed ASNs. ASN values are decimal integers without a leading `AS`. |
 | `geoip_fail_open` | `[true\|false]` | `false` | When a GeoIP/ASN lookup fails (e.g. missing database), allow the request instead of blocking it with `403`. A bare directive enables it. See [Fail-safe behaviour](/security#request-time). |
 | `custom_response` | `<status> <content-type> <inline-body…>` _or_ `<status> <content-type> <file-path>` | unset | Custom block response. Repeat with different status codes. |
-| `redact_sensitive_data` | _(no args)_ | off | Redact sensitive query parameters and log fields. The redaction key list is in [`logging.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/logging.go) (`sensitiveKeys`). |
+| `redact_sensitive_data` | `[on\|off]` | **on** | Redact sensitive values in logs — both by target-name key and by value content. On by default; disable with `redact_sensitive_data off` (JSON: `false`). The redaction key list is in [`logging.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/logging.go) (`sensitiveKeys`). |
 | `tor` | block (see below) | disabled | Enable Tor exit-node blocking. |
 | `rate_limit` | block (see below) | disabled | Enable per-IP rate limiting. |
 
@@ -167,7 +169,7 @@ When the `waf` block is parsed, [`UnmarshalCaddyfile`](https://github.com/fabriz
 | `CountryWhitelist.Enabled` | `false` |
 | `BlockASNs.Enabled` | `false` |
 | `LogFilePath` | `debug.json` |
-| `RedactSensitiveData` | `false` |
+| `RedactSensitiveData` | unset (`nil`) → redaction **on** (disable with `redact_sensitive_data off`) |
 | `LogBuffer` | `1000` |
 | `Tor.Enabled` | `false` |
 | `Tor.TORIPBlacklistFile` | `tor_blacklist.txt` |
@@ -179,7 +181,7 @@ Additional defaults applied during `Provision` (after Caddyfile parsing):
 
 - If `LogSeverity` is empty → `info`.
 - If `LogFilePath` is empty → `log.json` (Provision fallback differs from the parser default).
-- If `AnomalyThreshold <= 0` → `20`.
+- If `AnomalyThreshold <= 0` → `5` (`defaultAnomalyThreshold`, the same value the Caddyfile parser sets).
 
 ---
 
