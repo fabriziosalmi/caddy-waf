@@ -48,7 +48,10 @@ jobs:
         run: |
           cd caddy-waf
           go mod tidy
-          go get -v github.com/fabriziosalmi/caddy-waf github.com/caddyserver/caddy/v2 github.com/oschwald/maxminddb-golang
+          # Pin caddy/v2 to the go.mod version; an unversioned `go get` upgrades
+          # it to the newest release (2.11.7 needs go >= 1.26) and breaks the
+          # build on Go 1.25. Keep in sync with the go.mod pin.
+          go get -v github.com/fabriziosalmi/caddy-waf github.com/caddyserver/caddy/v2@v2.11.4 github.com/oschwald/maxminddb-golang
 
       - name: Download GeoLite2 Country Database
         run: |
