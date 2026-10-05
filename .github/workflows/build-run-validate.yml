@@ -103,7 +103,12 @@ jobs:
         run: |
           cd caddy-waf
           go install github.com/caddyserver/xcaddy/cmd/xcaddy@v0.4.7
-          xcaddy build --with github.com/fabriziosalmi/caddy-waf=./
+          # Pin the Caddy version to the one go.mod requires, instead of letting
+          # xcaddy pull the newest release. A newer Caddy can raise its minimum
+          # Go version (2.11.7 needs go >= 1.26) and break this build on the
+          # go-version above for reasons unrelated to caddy-waf. Keep this in
+          # sync with the caddyserver/caddy/v2 pin in go.mod.
+          xcaddy build v2.11.4 --with github.com/fabriziosalmi/caddy-waf=./
 
       - name: Validate Build
         run: |
