@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.4.16] - 2026-10-05
+
+### Changed
+- **Builds now require Go 1.26.** Caddy 2.11.5+ and the OpenTelemetry 1.47 line raised their minimum Go version, so building the module (with `xcaddy`, `caddy add-package`, or from source) now needs Go 1.26 or newer. Bundled Caddy pin moved to 2.11.6.
+
+### Performance
+- **~60% fewer allocations on the request hot path**, with no behaviour change at any log level. Per-request `zap.Field` slices for several debug logs in `handlePhase` were being built even at the default `info` level; they are now gated behind a single debug-level check. The benign-request benchmark drops from 152 to 59 allocations/op (−61%) and ~16 KB to ~9 KB/op; a blocked request drops from 96 to 68 allocations/op. Also stopped formatting an error for every absent extraction target (sentinel errors) and computing log-field redaction before a match.
+
+### Tests
+- Regression and concurrency (`-race`) coverage for the rate-limiter `max_entries` memory bound.
+
+### Docs & site
+- SEO/discoverability for https://www.caddy-waf.com/: per-page `rel=canonical`, `SoftwareApplication` JSON-LD, `llms.txt`, `/.well-known/security.txt` (RFC 9116), descriptive titles, and `max-image-preview:large`.
+- Corrected documentation drift against shipped v0.4.15 behaviour (`redact_sensitive_data` default-on, single `anomaly_threshold` default of 5, and the `metrics_allow_from` / `block_oversize_request_body` directives).
+
+### Security
+- `get_blacklisted_ip.py` fetches the CI Army blocklist over HTTPS.
+
 ## [v0.4.15] - 2026-09-08
 
 ### Security
