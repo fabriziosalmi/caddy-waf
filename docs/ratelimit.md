@@ -23,6 +23,7 @@ waf {
 | `cleanup_interval` | Go duration | `300s` (5 min) | How often the cleanup goroutine sweeps expired entries from the in-memory map. |
 | `paths` | one or more regex patterns | empty | When non-empty (and `match_all_paths=false`), only requests whose path matches one of these regex patterns are subject to the limit. |
 | `match_all_paths` | `true` / `false` | `false` | When `true`, the limiter applies to **every** request regardless of `paths`. |
+| `max_entries` | positive integer | `1000000` | Upper bound on the number of distinct bucket keys tracked at once, so a flood of unique source IPs cannot grow the in-memory map without bound between cleanup sweeps. See [Behaviour](#behaviour). |
 
 The block is required to set `requests > 0` and `window > 0`; otherwise the parser rejects the configuration.
 
@@ -54,6 +55,7 @@ proxy shares the proxy's IP and collapses into one bucket. See
 - When the bucket counter exceeds `requests` within the active window, the request is blocked with HTTP `429 Too Many Requests` and the per-rate-limiter `blockedRequests` counter is incremented.
 - When the active window has expired, the bucket is reset (`count=1`, new `window=now`).
 - `cleanup_interval` ticks a background goroutine that walks the map and deletes buckets whose window is older than `window`.
+- The key table is bounded by `max_entries`. Once it is full, a request from a **new** key that is not yet tracked is allowed through without being counted (it is not rate-limited by this instance) rather than growing the map further; keys that are **already** tracked keep being counted normally, and a cleanup sweep frees capacity for new keys again. This is a deliberate memory bound: a flood of distinct source IPs cannot exhaust process memory, and — unlike an LRU — an attacker cannot evict and reset the counters of legitimate, already-tracked clients.
 
 ## Counters and metrics
 
