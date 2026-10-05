@@ -30,7 +30,7 @@ jobs:
       - name: Install Go 1.25
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: '1.25'
+          go-version: '1.26'
             
       - name: Clone caddy-waf Repository
         run: |
@@ -51,7 +51,7 @@ jobs:
           # Pin caddy/v2 to the go.mod version; an unversioned `go get` upgrades
           # it to the newest release (2.11.7 needs go >= 1.26) and breaks the
           # build on Go 1.25. Keep in sync with the go.mod pin.
-          go get -v github.com/fabriziosalmi/caddy-waf github.com/caddyserver/caddy/v2@v2.11.4 github.com/oschwald/maxminddb-golang
+          go get -v github.com/fabriziosalmi/caddy-waf github.com/caddyserver/caddy/v2@v2.11.6 github.com/oschwald/maxminddb-golang
 
       - name: Download GeoLite2 Country Database
         run: |
@@ -111,7 +111,7 @@ jobs:
           # Go version (2.11.7 needs go >= 1.26) and break this build on the
           # go-version above for reasons unrelated to caddy-waf. Keep this in
           # sync with the caddyserver/caddy/v2 pin in go.mod.
-          xcaddy build v2.11.4 --with github.com/fabriziosalmi/caddy-waf=./
+          xcaddy build v2.11.6 --with github.com/fabriziosalmi/caddy-waf=./
 
       - name: Validate Build
         run: |
