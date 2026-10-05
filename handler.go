@@ -676,13 +676,18 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 				continue
 			}
 
-			redactedValue := m.requestValueExtractor.RedactValueIfSensitive(target, value)
-
-			m.logger.Debug("Extracted value",
-				zap.String("rule_id", rule.ID),
-				zap.String("target", target),
-				zap.String("value", redactedValue),
-			)
+			// The extracted value is logged only at debug level. Redaction is
+			// computed lazily inside each Check below so the default (info) hot
+			// path pays nothing for it -- this runs once per rule*target,
+			// including the common no-match case, so the saving is on every
+			// benign request, not just matches.
+			if ce := m.logger.Check(zapcore.DebugLevel, "Extracted value"); ce != nil {
+				ce.Write(
+					zap.String("rule_id", rule.ID),
+					zap.String("target", target),
+					zap.String("value", m.requestValueExtractor.RedactValueIfSensitive(target, value)),
+				)
+			}
 
 			// Additive dual-match: test the raw value first, then a normalized
 			// copy. Because raw is tested first, a rule that matches today cannot
@@ -695,11 +700,13 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 				}
 			}
 			if matched {
-				m.logger.Debug("Rule matched",
-					zap.String("rule_id", rule.ID),
-					zap.String("target", target),
-					zap.String("value", redactedValue),
-				)
+				if ce := m.logger.Check(zapcore.DebugLevel, "Rule matched"); ce != nil {
+					ce.Write(
+						zap.String("rule_id", rule.ID),
+						zap.String("target", target),
+						zap.String("value", m.requestValueExtractor.RedactValueIfSensitive(target, value)),
+					)
+				}
 
 				// Dispatch the match. In the response phases (3/4) the recorder is
 				// the writer to record against; see dispatchRuleMatch.
@@ -720,11 +727,13 @@ func (m *Middleware) handlePhase(w http.ResponseWriter, r *http.Request, phase i
 					return
 				}
 			} else {
-				m.logger.Debug("Rule did not match",
-					zap.String("rule_id", rule.ID),
-					zap.String("target", target),
-					zap.String("value", redactedValue),
-				)
+				if ce := m.logger.Check(zapcore.DebugLevel, "Rule did not match"); ce != nil {
+					ce.Write(
+						zap.String("rule_id", rule.ID),
+						zap.String("target", target),
+						zap.String("value", m.requestValueExtractor.RedactValueIfSensitive(target, value)),
+					)
+				}
 			}
 		}
 	}
