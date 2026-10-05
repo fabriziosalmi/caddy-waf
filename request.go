@@ -3,6 +3,7 @@ package caddywaf
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,18 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
+)
+
+// Sentinel extraction errors for the common "target is simply absent or not
+// applicable in this phase" cases. They are returned as-is instead of a fresh
+// fmt.Errorf so the benign hot path does not allocate and format an error for
+// every missing target on every request (#238). The call sites already log the
+// target name at debug, and no caller branches on the message -- only on
+// err != nil -- so no information is lost.
+var (
+	errExtractTargetAbsent  = errors.New("extraction target not present")
+	errExtractTargetNotHere = errors.New("extraction target not accessible in this phase")
+	errExtractValueEmpty    = errors.New("extraction target value is empty")
 )
 
 // RequestValueExtractor struct
@@ -164,7 +177,7 @@ func (rve *RequestValueExtractor) extractSingleValue(target string, r *http.Requ
 			unredactedValue, err = rve.extractDynamicHeader(r.Header, strings.TrimPrefix(target, TargetHeadersPrefix), target)
 		case strings.HasPrefix(target, TargetResponseHeadersPrefix):
 			if w == nil {
-				return "", fmt.Errorf("response headers not accessible outside Phase 3/4 for target: %s", target)
+				return "", errExtractTargetNotHere
 			}
 			unredactedValue, err = rve.extractDynamicResponseHeader(w.Header(), strings.TrimPrefix(target, TargetResponseHeadersPrefix), target)
 		case strings.HasPrefix(target, TargetCookiesPrefix):
@@ -200,7 +213,7 @@ func (rve *RequestValueExtractor) extractSingleValue(target string, r *http.Requ
 func (rve *RequestValueExtractor) checkEmpty(value string, target, message string) error {
 	if value == "" {
 		rve.logger.Debug(message, zap.String("target", target))
-		return fmt.Errorf("%s for target: %s", message, target)
+		return errExtractValueEmpty
 	}
 	return nil
 }
@@ -280,11 +293,11 @@ func (rve *RequestValueExtractor) readAndRestoreBody(r *http.Request) ([]byte, e
 func (rve *RequestValueExtractor) extractBody(r *http.Request, target string) (string, error) {
 	if r.Body == nil {
 		rve.logger.Warn("Request body is nil", zap.String("target", target))
-		return "", fmt.Errorf("request body is nil for target: %s", target)
+		return "", errExtractTargetAbsent
 	}
 	if r.ContentLength == 0 {
 		rve.logger.Debug("Request body is empty", zap.String("target", target))
-		return "", fmt.Errorf("request body is empty for target: %s", target)
+		return "", errExtractValueEmpty
 	}
 	// ServeHTTP buffers the body up front and stashes the inspection window in
 	// the context; read it there so extraction never drains the body the
@@ -306,7 +319,7 @@ func (rve *RequestValueExtractor) extractBody(r *http.Request, target string) (s
 func (rve *RequestValueExtractor) extractAllHeaders(header http.Header, logMessage, target string) (string, error) {
 	if len(header) == 0 {
 		rve.logger.Debug(logMessage+" are empty", zap.String("target", target))
-		return "", fmt.Errorf("%s are empty for target: %s", logMessage, target)
+		return "", errExtractValueEmpty
 	}
 	headers := make([]string, 0)
 	for name, values := range header {
@@ -322,7 +335,7 @@ func (rve *RequestValueExtractor) extractAllHeaders(header http.Header, logMessa
 // See issue #144.
 func (rve *RequestValueExtractor) extractResponseHeaders(w http.ResponseWriter, target string) (string, error) {
 	if w == nil {
-		return "", fmt.Errorf("response headers not accessible outside Phase 3/4 for target: %s", target)
+		return "", errExtractTargetNotHere
 	}
 	return rve.extractAllHeaders(w.Header(), "Response headers", target)
 }
@@ -330,15 +343,15 @@ func (rve *RequestValueExtractor) extractResponseHeaders(w http.ResponseWriter, 
 // Helper function to extract response body (for phase 4)
 func (rve *RequestValueExtractor) extractResponseBody(w http.ResponseWriter, target string) (string, error) {
 	if w == nil {
-		return "", fmt.Errorf("response body not accessible outside Phase 4 for target: %s", target)
+		return "", errExtractTargetNotHere
 	}
 	recorder, ok := w.(*responseRecorder)
 	if !ok || recorder == nil {
-		return "", fmt.Errorf("response recorder not available for target: %s", target)
+		return "", errExtractTargetNotHere
 	}
 	if recorder.body.Len() == 0 {
 		rve.logger.Debug("Response body is empty", zap.String("target", target))
-		return "", fmt.Errorf("response body is empty for target: %s", target)
+		return "", errExtractValueEmpty
 	}
 	return recorder.BodyString(), nil
 }
@@ -378,7 +391,7 @@ func (rve *RequestValueExtractor) extractDynamicHeader(header http.Header, heade
 	headerValue := header.Get(headerName)
 	if headerValue == "" {
 		rve.logger.Debug("Header not found", zap.String("header", headerName), zap.String("target", target))
-		return "", fmt.Errorf("header '%s' not found for target: %s", headerName, target)
+		return "", errExtractTargetAbsent
 	}
 	return headerValue, nil
 }
@@ -386,12 +399,12 @@ func (rve *RequestValueExtractor) extractDynamicHeader(header http.Header, heade
 // Helper function to extract dynamic response header value (for phase 3)
 func (rve *RequestValueExtractor) extractDynamicResponseHeader(header http.Header, headerName, target string) (string, error) {
 	if header == nil {
-		return "", fmt.Errorf("response headers not available during this phase for target: %s", target)
+		return "", errExtractTargetNotHere
 	}
 	headerValue := header.Get(headerName)
 	if headerValue == "" {
 		rve.logger.Debug("Response header not found", zap.String("header", headerName), zap.String("target", target))
-		return "", fmt.Errorf("response header '%s' not found for target: %s", headerName, target)
+		return "", errExtractTargetAbsent
 	}
 	return headerValue, nil
 }
@@ -401,7 +414,7 @@ func (rve *RequestValueExtractor) extractDynamicCookie(r *http.Request, cookieNa
 	cookie, err := r.Cookie(cookieName)
 	if err != nil {
 		rve.logger.Debug("Cookie not found", zap.String("cookie", cookieName), zap.String("target", target))
-		return "", fmt.Errorf("cookie '%s' not found for target: %s", cookieName, target)
+		return "", errExtractTargetAbsent
 	}
 	return cookie.Value, nil
 }
@@ -428,11 +441,11 @@ func (rve *RequestValueExtractor) extractURLParam(url *url.URL, paramName string
 func (rve *RequestValueExtractor) extractValueForJSONPath(r *http.Request, jsonPath string, target string) (string, error) {
 	if r.Body == nil {
 		rve.logger.Warn("Request body is nil", zap.String("target", target))
-		return "", fmt.Errorf("request body is nil for target: %s", target)
+		return "", errExtractTargetAbsent
 	}
 	if r.ContentLength == 0 {
 		rve.logger.Debug("Request body is empty", zap.String("target", target))
-		return "", fmt.Errorf("request body is empty for target: %s", target)
+		return "", errExtractValueEmpty
 	}
 
 	bodyBytes, ok := r.Context().Value(bodyBufferKey{}).([]byte)
