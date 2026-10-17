@@ -19,39 +19,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Check out into ./caddy-waf: every step below works there. This used to
+      # check out into the workspace root and then `git clone` main from
+      # GitHub into ./caddy-waf, so on a pull request the job built and
+      # validated main, never the PR.
       - name: Checkout Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: caddy-waf
 
       - name: Install Dependencies
         run: |
           sudo apt update
           sudo apt install -y wget git build-essential curl python3 python3-pip
 
-      - name: Install Go 1.25
+      - name: Install Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.26'
             
-      - name: Clone caddy-waf Repository
-        run: |
-          git clone https://github.com/fabriziosalmi/caddy-waf.git
-          cd caddy-waf
-
-      - name: Validate Repository Cloning
-        run: |
-          if [ ! -d "caddy-waf" ]; then
-            echo "Repository cloning failed"
-            exit 1
-          fi
-
       - name: Install Go Dependencies
         run: |
           cd caddy-waf
           go mod tidy
-          # Pin caddy/v2 to the go.mod version; an unversioned `go get` upgrades
-          # it to the newest release (2.11.7 needs go >= 1.26) and breaks the
-          # build on Go 1.25. Keep in sync with the go.mod pin.
-          go get -v github.com/fabriziosalmi/caddy-waf github.com/caddyserver/caddy/v2@v2.11.6 github.com/oschwald/maxminddb-golang
+          # Build against the Caddy version go.mod requires, read from go.mod
+          # itself: a hand-copied pin drifted (v2.11.6 here, v2.11.7 in go.mod)
+          # as soon as Dependabot bumped go.mod. An unversioned `go get` would
+          # instead pull the newest Caddy, which can raise the minimum Go.
+          CADDY_VERSION=$(go list -m -f '{{.Version}}' github.com/caddyserver/caddy/v2)
+          echo "CADDY_VERSION=$CADDY_VERSION" >> "$GITHUB_ENV"
+          go get -v github.com/fabriziosalmi/caddy-waf github.com/caddyserver/caddy/v2@"$CADDY_VERSION" github.com/oschwald/maxminddb-golang
 
       - name: Download GeoLite2 Country Database
         run: |
@@ -106,12 +103,9 @@ jobs:
         run: |
           cd caddy-waf
           go install github.com/caddyserver/xcaddy/cmd/xcaddy@v0.4.7
-          # Pin the Caddy version to the one go.mod requires, instead of letting
-          # xcaddy pull the newest release. A newer Caddy can raise its minimum
-          # Go version (2.11.7 needs go >= 1.26) and break this build on the
-          # go-version above for reasons unrelated to caddy-waf. Keep this in
-          # sync with the caddyserver/caddy/v2 pin in go.mod.
-          xcaddy build v2.11.6 --with github.com/fabriziosalmi/caddy-waf=./
+          # The Caddy version go.mod requires (CADDY_VERSION, set above), not
+          # the newest release xcaddy would otherwise pick.
+          xcaddy build "$CADDY_VERSION" --with github.com/fabriziosalmi/caddy-waf=./
 
       - name: Validate Build
         run: |
