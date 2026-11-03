@@ -13,8 +13,9 @@ func (m *Middleware) allowRequest(state *WAFState) {
 	state.Blocked = false
 	state.StatusCode = http.StatusOK
 	state.ResponseWritten = false
-
-	m.incrementAllowedRequestsMetric()
+	// Not counted here: this runs at the end of every phase a request passes,
+	// so counting here counted one allowed request up to four times. ServeHTTP
+	// counts it once, where the request leaves the WAF.
 }
 
 // blockRequest handles blocking a request and logging the details.
@@ -35,20 +36,28 @@ func (m *Middleware) blockRequest(recorder http.ResponseWriter, r *http.Request,
 		zap.String("remote_addr", r.RemoteAddr),
 		zap.Int("total_score", state.TotalScore))...)
 
-	// CRITICAL FIX: Increment blocked metrics immediately
+	// The one place a block is counted, so blocked and allowed add up to the
+	// total (#248).
 	m.incrementBlockedRequestsMetric()
 
-	// Write a simple text response for blocked requests
+	// The one place the block response is written (#247). Headers go before
+	// WriteHeader, or the client never sees the custom Content-Type.
+	if custom, ok := m.CustomResponses[statusCode]; ok {
+		for k, v := range custom.Headers {
+			recorder.Header().Set(k, v)
+		}
+		recorder.WriteHeader(custom.StatusCode)
+		if _, err := recorder.Write([]byte(custom.Body)); err != nil {
+			m.logger.Error("Failed to write custom response body", zap.Error(err))
+		}
+		return
+	}
+
 	recorder.Header().Set("Content-Type", "text/plain")
 	recorder.WriteHeader(statusCode)
-
-	if m.CustomResponses != nil {
-		m.writeCustomResponse(recorder, state.StatusCode)
-	} else {
-		message := fmt.Sprintf("Request blocked by WAF. Reason: %s", reason)
-		if _, err := recorder.Write([]byte(message)); err != nil {
-			m.logger.Error("Failed to write blocked response", zap.Error(err))
-		}
+	message := fmt.Sprintf("Request blocked by WAF. Reason: %s", reason)
+	if _, err := recorder.Write([]byte(message)); err != nil {
+		m.logger.Error("Failed to write blocked response", zap.Error(err))
 	}
 }
 
