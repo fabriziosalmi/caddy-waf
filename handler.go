@@ -25,9 +25,26 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	reqStart := time.Now()
 	defer func() { m.observeLatency(time.Since(reqStart).Seconds()) }()
 
+	// The response recorder, once the request reaches the upstream. Declared
+	// here so the panic recovery below can see it.
+	var recorder *responseRecorder
+
 	// Add panic recovery to catch and log panics
 	defer func() {
 		if rec := recover(); rec != nil {
+			if rec == http.ErrAbortHandler {
+				// Caddy's way to abort a response mid-stream (reverse_proxy panics
+				// with it when a write to the client fails). When the upstream gave
+				// up because a response-phase rule refused its output, nothing of
+				// it reached the client and the block response still goes out.
+				// Otherwise the abort propagates: writing a 500 here would append
+				// it to a response the client is already reading.
+				if recorder != nil && recorder.blocked && !recorder.headerSent {
+					m.writeResponseBlock(w, recorder, logID)
+					return
+				}
+				panic(rec)
+			}
 			m.logger.Error("PANIC in ServeHTTP",
 				zap.String("log_id", logID),
 				zap.Any("panic", rec),
@@ -133,47 +150,43 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 	// Response capture and processing. The body is only buffered when Phase 4
 	// rules exist to inspect it, and never past MaxResponseBodySize, so a large
 	// or streaming upstream response cannot drive the process out of memory.
-	recorder := NewResponseRecorderWithLimit(w, m.MaxResponseBodySize, m.hasResponseBodyRules())
-	err := next.ServeHTTP(recorder, r)
+	recorder = NewResponseRecorderWithLimit(w, m.MaxResponseBodySize, m.hasResponseBodyRules())
 
-	// Phase 3: Response Header analysis
-	if m.isPhaseBlocked(recorder, r, 3, state) {
-		return nil // Request blocked in Phase 3, short-circuit
+	// Phase 3: Response Header analysis. It runs when the upstream's status line
+	// is about to go out (see responseRecorder.commitHeader), so a block decided
+	// on the headers is still in time: before this, Phase 3 ran after the
+	// upstream returned, when a streamed response was already on the wire.
+	if m.hasResponseHeaderRules() {
+		recorder.headerCheck = func() { m.isPhaseBlocked(recorder, r, 3, state) }
+	}
+	if recorder.headerCheck != nil || m.hasResponseBodyRules() {
+		// A response-phase block drops every header the upstream set; keep what
+		// was there before it ran (headers set by earlier handlers).
+		recorder.preHeader = w.Header().Clone()
 	}
 
-	// Phase 4: Response Body analysis (if not already blocked)
-	m.handleResponseBodyPhase(recorder, r, state)
+	err := next.ServeHTTP(recorder, r)
 
-	if state.Blocked {
-		// blockRequest already counted this block.
-		// In inspect mode the recorder held the status, so a Phase 3/4 block can
-		// still set it here. forwardHeader guards against a double WriteHeader when
-		// the recorder already streamed (passthrough), in which case the status was
-		// committed upstream and cannot be changed. The recorder's buffered body is
-		// discarded on the blocked path, so the block body is written straight to w.
-		if custom, ok := m.CustomResponses[state.StatusCode]; ok {
-			for k, v := range custom.Headers {
-				w.Header().Set(k, v)
-			}
-			recorder.forwardHeader(custom.StatusCode)
-			if _, err := w.Write([]byte(custom.Body)); err != nil {
-				m.logger.Error("Failed to write custom response body", zap.Error(err))
-			}
-		} else {
-			recorder.forwardHeader(state.StatusCode)
-			if _, err := w.Write([]byte("Request blocked by WAF.")); err != nil {
-				m.logger.Error("Failed to write blocked response body", zap.Error(err))
-			}
-		}
+	// Phase 3 for a response the upstream never committed (it wrote nothing),
+	// or that the recorder still holds in inspect mode. A no-op if it ran.
+	recorder.checkHeaders()
+
+	// Phase 4: Response Body analysis (if not already blocked)
+	if !recorder.blocked {
+		m.handleResponseBodyPhase(recorder, r, state)
+	}
+
+	if recorder.blocked {
+		// blockRequest already counted this block and left the response to us:
+		// exactly one block response, with none of the upstream's headers or
+		// body (or an abort, if part of the upstream's response already left).
+		m.writeResponseBlock(w, recorder, logID)
+		m.logRequestCompletion(logID, state)
 		return nil
 	}
 
-	// If not blocked, copy recorded response back to original writer
-	// Moved this inside if check to call only if not blocked
-	if !state.Blocked {
-		m.incrementAllowedRequestsMetric() // Increment here only if not blocked
-		m.copyResponse(w, recorder, r)
-	}
+	m.incrementAllowedRequestsMetric()
+	m.copyResponse(w, recorder, r)
 	m.logRequestCompletion(logID, state)
 
 	return err // Return any error from the next handler
@@ -258,6 +271,13 @@ func getLogID(ctx context.Context) string {
 // none is, the response body never has to be held in memory at all.
 func (m *Middleware) hasResponseBodyRules() bool {
 	return len(m.Rules[4]) > 0
+}
+
+// hasResponseHeaderRules reports whether any Phase 3 rule is configured. When
+// none is, the response's status line is forwarded as soon as the upstream
+// writes it, exactly as without the WAF.
+func (m *Middleware) hasResponseHeaderRules() bool {
+	return len(m.Rules[3]) > 0
 }
 
 // hasRequestBodyRules reports whether any request-phase rule reads the request
@@ -392,8 +412,11 @@ func (m *Middleware) copyResponse(w http.ResponseWriter, recorder *responseRecor
 		m.logger.Error("Log ID not found in context during response copy")
 	}
 	// In inspect mode the recorder held the status until now so a Phase 3/4 block
-	// could still set it; forward the (unblocked) status before the body.
-	recorder.forwardHeader(recorder.StatusCode())
+	// could still replace the response; forward the (unblocked) status before
+	// the body.
+	if !recorder.commitHeader(recorder.StatusCode()) {
+		return
+	}
 	_, err := w.Write(recorder.body.Bytes())
 	if err != nil {
 		m.logger.Error("Failed to write recorded response body to client", zap.Error(err), zap.String("log_id", logID))

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.4.17] - 2026-11-03
+
+### Security
+- **Response-phase block rules now block the response** (GHSA-rfqq-hwhp-26m7). A phase 3 (response header) rule with action `block` used to let the upstream response through: with no phase 4 rule loaded the client received the upstream status and body followed by the block message, and with a phase 4 rule loaded it received `200` with an empty body. Phase 3 now runs before the upstream's status line is sent, and a response-phase block sends exactly one block response (custom or default) with the block status.
+- **A phase 4 (response body) block no longer carries the upstream headers.** The block response used to keep the upstream `Content-Length` and every other upstream header, which leaked header values and broke the client read. The header map is reset to what earlier handlers set before the block response is written.
+
+### Fixed
+- A custom response for a blocked request is written once, with its own `Content-Type`, and a block is counted once, so `blocked` plus `allowed` adds up to the total (#247, #248).
+- When a response-phase block is decided after part of the upstream response already reached the client, the response is aborted instead of having the block message appended to it.
+
+### Changed
+- The default response-phase block body now includes the reason, like request-phase blocks.
+- The install script requires Go 1.26, matching `go.mod`.
+- Bundled Caddy pin moved to 2.11.7; dependency updates.
+
 ## [v0.4.16] - 2026-10-05
 
 ### Changed
