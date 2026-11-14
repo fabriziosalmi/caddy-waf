@@ -43,7 +43,7 @@ A representative provisioning log:
 ```
 INFO  Provisioning WAF middleware     {"log_level":"info","log_path":"debug.json","log_json":true,"anomaly_threshold":5}
 INFO  http.handlers.waf  Tor exit nodes updated  {"count":1093}
-INFO  WAF middleware version          {"version":"v0.4.17"}
+INFO  WAF middleware version          {"version":"v0.4.18"}
 INFO  Rate limit configuration        {"requests":100,"window":10,"cleanup_interval":300,"paths":["/api/v1/.*"],"match_all_paths":false}
 WARN  GeoIP database not found. Country blacklisting/whitelisting will be disabled  {"path":"GeoLite2-Country.mmdb"}
 INFO  IP blacklist loaded             {"path":"ip_blacklist.txt","valid_entries":223770,"invalid_entries":0,"total_lines":223770}
@@ -76,7 +76,7 @@ The module is registered in Caddy's package registry, so an existing Caddy v2.7+
 caddy add-package github.com/fabriziosalmi/caddy-waf
 ```
 
-This asks the Caddy build service for a binary containing your current module set plus `caddy-waf`, then replaces the binary in place (backing up the old one unless `--keep-backup` is passed). Pin a version with `@v0.4.17` if needed.
+This asks the Caddy build service for a binary containing your current module set plus `caddy-waf`, then replaces the binary in place (backing up the old one unless `--keep-backup` is passed). Pin a version with `@v0.4.18` if needed.
 
 The module is also selectable on <https://caddyserver.com/download>.
 
@@ -89,22 +89,22 @@ Caddy's maintainers are discussing whether to move `add-package`, `remove-packag
 Images are published to GitHub Container Registry on every release tag, for `linux/amd64` and `linux/arm64`. No Go toolchain, no build step:
 
 ```bash
-docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.17
+docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.18
 ```
 
 | Tag | Meaning |
 |---|---|
-| `0.4.17` | An exact release. **Prefer this in deployments.** |
+| `0.4.18` | An exact release. **Prefer this in deployments.** |
 | `0.4` | Latest patch of the 0.4 line. |
 | `latest` | Latest release, whatever it currently is. |
 
-The image tag carries **no `v` prefix**, unlike the Go module version: `@v0.4.17` for `add-package`, `:0.4.17` for `docker pull`.
+The image tag carries **no `v` prefix**, unlike the Go module version: `@v0.4.18` for `add-package`, `:0.4.18` for `docker pull`.
 
 See [docker.md](docker.md) for mounting rule files and blacklists, Docker Compose, and hot reload inside a container.
 
 ## Method 6 — Prebuilt binary
 
-Releases after v0.4.17 attach one archive per platform to the [GitHub release](https://github.com/fabriziosalmi/caddy-waf/releases): `linux` and `darwin` on `amd64` and `arm64`, and `windows` on `amd64`. Each archive holds a Caddy binary with caddy-waf compiled in, built with `xcaddy` against the Caddy version in `go.mod`, plus `LICENSE`, `README.md` and the default `rules.json`.
+From v0.4.18, releases attach one archive per platform to the [GitHub release](https://github.com/fabriziosalmi/caddy-waf/releases): `linux` and `darwin` on `amd64` and `arm64`, and `windows` on `amd64`. Each archive holds a Caddy binary with caddy-waf compiled in, built with `xcaddy` against the Caddy version in `go.mod`, plus `LICENSE`, `README.md` and the default `rules.json`.
 
 > [!NOTE]
 > The archives attached to v0.4.17 and earlier releases do not contain a runnable program: they are Go package archives of the module. Use any other method for those versions.

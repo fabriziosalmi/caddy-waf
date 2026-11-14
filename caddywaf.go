@@ -64,7 +64,7 @@ var ModuleVersion string
 // test binary). Keep it a plain, single-line string literal: the docs config
 // (docs/.vitepress/config.mts) scrapes this constant from the source, so a
 // computed value would break the docs build. Bump it with every release.
-const wafVersionDefault = "v0.4.17"
+const wafVersionDefault = "v0.4.18"
 
 // wafVersion is the version the WAF reports in logs, metrics and build_info.
 // See resolveVersion (version.go) for the precedence.
