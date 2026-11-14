@@ -6,6 +6,7 @@ caddy
 *.so
 *.dylib
 bin/
+dist/
 
 # Go
 vendor/

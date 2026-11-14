@@ -6,8 +6,9 @@ on:
       - 'v*' # Trigger when a tag matching v* is pushed (e.g., v1.0.0)
   workflow_dispatch:  # Allow manual triggering from the GitHub UI
 
+# Read-only by default; only create-release gets write access.
 permissions:
-  contents: write # Grant write permission for release creation
+  contents: read
 
 jobs:
   build-and-release:
@@ -28,24 +29,67 @@ jobs:
         with:
           go-version: '1.26' # Use your desired go version
 
-      - name: Extract Tag Name
-        id: extract_tag
-        if: startsWith(github.ref, 'refs/tags/')
-        run: echo "TAG_NAME=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_OUTPUT
+      - name: Install xcaddy
+        # Pinned, same version as the Dockerfile and build-run-validate.yml.
+        run: go install github.com/caddyserver/xcaddy/cmd/xcaddy@v0.4.7
 
-      - name: Build Binary
+      # Each archive holds a Caddy binary with caddy-waf compiled in. The
+      # previous step ran `go build` on the module itself, which is a library:
+      # the "binaries" it shipped were Go package archives that could not run.
+      - name: Build Caddy with caddy-waf
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
+          TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+        run: .github/scripts/build-release.sh
+
+      # The runner is linux/amd64, so that archive can be executed here: the
+      # binary must start, load the WAF with the bundled rules.json, and report
+      # the tag as its version on the metrics endpoint.
+      - name: Smoke-test the linux/amd64 binary
+        if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
+        env:
+          TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
         run: |
-          GOOS=${GOOS} GOARCH=${GOARCH} go build -ldflags "-X 'github.com/fabriziosalmi/caddy-waf.ModuleVersion=${{ steps.extract_tag.outputs.TAG_NAME }}'" -o caddy-waf-${GOOS}-${GOARCH}
-          tar czf caddy-waf-${GOOS}-${GOARCH}.tar.gz caddy-waf-${GOOS}-${GOARCH}
+          set -euo pipefail
+          dir=$(mktemp -d)
+          tar -C "$dir" -xzf dist/caddy-waf_*_linux_amd64.tar.gz
+          cd "$dir"/caddy-waf_*_linux_amd64
+          ./caddy version
+          ./caddy list-modules | grep -qx 'http.handlers.waf'
+          cat > Caddyfile <<'CADDY'
+          {
+            auto_https off
+            admin off
+          }
+          :18081 {
+            route {
+              waf {
+                rule_file rules.json
+                metrics_endpoint /waf_metrics
+              }
+              respond "ok" 200
+            }
+          }
+          CADDY
+          ./caddy run --config Caddyfile --adapter caddyfile > caddy.log 2>&1 &
+          pid=$!
+          for _ in $(seq 1 50); do curl -fsS -o /dev/null http://localhost:18081/ 2>/dev/null && break; sleep 0.2; done
+          version=$(curl -fsS http://localhost:18081/waf_metrics | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')
+          kill "$pid"
+          echo "reported version: $version"
+          if [ -n "$TAG" ] && [ "$version" != "$TAG" ]; then
+            echo "error: binary reports $version, expected $TAG" >&2
+            cat caddy.log >&2
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: caddy-waf-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: caddy-waf-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
+          path: dist/*.tar.gz
+          if-no-files-found: error
 
   create-release:
     runs-on: ubuntu-latest
@@ -61,7 +105,7 @@ jobs:
       - name: Extract Tag Name
         id: extract_tag
         if: startsWith(github.ref, 'refs/tags/')
-        run: echo "TAG_NAME=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_OUTPUT
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
       - name: Download all artifacts
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
@@ -75,11 +119,13 @@ jobs:
           # Flatten artifacts structure (download-artifact puts them in subdirs matches artifact name)
           # But we want all .tar.gz in current dir
           find . -name "*.tar.gz" -exec mv {} . \;
-          
+          sha256sum caddy-waf_*.tar.gz > SHA256SUMS
+          cat SHA256SUMS
+
           echo "Creating or updating release for $TAG_NAME..."
           # Try to create release with assets. If it fails (exists), upload assets.
-          gh release create "$TAG_NAME" *.tar.gz --title "$TAG_NAME" --generate-notes || \
-          gh release upload "$TAG_NAME" *.tar.gz --clobber
+          gh release create "$TAG_NAME" caddy-waf_*.tar.gz SHA256SUMS --title "$TAG_NAME" --generate-notes || \
+          gh release upload "$TAG_NAME" caddy-waf_*.tar.gz SHA256SUMS --clobber
 
       # Software Bill of Materials for the release (SPDX), attached as an asset.
       - name: Generate SBOM
@@ -103,4 +149,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: "*.tar.gz"
+          subject-path: "caddy-waf_*.tar.gz"

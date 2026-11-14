@@ -148,6 +148,10 @@ docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.17
 
 Tags are `0.4.17`, `0.4` and `latest` — note there is **no `v` prefix**, unlike the Go module version. Pin an exact version in anything you deploy. See [`docs/docker.md`](docs/docker.md) for volumes, Compose, and hot reload.
 
+### Method 6 — Prebuilt binary
+
+Releases after v0.4.17 attach a Caddy binary with caddy-waf compiled in for linux and macOS (amd64, arm64) and Windows (amd64), with `SHA256SUMS` and a build provenance attestation. The archives on v0.4.17 and earlier are not runnable. See [`docs/installation.md`](docs/installation.md) for download and verification.
+
 ---
 
 ## Minimal Caddyfile
