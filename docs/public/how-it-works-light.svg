@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="584" viewBox="0 0 1000 584" role="img" aria-labelledby="title desc">
+<title id="title">How caddy-waf inspects a request</title>
+<desc id="desc">caddy-waf runs inside Caddy. Phase 1 checks the client against an IP allowlist, IP and DNS blacklists, a rate limit and country and ASN lists, then runs rules on the URL and headers. Phase 2 runs rules on the request body. Matching rules add to an anomaly score; at the threshold, or on a rule with action block, the request is answered with 403 and never reaches the application. Phases 3 and 4 run rules on the response headers and body before the response returns to the client.</desc>
+<defs>
+<marker id="arrow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#59636e"/></marker>
+<marker id="arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0969da"/></marker>
+<marker id="arrow-block" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#cf222e"/></marker>
+</defs>
+<rect x="150" y="14" width="670" height="556" rx="14" fill="#ffffff" stroke="#d1d9e0" stroke-width="1.5"/>
+<text x="170" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#1f2328" text-anchor="start">Caddy</text>
+<text x="222" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#59636e" text-anchor="start">waf handler (http.handlers.waf), inside your route</text>
+<rect x="16" y="110" width="110" height="48" rx="24" fill="#f6f8fa" stroke="#d1d9e0" stroke-width="1"/>
+<text x="71" y="139" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#1f2328" text-anchor="middle">Client</text>
+<rect x="846" y="110" width="138" height="48" rx="10" fill="#f6f8fa" stroke="#d1d9e0" stroke-width="1"/>
+<text x="915" y="132" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#1f2328" text-anchor="middle">Your app</text>
+<text x="915" y="149" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#59636e" text-anchor="middle">reverse_proxy, files</text>
+<text x="170" y="76" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#59636e" text-anchor="start">REQUEST</text>
+<text x="170" y="404" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#59636e" text-anchor="start">RESPONSE</text>
+<rect x="170" y="88" width="330" height="284" rx="10" fill="#f6f8fa" stroke="#d1d9e0" stroke-width="1"/>
+<text x="186" y="114" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#0969da" text-anchor="start">Phase 1</text>
+<text x="248" y="114" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#59636e" text-anchor="start">who is asking, and for what</text>
+<circle cx="196" cy="146" r="10" fill="#ddf4ff"/>
+<text x="196" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#0969da" text-anchor="middle">1</text>
+<text x="214" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#1f2328" text-anchor="start">IP allowlist</text>
+<text x="320" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#59636e" text-anchor="start">skips checks 2 and 5</text>
+<circle cx="196" cy="182" r="10" fill="#ddf4ff"/>
+<text x="196" y="186" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#0969da" text-anchor="middle">2</text>
+<text x="214" y="186" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#1f2328" text-anchor="start">IP blacklist</text>
+<text x="320" y="186" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#59636e" text-anchor="start">peer and X-Forwarded-For</text>
+<circle cx="196" cy="218" r="10" fill="#ddf4ff"/>
+<text x="196" y="222" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#0969da" text-anchor="middle">3</text>
+<text x="214" y="222" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#1f2328" text-anchor="start">DNS blacklist</text>
+<text x="320" y="222" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#59636e" text-anchor="start">Host header</text>
+<circle cx="196" cy="254" r="10" fill="#ddf4ff"/>
+<text x="196" y="258" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#0969da" text-anchor="middle">4</text>
+<text x="214" y="258" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#1f2328" text-anchor="start">Rate limit</text>
+<text x="320" y="258" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#59636e" text-anchor="start">per client IP, 429</text>
+<circle cx="196" cy="290" r="10" fill="#ddf4ff"/>
+<text x="196" y="294" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#0969da" text-anchor="middle">5</text>
+<text x="214" y="294" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#1f2328" text-anchor="start">Country, ASN</text>
+<text x="320" y="294" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#59636e" text-anchor="start">MaxMind GeoLite2</text>
+<circle cx="196" cy="326" r="10" fill="#ddf4ff"/>
+<text x="196" y="330" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#0969da" text-anchor="middle">6</text>
+<text x="214" y="330" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#1f2328" text-anchor="start">Rules</text>
+<text x="320" y="330" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#59636e" text-anchor="start">URL, query, headers, cookies</text>
+<text x="186" y="356" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#cf222e" text-anchor="start">A hit on 2, 3 or 5 is answered 403 at once.</text>
+<rect x="520" y="88" width="280" height="92" rx="10" fill="#f6f8fa" stroke="#d1d9e0" stroke-width="1"/>
+<text x="536" y="114" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#0969da" text-anchor="start">Phase 2</text>
+<text x="598" y="114" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#59636e" text-anchor="start">request body</text>
+<text x="536" y="140" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#1f2328" text-anchor="start">Rules on the body, JSON fields</text>
+<text x="536" y="160" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#1f2328" text-anchor="start">and uploaded file names</text>
+<rect x="520" y="200" width="280" height="172" rx="10" fill="#ffebe9" stroke="#cf222e" stroke-width="1"/>
+<text x="536" y="226" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#cf222e" text-anchor="start">Anomaly score</text>
+<text x="536" y="252" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#1f2328" text-anchor="start">Each matching rule adds its score.</text>
+<text x="536" y="272" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#1f2328" text-anchor="start">Blocked when the total reaches</text>
+<text x="536" y="292" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#1f2328" text-anchor="start">anomaly_threshold, or at once when</text>
+<text x="536" y="312" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#1f2328" text-anchor="start">the rule's action is block.</text>
+<text x="536" y="348" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#cf222e" text-anchor="start">403, and your app never sees it</text>
+<rect x="520" y="416" width="280" height="70" rx="10" fill="#f6f8fa" stroke="#d1d9e0" stroke-width="1"/>
+<text x="536" y="442" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#0969da" text-anchor="start">Phase 3</text>
+<text x="598" y="442" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#59636e" text-anchor="start">response headers</text>
+<text x="536" y="466" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#1f2328" text-anchor="start">Rules on the headers your app sends</text>
+<rect x="170" y="416" width="330" height="70" rx="10" fill="#f6f8fa" stroke="#d1d9e0" stroke-width="1"/>
+<text x="186" y="442" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#0969da" text-anchor="start">Phase 4</text>
+<text x="248" y="442" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#59636e" text-anchor="start">response body</text>
+<text x="186" y="466" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#1f2328" text-anchor="start">Rules on the body your app sends</text>
+<text x="170" y="510" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#cf222e" text-anchor="start">A blocking match in phase 3 or 4 replaces the response with the block response.</text>
+<text x="170" y="552" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#59636e" text-anchor="start">Visible in /waf_metrics (JSON), Prometheus, the built-in dashboard and JSON logs</text>
+<path d="M126,134 L168,134" fill="none" stroke="#59636e" stroke-width="1.5" marker-end="url(#arrow-arrow)"/>
+<path d="M500,134 L518,134" fill="none" stroke="#59636e" stroke-width="1.5" marker-end="url(#arrow-arrow)"/>
+<path d="M800,134 L844,134" fill="none" stroke="#59636e" stroke-width="1.5" marker-end="url(#arrow-arrow)"/>
+<path d="M660,180 L660,198" fill="none" stroke="#cf222e" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrow-block)"/>
+<path d="M500,326 L518,326" fill="none" stroke="#cf222e" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrow-block)"/>
+<path d="M915,158 L915,451 L802,451" fill="none" stroke="#59636e" stroke-width="1.5" marker-end="url(#arrow-arrow)"/>
+<path d="M520,451 L502,451" fill="none" stroke="#59636e" stroke-width="1.5" marker-end="url(#arrow-arrow)"/>
+<path d="M170,451 L71,451 L71,160" fill="none" stroke="#59636e" stroke-width="1.5" marker-end="url(#arrow-arrow)"/>
+</svg>
