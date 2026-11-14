@@ -59,21 +59,16 @@ var (
 // instead of being silently dropped by the linker.
 var ModuleVersion string
 
-// wafVersionDefault is the fallback version for non-release builds (releases
-// carry the git tag via ModuleVersion). Keep it a plain, single-line string
-// literal: the docs config (docs/.vitepress/config.mts) scrapes this constant
-// from the source, so a computed value would break the docs build.
-const wafVersionDefault = "v0.4.16"
+// wafVersionDefault is the last-resort version, used only when neither
+// ModuleVersion nor the Go build info carries one (a local `=./` build, a
+// test binary). Keep it a plain, single-line string literal: the docs config
+// (docs/.vitepress/config.mts) scrapes this constant from the source, so a
+// computed value would break the docs build. Bump it with every release.
+const wafVersionDefault = "v0.4.17"
 
 // wafVersion is the version the WAF reports in logs, metrics and build_info.
-// The release build injects ModuleVersion (from the git tag) which takes
-// precedence; otherwise wafVersionDefault is used.
-var wafVersion = func() string {
-	if ModuleVersion != "" {
-		return ModuleVersion
-	}
-	return wafVersionDefault
-}()
+// See resolveVersion (version.go) for the precedence.
+var wafVersion = resolveVersion(ModuleVersion, readBuildInfo)
 
 // defaultAnomalyThreshold is the single source of truth for the cumulative
 // anomaly score at which a request is blocked when the operator does not set

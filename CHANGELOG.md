@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **The WAF reports the version it was built at.** Binaries from `caddy add-package`, caddyserver.com/download and `xcaddy build --with github.com/fabriziosalmi/caddy-waf@vX.Y.Z` used to report the hard-coded fallback (`v0.4.17` builds said `v0.4.16`) in the startup log, the JSON metrics and `caddywaf_build_info`. The version is now read from the Go build info. A build injected with `-ldflags -X ...ModuleVersion=` still takes precedence; a build from a local directory (`--with ...=./`) falls back to the constant.
+
 ## [v0.4.17] - 2026-11-03
 
 ### Security
