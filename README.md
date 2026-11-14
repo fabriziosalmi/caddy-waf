@@ -6,6 +6,11 @@ A Web Application Firewall middleware for the [Caddy](https://caddyserver.com/) 
 [![CodeQL](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/github-code-scanning/codeql)
 [![Build, Run and Validate](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/build-run-validate.yml/badge.svg)](https://github.com/fabriziosalmi/caddy-waf/actions/workflows/build-run-validate.yml)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/public/how-it-works-dark.svg">
+  <img alt="How caddy-waf inspects a request inside Caddy: phase 1 checks the IP allowlist, IP and DNS blacklists, rate limit, country and ASN, then runs rules on the URL and headers; phase 2 runs rules on the request body; matching rules add to an anomaly score and a blocked request gets 403 without reaching your app; phases 3 and 4 run rules on the response headers and body." src="docs/public/how-it-works-light.svg" width="100%">
+</picture>
+
 - **Module ID**: `http.handlers.waf` — [registered in Caddy's package registry](https://caddyserver.com/docs/modules/http.handlers.waf), so the module is selectable on the [download page](https://caddyserver.com/download?package=github.com%2Ffabriziosalmi%2Fcaddy-waf)
 - **Go module path**: `github.com/fabriziosalmi/caddy-waf`
 - **Current version**: `v0.4.17` (see [`caddywaf.go`](caddywaf.go) — `const wafVersionDefault`)
