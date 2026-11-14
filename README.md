@@ -115,19 +115,6 @@ xcaddy build --with github.com/fabriziosalmi/caddy-waf=./
 
 ### Method 4 — `caddy add-package`
 
-> [!IMPORTANT]
-> **Prefer `xcaddy` or the container image.** Caddy's maintainers have proposed
-> moving `add-package`, `remove-package` and `upgrade` out of Caddy's core to
-> discourage their use ([caddyserver/caddy#7010](https://github.com/caddyserver/caddy/issues/7010)):
-> the commands call Caddy's shared build server, and using them in CI/CD is an
-> anti-pattern. Raised for this project in
-> [#138](https://github.com/fabriziosalmi/caddy-waf/issues/138) by a Caddy
-> maintainer.
->
-> The command works today and the module remains registered, so this section
-> stays accurate. Treat it as a convenience for one-off, hand-operated installs
-> — not as the way to build or deploy caddy-waf.
-
 The module is registered in Caddy's package registry, so an existing Caddy v2.7+ binary can pull it in without a Go toolchain:
 
 ```bash
@@ -136,6 +123,8 @@ caddy list-modules | grep waf   # expect: http.handlers.waf
 ```
 
 It is also selectable on [caddyserver.com/download](https://caddyserver.com/download). See [`docs/add-package-guide.md`](docs/add-package-guide.md) for version pinning, removal, and when to prefer `xcaddy` instead.
+
+Caddy's maintainers are discussing whether to move `add-package`, `remove-package` and `upgrade` out of Caddy's core ([caddyserver/caddy#7010](https://github.com/caddyserver/caddy/issues/7010), open since May 2025). The commands still ship in Caddy 2.11 and rely on Caddy's shared build server, so use `xcaddy` or Docker for anything you deploy or automate.
 
 ### Method 5 — Docker
 
