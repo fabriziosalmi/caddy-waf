@@ -36,7 +36,7 @@ Without arguments xcaddy picks the latest Caddy release and the latest version o
 
 ```bash
 xcaddy build v2.11.7 \
-    --with github.com/fabriziosalmi/caddy-waf@v0.4.17
+    --with github.com/fabriziosalmi/caddy-waf@v0.4.18
 ```
 
 The first argument is the Caddy version (when omitted, xcaddy uses the `CADDY_VERSION` environment variable, or the latest release); `@version` pins a module.
@@ -47,7 +47,7 @@ Repeat `--with` once per module. For example caddy-waf together with the Cloudfl
 
 ```bash
 xcaddy build v2.11.7 \
-    --with github.com/fabriziosalmi/caddy-waf@v0.4.17 \
+    --with github.com/fabriziosalmi/caddy-waf@v0.4.18 \
     --with github.com/caddy-dns/cloudflare
 ./caddy list-modules | grep -E 'http.handlers.waf|dns.providers.cloudflare'
 ```
@@ -58,7 +58,7 @@ xcaddy honours `GOOS` and `GOARCH`, so a Linux server binary can be built on a M
 
 ```bash
 GOOS=linux GOARCH=amd64 xcaddy build v2.11.7 \
-    --with github.com/fabriziosalmi/caddy-waf@v0.4.17
+    --with github.com/fabriziosalmi/caddy-waf@v0.4.18
 ```
 
 ### Build from a local checkout
@@ -78,7 +78,7 @@ The official `caddy` images come in a `-builder` variant that already contains G
 ```dockerfile
 FROM caddy:2.11-builder AS builder
 RUN xcaddy build \
-    --with github.com/fabriziosalmi/caddy-waf@v0.4.17
+    --with github.com/fabriziosalmi/caddy-waf@v0.4.18
 
 FROM caddy:2.11
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy

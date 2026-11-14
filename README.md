@@ -13,7 +13,7 @@ A Web Application Firewall middleware for the [Caddy](https://caddyserver.com/) 
 
 - **Module ID**: `http.handlers.waf` — [registered in Caddy's package registry](https://caddyserver.com/docs/modules/http.handlers.waf), so the module is selectable on the [download page](https://caddyserver.com/download?package=github.com%2Ffabriziosalmi%2Fcaddy-waf)
 - **Go module path**: `github.com/fabriziosalmi/caddy-waf`
-- **Current version**: `v0.4.17` (see [`caddywaf.go`](caddywaf.go) — `const wafVersionDefault`)
+- **Current version**: `v0.4.18` (see [`caddywaf.go`](caddywaf.go) — `const wafVersionDefault`)
 - **License**: AGPL-3.0 — note this is a copyleft licence; check it suits your deployment before integrating
 
 ---
@@ -72,7 +72,7 @@ A representative provisioning log:
 ```
 INFO  Provisioning WAF middleware     {"log_level":"info","log_path":"debug.json","log_json":true,"anomaly_threshold":5}
 INFO  http.handlers.waf  Tor exit nodes updated  {"count":1093}
-INFO  WAF middleware version  {"version":"v0.4.17"}
+INFO  WAF middleware version  {"version":"v0.4.18"}
 INFO  Rate limit configuration  {"requests":100,"window":10,"cleanup_interval":300,"paths":["/api/v1/.*"],"match_all_paths":false}
 WARN  GeoIP database not found. Country blacklisting/whitelisting will be disabled  {"path":"GeoLite2-Country.mmdb"}
 INFO  IP blacklist loaded     {"path":"ip_blacklist.txt","valid_entries":223770,"invalid_entries":0,"total_lines":223770}
@@ -136,15 +136,15 @@ Caddy's maintainers are discussing whether to move `add-package`, `remove-packag
 Images are published to GitHub Container Registry on every release tag, for `linux/amd64` and `linux/arm64`:
 
 ```bash
-docker pull ghcr.io/fabriziosalmi/caddy-waf:0.4.17
-docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.17
+docker pull ghcr.io/fabriziosalmi/caddy-waf:0.4.18
+docker run --rm -p 8080:8080 ghcr.io/fabriziosalmi/caddy-waf:0.4.18
 ```
 
-Tags are `0.4.17`, `0.4` and `latest` — note there is **no `v` prefix**, unlike the Go module version. Pin an exact version in anything you deploy. See [`docs/docker.md`](docs/docker.md) for volumes, Compose, and hot reload.
+Tags are `0.4.18`, `0.4` and `latest` — note there is **no `v` prefix**, unlike the Go module version. Pin an exact version in anything you deploy. See [`docs/docker.md`](docs/docker.md) for volumes, Compose, and hot reload.
 
 ### Method 6 — Prebuilt binary
 
-Releases after v0.4.17 attach a Caddy binary with caddy-waf compiled in for linux and macOS (amd64, arm64) and Windows (amd64), with `SHA256SUMS` and a build provenance attestation. The archives on v0.4.17 and earlier are not runnable. See [`docs/installation.md`](docs/installation.md) for download and verification.
+From v0.4.18, releases attach a Caddy binary with caddy-waf compiled in for linux and macOS (amd64, arm64) and Windows (amd64), with `SHA256SUMS` and a build provenance attestation. The archives on v0.4.17 and earlier are not runnable. See [`docs/installation.md`](docs/installation.md) for download and verification.
 
 ---
 
