@@ -21,7 +21,7 @@ const wafVersion = (() => {
 export default defineConfig({
   title: 'caddy-waf',
   description:
-    'Web Application Firewall middleware for Caddy — regex rule engine with anomaly scoring, IP/DNS/ASN/country blacklists, rate limiting, and a JSON metrics endpoint.',
+    'Open-source web application firewall for Caddy: regex rules with anomaly scoring, IP, country and ASN blocking, rate limiting and a built-in dashboard.',
   lang: 'en-US',
 
   // Served from the custom domain https://www.caddy-waf.com/ (CNAME in docs/public),
@@ -45,11 +45,22 @@ export default defineConfig({
     const path = pageData.relativePath === 'index.md'
       ? ''
       : pageData.relativePath.replace(/\.md$/, '')
-    pageData.frontmatter.head ??= []
-    pageData.frontmatter.head.push([
-      'link',
-      { rel: 'canonical', href: `${site}${path}` },
-    ])
+    const url = `${site}${path}`
+    // Per-page title and description for link previews. These used to be
+    // site-wide constants, so every shared page claimed to be the home page
+    // (og:url) and carried the same title and summary.
+    const fm = pageData.frontmatter
+    const title = fm.titleTemplate === false || !pageData.title
+      ? (pageData.title || 'caddy-waf')
+      : `${pageData.title} | caddy-waf`
+    const description = pageData.description || fm.description || ''
+    fm.head ??= []
+    fm.head.push(
+      ['link', { rel: 'canonical', href: url }],
+      ['meta', { property: 'og:url', content: url }],
+      ['meta', { property: 'og:title', content: title }],
+      ['meta', { property: 'og:description', content: description }],
+    )
   },
 
   markdown: {
@@ -72,21 +83,11 @@ export default defineConfig({
     ['meta', { name: 'theme-color', content: '#0369a1' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: 'caddy-waf' }],
-    ['meta', { property: 'og:title', content: 'caddy-waf — Web Application Firewall for Caddy' }],
-    [
-      'meta',
-      {
-        property: 'og:description',
-        content:
-          'Regex rule engine with anomaly scoring, blacklists, geo and ASN filtering, and rate limiting. Registered Caddy module http.handlers.waf.',
-      },
-    ],
     // Absolute URL: relative og:image values are not resolved by most crawlers.
     // PNG rather than SVG, which several of them refuse to render.
     ['meta', { property: 'og:image', content: `${site}og.png` }],
     ['meta', { property: 'og:image:width', content: '1200' }],
     ['meta', { property: 'og:image:height', content: '630' }],
-    ['meta', { property: 'og:url', content: site }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:image', content: `${site}og.png` }],
     // Let Google Discover show large image previews rather than a thumbnail.
@@ -108,7 +109,7 @@ export default defineConfig({
         '@type': 'SoftwareApplication',
         name: 'caddy-waf',
         description:
-          'Web Application Firewall middleware for Caddy — regex rule engine with anomaly scoring, IP/DNS/ASN/country blacklists, rate limiting, and a JSON metrics endpoint.',
+          'Open-source web application firewall for Caddy: regex rules with anomaly scoring, IP, country and ASN blocking, rate limiting and a built-in dashboard.',
         url: site,
         applicationCategory: 'SecurityApplication',
         operatingSystem: 'Linux, macOS, Windows',
@@ -157,6 +158,7 @@ export default defineConfig({
         items: [
           { text: 'Introduction', link: '/introduction' },
           { text: 'Installation', link: '/installation' },
+          { text: 'Build Caddy with plugins', link: '/build-caddy' },
           { text: 'caddy add-package', link: '/add-package-guide' },
           { text: 'Docker', link: '/docker' },
         ],

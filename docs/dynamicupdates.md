@@ -1,3 +1,8 @@
+---
+title: "Reload WAF rules and blacklists without restarting Caddy"
+description: "Which caddy-waf files are hot-reloaded on change, what each reload covers, and which settings still need a caddy reload."
+---
+
 # Dynamic Updates
 
 The WAF reloads selected configuration files in place, without restarting Caddy. This document describes exactly which paths trigger a reload, what each reload covers, and what it does not cover.

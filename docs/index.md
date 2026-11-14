@@ -1,6 +1,7 @@
 ---
 layout: home
-title: caddy-waf — Web Application Firewall for Caddy
+title: "caddy-waf: Web Application Firewall for Caddy"
+description: "Open-source web application firewall for Caddy: regex rules with anomaly scoring, IP, country and ASN blocking, rate limiting and a built-in dashboard."
 titleTemplate: false
 
 hero:

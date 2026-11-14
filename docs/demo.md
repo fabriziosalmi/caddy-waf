@@ -1,5 +1,6 @@
 ---
-title: Live demo
+title: "Live dashboard demo"
+description: "The real caddy-waf dashboard running in your browser on generated sample data. Nothing is collected."
 ---
 
 # Live demo

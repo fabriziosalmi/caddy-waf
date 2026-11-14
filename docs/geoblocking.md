@@ -1,6 +1,33 @@
-# Country and ASN Blocking
+---
+title: "Block countries and ASNs in Caddy"
+description: "Block or allow traffic by country, and block networks by ASN, in Caddy with caddy-waf and MaxMind GeoLite2 databases."
+---
+
+# Block countries and ASNs in Caddy
 
 The middleware can block or whitelist requests by country (using a MaxMind GeoLite2 Country MMDB) and block requests by Autonomous System Number (using a MaxMind GeoLite2 ASN MMDB). Implementation: [`geoip.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/geoip.go).
+
+## Quick start: block countries and ASNs in Caddy
+
+```caddyfile
+example.com {
+    route {
+        waf {
+            rule_file       /etc/caddy/rules.json
+
+            # Block these countries (ISO 3166-1 alpha-2 codes).
+            block_countries /etc/caddy/GeoLite2-Country.mmdb RU CN KP
+
+            # Block these networks by autonomous system number (no "AS" prefix).
+            block_asns      /etc/caddy/GeoLite2-ASN.mmdb 64496 64511
+        }
+
+        reverse_proxy localhost:8080
+    }
+}
+```
+
+Download the free GeoLite2 Country and ASN databases from [MaxMind](https://www.maxmind.com/) (an account is required) and keep them updated. A request from a listed country or network gets `403 Forbidden`. To allow only some countries instead, use `whitelist_countries` (below). If a lookup fails the request is blocked, unless `geoip_fail_open` is set.
 
 ## Caddyfile directives
 

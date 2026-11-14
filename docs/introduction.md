@@ -1,3 +1,8 @@
+---
+title: "Introduction: how caddy-waf protects a Caddy site"
+description: "What the caddy-waf middleware checks on every request, in which order, and how it fits into a Caddy route as the http.handlers.waf module."
+---
+
 # Introduction
 
 `caddy-waf` is an HTTP handler middleware for the [Caddy](https://caddyserver.com/) web server. It is registered with the module ID `http.handlers.waf` and is configurable via the Caddyfile or directly via JSON.

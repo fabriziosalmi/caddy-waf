@@ -1,3 +1,8 @@
+---
+title: "Install caddy-waf: xcaddy, Docker, add-package or a binary"
+description: "Build Caddy with the caddy-waf module using xcaddy, the install script, a source checkout, caddy add-package, the ghcr.io image or a release binary."
+---
+
 # Installation
 
 ## Requirements
@@ -5,7 +10,7 @@
 | Component | Minimum version | Source of truth |
 |---|---|---|
 | Go | **1.26.0** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `go 1.26.0`, propagated from `caddy/v2` |
-| Caddy | **v2.11.x** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `github.com/caddyserver/caddy/v2 v2.11.4` |
+| Caddy | **v2.11.x** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `github.com/caddyserver/caddy/v2 v2.11.x` (the exact patch moves with dependency updates) |
 | `xcaddy` | latest | [github.com/caddyserver/xcaddy](https://github.com/caddyserver/xcaddy) |
 | MaxMind GeoLite2 Country MMDB | optional, only when using country block / whitelist | [maxmind.com](https://www.maxmind.com/) |
 | MaxMind GeoLite2 ASN MMDB | optional, only when using `block_asns` | [maxmind.com](https://www.maxmind.com/) |
@@ -19,6 +24,8 @@ xcaddy build --with github.com/fabriziosalmi/caddy-waf
 ```
 
 This produces a `./caddy` binary in the current directory with the WAF compiled in.
+
+Pinning versions, combining several plugins, cross-compiling and building a Docker image are covered in [Build Caddy with plugins](build-caddy.md).
 
 ## Method 2 — Quick script
 

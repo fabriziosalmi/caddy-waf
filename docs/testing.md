@@ -1,3 +1,8 @@
+---
+title: "Testing caddy-waf"
+description: "The test layers shipped with caddy-waf: Go unit and integration tests, lint, a live attack suite, a traffic generator and benchmarks."
+---
+
 # Testing
 
 The repository ships several testing layers:

@@ -1,3 +1,8 @@
+---
+title: "caddy add-package: add a module to an existing Caddy"
+description: "How caddy add-package adds caddy-waf to an existing Caddy binary without Go, how to pin or remove a version, and why xcaddy or Docker is preferred."
+---
+
 # `caddy add-package`
 
 > [!IMPORTANT]

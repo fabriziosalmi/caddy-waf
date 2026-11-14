@@ -1,3 +1,8 @@
+---
+title: "Helper scripts for rules and blacklists"
+description: "Python scripts that build and refresh the bundled rules.json, IP blacklist and DNS blacklist from external sources. None are needed at runtime."
+---
+
 # Helper Scripts
 
 The repository ships a set of Python scripts that automate the creation and refresh of rule files and blacklists from external sources. None of the scripts are required at runtime — they exist to keep the bundled `rules.json`, `ip_blacklist.txt`, and `dns_blacklist.txt` up to date.

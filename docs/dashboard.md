@@ -1,3 +1,8 @@
+---
+title: "Built-in WAF dashboard for Caddy"
+description: "A read-only dashboard served by caddy-waf itself: allowed and blocked requests, top rules, top IPs, countries and recent blocks, with no external stack."
+---
+
 # Built-in dashboard
 
 A read-only web dashboard for a live view of what the WAF is doing — requests allowed vs blocked, block rate, top rules, top offending IPs, per-country and per-phase breakdowns, and a tail of the most recent blocked requests. It is **served by the WAF itself**, same-origin with the metrics endpoint: no external stack, no CDN, no third-party runtime requests. The page is modular — structure (`ui/index.html`), style (`ui/dashboard.css`) and behaviour (`ui/dashboard.js`, split into decoupled config/store/view/api modules) are separate embedded files, served beneath the dashboard path.

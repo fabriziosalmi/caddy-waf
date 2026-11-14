@@ -1,3 +1,8 @@
+---
+title: "Ship Caddy WAF logs to Elasticsearch and Kibana"
+description: "Send the structured JSON logs of caddy-waf to Elasticsearch and Kibana with Filebeat: log_path, log_json and the fields each record carries."
+---
+
 # ELK Observability
 
 The WAF writes structured JSON logs to the path configured by `log_path` (default: `debug.json` when set via Caddyfile, `log.json` when set as the `Provision` fallback). When `log_json` is enabled, every record is a one-line JSON object suitable for ingestion by Elasticsearch / Kibana via Filebeat.

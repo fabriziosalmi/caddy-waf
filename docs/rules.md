@@ -1,3 +1,8 @@
+---
+title: "Writing WAF rules for Caddy"
+description: "The caddy-waf rule schema: targets, RE2 regex patterns, scores, priorities, block and log actions, and how matches add up to the anomaly threshold."
+---
+
 # Rules
 
 The WAF evaluates a set of rules defined in one or more JSON files. Each file is a JSON array of rule objects. Files are loaded by the `rule_file` directive (which may be repeated to load several files).

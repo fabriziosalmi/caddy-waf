@@ -1,3 +1,8 @@
+---
+title: "Real client IP behind a proxy or CDN in Caddy"
+description: "How caddy-waf finds the client IP behind a CDN or reverse proxy: trusted_proxies, client_ip_header, and why X-Forwarded-For needs a trust boundary."
+---
+
 # Client IP & trusted proxies
 
 How the WAF decides *who* a request is from — and why that decision needs a trust boundary. Implementation: [`clientip.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/clientip.go).
