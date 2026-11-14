@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Release archives contain a runnable Caddy binary.** The release workflow ran `go build` on the module, which is a library, so the attached `caddy-waf-<os>-<arch>.tar.gz` files held Go package archives that could not be executed (v0.4.17 and earlier). Releases now attach `caddy-waf_<tag>_<os>_<arch>.tar.gz`, each holding a Caddy binary built with `xcaddy` and caddy-waf compiled in, plus `LICENSE`, `README.md` and `rules.json`, with a `SHA256SUMS` file and a build provenance attestation. The linux/amd64 binary is started in CI and must report the tag on the metrics endpoint before the release is published.
 - **The WAF reports the version it was built at.** Binaries from `caddy add-package`, caddyserver.com/download and `xcaddy build --with github.com/fabriziosalmi/caddy-waf@vX.Y.Z` used to report the hard-coded fallback (`v0.4.17` builds said `v0.4.16`) in the startup log, the JSON metrics and `caddywaf_build_info`. The version is now read from the Go build info. A build injected with `-ldflags -X ...ModuleVersion=` still takes precedence; a build from a local directory (`--with ...=./`) falls back to the constant.
 
 ## [v0.4.17] - 2026-11-03

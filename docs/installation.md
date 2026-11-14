@@ -106,6 +106,31 @@ The image tag carries **no `v` prefix**, unlike the Go module version: `@v0.4.17
 
 See [docker.md](docker.md) for mounting rule files and blacklists, Docker Compose, and hot reload inside a container.
 
+## Method 6 — Prebuilt binary
+
+Releases after v0.4.17 attach one archive per platform to the [GitHub release](https://github.com/fabriziosalmi/caddy-waf/releases): `linux` and `darwin` on `amd64` and `arm64`, and `windows` on `amd64`. Each archive holds a Caddy binary with caddy-waf compiled in, built with `xcaddy` against the Caddy version in `go.mod`, plus `LICENSE`, `README.md` and the default `rules.json`.
+
+> [!NOTE]
+> The archives attached to v0.4.17 and earlier releases do not contain a runnable program: they are Go package archives of the module. Use any other method for those versions.
+
+```bash
+TAG=v0.4.18          # the release you want
+OS=linux ARCH=amd64  # or darwin / windows, arm64
+curl -fsSLO https://github.com/fabriziosalmi/caddy-waf/releases/download/$TAG/caddy-waf_${TAG}_${OS}_${ARCH}.tar.gz
+curl -fsSLO https://github.com/fabriziosalmi/caddy-waf/releases/download/$TAG/SHA256SUMS
+sha256sum --ignore-missing -c SHA256SUMS      # macOS: shasum -a 256 --ignore-missing -c SHA256SUMS
+tar -xzf caddy-waf_${TAG}_${OS}_${ARCH}.tar.gz
+./caddy-waf_${TAG}_${OS}_${ARCH}/caddy list-modules | grep waf   # expect: http.handlers.waf
+```
+
+Each archive also carries a [build provenance attestation](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations). With the GitHub CLI:
+
+```bash
+gh attestation verify caddy-waf_${TAG}_${OS}_${ARCH}.tar.gz --repo fabriziosalmi/caddy-waf
+```
+
+The binary contains only the standard Caddy modules and caddy-waf. If you need other plugins (a DNS provider for ACME, for example), build with `xcaddy` instead.
+
 ## Verifying the build
 
 ```bash
