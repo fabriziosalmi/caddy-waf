@@ -1,3 +1,8 @@
+---
+title: "WAF metrics endpoint"
+description: "The JSON metrics document served by caddy-waf: total, blocked and allowed requests, rule hits by phase, blacklist, rate-limit and GeoIP counters."
+---
+
 # Metrics
 
 When `metrics_endpoint` is configured, the WAF serves a JSON metrics document at the given path. The document is emitted by `handleMetricsRequest` in [`caddywaf.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/caddywaf.go) and reflects the counters maintained by the runtime.

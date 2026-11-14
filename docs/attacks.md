@@ -1,3 +1,8 @@
+---
+title: "Attack coverage of the bundled WAF rules"
+description: "Which attack categories the bundled caddy-waf rules address, such as SQL injection, XSS, path traversal, RCE and SSRF, and what regex rules cannot cover."
+---
+
 # Attack Coverage
 
 This document summarises the attack categories addressed by the rule files shipped under [`rules/`](https://github.com/fabriziosalmi/caddy-waf/tree/main/rules) and [`rules.json`](https://github.com/fabriziosalmi/caddy-waf/blob/main/rules.json). The coverage is regex-based; it complements, but does not replace, application-layer input validation, parameterised database queries, output encoding, and a sound authentication / authorisation design.

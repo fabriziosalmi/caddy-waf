@@ -1,6 +1,34 @@
-# Rate Limiting
+---
+title: "Rate limiting in Caddy"
+description: "Per-IP sliding-window rate limiting in Caddy with caddy-waf: limit a login endpoint, an API or every path, answer 429, and keep memory bounded."
+---
+
+# Rate limiting in Caddy
 
 Per-IP, sliding-window rate limiting. Implemented in [`ratelimiter.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/ratelimiter.go) and configured through the `rate_limit` block inside the `waf` directive.
+
+## Quick start: rate limit a login endpoint
+
+```caddyfile
+example.com {
+    route {
+        waf {
+            rule_file /etc/caddy/rules.json
+
+            # At most 5 requests per minute per client IP to /login; the 6th gets 429.
+            rate_limit {
+                requests 5
+                window   1m
+                paths    ^/login$
+            }
+        }
+
+        reverse_proxy localhost:8080
+    }
+}
+```
+
+Each client IP gets 5 requests per minute on `/login`; the sixth gets `429 Too Many Requests` and other paths are not counted. Behind a CDN or reverse proxy set [`trusted_proxies`](/client-ip) first, or every client shares the proxy's address. Use `match_all_paths true` to limit every path.
 
 ## Caddyfile
 

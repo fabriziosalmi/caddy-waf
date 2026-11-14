@@ -1,3 +1,8 @@
+---
+title: "Security posture of caddy-waf"
+description: "How caddy-waf resists being turned into a weapon: linear-time RE2 matching, fail-safe behaviour on errors, and secure defaults."
+---
+
 # Security posture
 
 Notes on how the WAF itself resists being turned into a weapon — starting with

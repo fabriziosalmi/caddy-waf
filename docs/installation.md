@@ -1,3 +1,8 @@
+---
+title: "Install caddy-waf: xcaddy, Docker, add-package or a binary"
+description: "Build Caddy with the caddy-waf module using xcaddy, the install script, a source checkout, caddy add-package, the ghcr.io image or a release binary."
+---
+
 # Installation
 
 ## Requirements
@@ -5,7 +10,7 @@
 | Component | Minimum version | Source of truth |
 |---|---|---|
 | Go | **1.26.0** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `go 1.26.0`, propagated from `caddy/v2` |
-| Caddy | **v2.11.x** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `github.com/caddyserver/caddy/v2 v2.11.4` |
+| Caddy | **v2.11.x** | [`go.mod`](https://github.com/fabriziosalmi/caddy-waf/blob/main/go.mod) — `github.com/caddyserver/caddy/v2 v2.11.x` (the exact patch moves with dependency updates) |
 | `xcaddy` | latest | [github.com/caddyserver/xcaddy](https://github.com/caddyserver/xcaddy) |
 | MaxMind GeoLite2 Country MMDB | optional, only when using country block / whitelist | [maxmind.com](https://www.maxmind.com/) |
 | MaxMind GeoLite2 ASN MMDB | optional, only when using `block_asns` | [maxmind.com](https://www.maxmind.com/) |
@@ -19,6 +24,8 @@ xcaddy build --with github.com/fabriziosalmi/caddy-waf
 ```
 
 This produces a `./caddy` binary in the current directory with the WAF compiled in.
+
+Pinning versions, combining several plugins, cross-compiling and building a Docker image are covered in [Build Caddy with plugins](build-caddy.md).
 
 ## Method 2 — Quick script
 
@@ -63,19 +70,6 @@ The `=./` form of `--with` instructs `xcaddy` to use the local checkout rather t
 
 ## Method 4 — `caddy add-package`
 
-> [!IMPORTANT]
-> **Prefer `xcaddy` or the container image.** Caddy's maintainers have proposed
-> moving `add-package`, `remove-package` and `upgrade` out of Caddy's core to
-> discourage their use ([caddyserver/caddy#7010](https://github.com/caddyserver/caddy/issues/7010)):
-> the commands call Caddy's shared build server, and using them in CI/CD is an
-> anti-pattern. Raised for this project in
-> [#138](https://github.com/fabriziosalmi/caddy-waf/issues/138) by a Caddy
-> maintainer.
->
-> The command works today and the module remains registered, so this section
-> stays accurate. Treat it as a convenience for one-off, hand-operated installs
-> — not as the way to build or deploy caddy-waf.
-
 The module is registered in Caddy's package registry, so an existing Caddy v2.7+ binary can pull it in without a Go toolchain:
 
 ```bash
@@ -87,6 +81,8 @@ This asks the Caddy build service for a binary containing your current module se
 The module is also selectable on <https://caddyserver.com/download>.
 
 See [add-package-guide.md](add-package-guide.md) for the full flow, removal, and troubleshooting.
+
+Caddy's maintainers are discussing whether to move `add-package`, `remove-package` and `upgrade` out of Caddy's core ([caddyserver/caddy#7010](https://github.com/caddyserver/caddy/issues/7010), open since May 2025). The commands still ship in Caddy 2.11 and rely on Caddy's shared build server, so use `xcaddy` or Docker for anything you deploy or automate.
 
 ## Method 5 — Docker
 

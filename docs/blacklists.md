@@ -1,6 +1,32 @@
-# Blacklists
+---
+title: "Block IPs and domains in Caddy"
+description: "Block IP addresses, CIDR ranges and hostnames in Caddy with caddy-waf blacklist files, exempt trusted IPs, and reload the lists without a restart."
+---
+
+# Block IPs and domains in Caddy
 
 The middleware loads two blacklists at startup and on demand: an IP blacklist and a DNS blacklist. Both are plain-text files. Their loaders live in [`blacklist.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/blacklist.go) (`LoadIPBlacklistFromFile`, `LoadDNSBlacklistFromFile`).
+
+## Quick start: block and allow IPs in Caddy
+
+```caddyfile
+example.com {
+    route {
+        waf {
+            rule_file          /etc/caddy/rules.json
+            ip_blacklist_file  /etc/caddy/ip_blacklist.txt
+            dns_blacklist_file /etc/caddy/dns_blacklist.txt
+
+            # Never judge these clients by their address: private ranges and one office IP.
+            whitelist_ip       private_ranges 203.0.113.4
+        }
+
+        reverse_proxy localhost:8080
+    }
+}
+```
+
+One IP address, CIDR range or hostname per line in each file (formats below). A listed client IP or `Host` gets `403 Forbidden` before any rule runs. `whitelist_ip` exempts an address from the IP-based checks only: a whitelisted client asking for a blacklisted host is still blocked. The files are reloaded on change, without restarting Caddy. `waf` has no default place in Caddy's directive order, so it goes inside `route` (or set `order waf first` in the global options).
 
 ## Common file syntax
 

@@ -1,3 +1,8 @@
+---
+title: "Prometheus and Grafana for Caddy WAF metrics"
+description: "Scrape caddy-waf natively with Prometheus: counters and a request-duration histogram in the text format, plus Grafana queries. No exporter needed."
+---
+
 # Prometheus and Grafana
 
 The WAF speaks Prometheus **natively**. Set `prometheus_endpoint` and Prometheus can scrape it directly — the counters plus a request-duration histogram, in the text exposition format, no exporter needed.

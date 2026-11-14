@@ -1,3 +1,8 @@
+---
+title: "Run Caddy with a WAF in Docker"
+description: "The caddy-waf container image on ghcr.io: tags, building it yourself, mounting rules and blacklists, Docker Compose, and hot reload in a container."
+---
+
 # Docker
 
 The repository ships a [`Dockerfile`](https://github.com/fabriziosalmi/caddy-waf/blob/main/Dockerfile) and a [`docker-compose.yml`](https://github.com/fabriziosalmi/caddy-waf/blob/main/docker-compose.yml). This document describes both, and a few common operational patterns.
@@ -34,17 +39,18 @@ Two stages:
 
 ### Stage 1 — `builder` (`golang:1.27-alpine`)
 
-1. Installs `git` and `wget`, plus `xcaddy`.
+1. Installs `git` and a pinned `xcaddy` (v0.4.7).
 2. Copies `go.mod` / `go.sum` and warms the module cache, then copies the source.
-3. Downloads the GeoLite2 Country database from `https://git.io/GeoLite2-Country.mmdb` (a community mirror — see [geoblocking.md](geoblocking.md)).
-4. Cross-compiles with `GOARCH=$TARGETARCH` on the build platform, so an arm64 image costs no emulated compile.
+3. Cross-compiles with `GOARCH=$TARGETARCH` on the build platform, so an arm64 image costs no emulated compile.
+
+No GeoLite2 database is baked into the image. Country and ASN filtering are optional: mount an operator-supplied, versioned MaxMind database at runtime (see [geoblocking.md](geoblocking.md)).
 
 The builder image must be at least the Go version `go.mod` declares (`1.26.0`, propagated from `caddy/v2`). It was pinned to `1.24` until v0.4.0 and only worked because `GOTOOLCHAIN=auto` downloaded a newer toolchain mid-build.
 
-### Stage 2 — runtime (`alpine:latest`)
+### Stage 2 — runtime (`alpine:3.24`)
 
 1. Copies the built binary to `/usr/bin/caddy`.
-2. Copies `GeoLite2-Country.mmdb`, `rules.json`, `ip_blacklist.txt`, `dns_blacklist.txt` into `/app/`.
+2. Copies `rules.json`, `ip_blacklist.txt` and `dns_blacklist.txt` into `/app/`.
 3. Copies the local `Caddyfile` into `/app/`.
 4. Creates a `caddy:caddy` non-root user, `chown`s `/app`, and `USER caddy`.
 5. Exposes port `8080`.
@@ -125,10 +131,10 @@ docker exec caddy-waf caddy reload --config /app/Caddyfile
 
 ## Operational checklist
 
-- **Pin the base image**. The shipped Dockerfile uses `golang:1.27-alpine` and `alpine:latest`. For reproducible builds pin `alpine:<version>`.
+- **Pin the base image**. The shipped Dockerfile uses `golang:1.27-alpine` and `alpine:3.24`. For fully reproducible builds pin both by digest (`alpine:3.24@sha256:...`).
 - **Run as non-root**. Already done by the Dockerfile (`USER caddy`). Do not switch to `root` for convenience.
 - **Mount configuration read-only when possible**. Only the rule files and blacklists need to be writable for `fsnotify` to fire.
 - **Expose `metrics_endpoint` only on a private network**. Use a separate Caddy site / route or a sidecar to apply authentication.
 - **Persist the log file**. The JSON log written to `log_path` is otherwise lost when the container is replaced.
 - **Set resource limits**. `--memory`, `--cpus` (or the equivalent Compose / Kubernetes settings).
-- **Keep the GeoLite2 database fresh**. Re-build periodically or mount a managed copy from the host.
+- **Keep the GeoLite2 database fresh**. The image carries none: mount a managed copy from the host and refresh it there.

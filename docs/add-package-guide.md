@@ -1,21 +1,9 @@
-# `caddy add-package`
+---
+title: "caddy add-package: add a module to an existing Caddy"
+description: "How caddy add-package adds caddy-waf to an existing Caddy binary without Go, how to pin or remove a version, and why xcaddy or Docker is preferred."
+---
 
-> [!IMPORTANT]
-> **This is not the recommended way to install caddy-waf.** Caddy's maintainers
-> have proposed moving `add-package`, `remove-package` and `upgrade` out of
-> Caddy's core to discourage their use
-> ([caddyserver/caddy#7010](https://github.com/caddyserver/caddy/issues/7010)):
-> the commands call Caddy's shared build server, and periodic use from CI/CD is
-> an anti-pattern. Raised for this project in
-> [#138](https://github.com/fabriziosalmi/caddy-waf/issues/138) by a Caddy
-> maintainer.
->
-> Build with [`xcaddy`](installation.md#method-1--build-with-xcaddy-recommended)
-> or run the [container image](installation.md#method-5--docker) instead. Both
-> are reproducible, pinnable, and do not depend on someone else's build service.
->
-> The command still works and the module remains registered, so this page is
-> accurate — treat it as a convenience for a one-off, hand-operated install.
+# `caddy add-package`
 
 `github.com/fabriziosalmi/caddy-waf` is registered in Caddy's package registry
 (since 2026-07-28), so it can be added to an existing Caddy binary without a Go
@@ -80,6 +68,10 @@ build in an air-gapped environment, or produce reproducible artifacts in CI:
 ```bash
 xcaddy build --with github.com/fabriziosalmi/caddy-waf
 ```
+
+See [Build Caddy with plugins](build-caddy.md) for pinning, several plugins and Docker.
+
+Caddy's maintainers are discussing whether to move `add-package`, `remove-package` and `upgrade` out of Caddy's core ([caddyserver/caddy#7010](https://github.com/caddyserver/caddy/issues/7010), open since May 2025). The commands still ship in Caddy 2.11 and rely on Caddy's shared build server, so use `xcaddy` or Docker for anything you deploy or automate.
 
 ## Troubleshooting
 

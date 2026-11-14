@@ -1,3 +1,8 @@
+---
+title: "Configuration: every caddy-waf directive"
+description: "Every Caddyfile directive and JSON field of the caddy-waf module, the request lifecycle across the four phases, and the order of blocking decisions."
+---
+
 # Configuration
 
 This document describes the request lifecycle, every Caddyfile directive recognised by the `waf` block, every JSON-only field on the middleware, and the order in which blocking decisions are taken.
