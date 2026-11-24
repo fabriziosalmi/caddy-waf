@@ -2,6 +2,8 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
+    cooldown:
+      default-days: 7
     directory: "/"
     schedule:
       interval: "weekly"
@@ -12,6 +14,8 @@ updates:
           - "*"
 
   - package-ecosystem: "gomod"
+    cooldown:
+      default-days: 7
     directory: "/"
     schedule:
       interval: "weekly"
@@ -35,6 +39,8 @@ updates:
       - dependency-name: "go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 
   - package-ecosystem: "docker"
+    cooldown:
+      default-days: 7
     directory: "/"
     schedule:
       interval: "weekly"
