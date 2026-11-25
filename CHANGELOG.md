@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `client_ip_source caddy`: the WAF uses the client IP Caddy's server already resolved with its global `trusted_proxies` and `client_ip_headers` options, so IP source modules such as `cloudflare` keep the trusted ranges current and the WAF agrees with Caddy's logs and matchers. `trusted_proxies` or `client_ip_header` inside the `waf` block next to it fail at startup. The default, `waf`, keeps the existing behaviour (discussion #55).
+
 ## [v0.4.18] - 2026-11-14
 
 ### Security

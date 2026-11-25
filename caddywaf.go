@@ -869,6 +869,10 @@ func (m *Middleware) Validate() error {
 		m.logLevel = zapcore.InfoLevel // Default log level
 	}
 
+	if err := m.validateClientIPSource(); err != nil {
+		return err
+	}
+
 	// Validate anomaly threshold
 	if m.AnomalyThreshold < 0 {
 		return fmt.Errorf("anomaly_threshold cannot be negative: %d", m.AnomalyThreshold)
