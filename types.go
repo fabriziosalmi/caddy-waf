@@ -200,7 +200,13 @@ type Middleware struct {
 	TrustedProxies []string `json:"trusted_proxies,omitempty"`
 	// ClientIPHeader, when set (e.g. CF-Connecting-IP), is consulted for the
 	// client IP instead of X-Forwarded-For once the peer is a trusted proxy.
-	ClientIPHeader   string       `json:"client_ip_header,omitempty"`
+	ClientIPHeader string `json:"client_ip_header,omitempty"`
+	// ClientIPSource selects who resolves the client IP: "waf" (default) uses
+	// trusted_proxies and client_ip_header above; "caddy" uses the client IP
+	// Caddy's server already resolved (the client_ip request variable, governed
+	// by the global trusted_proxies and client_ip_headers server options, which
+	// accept IP source modules such as cloudflare). See docs/client-ip.md.
+	ClientIPSource   string       `json:"client_ip_source,omitempty"`
 	trustedProxies   *iptrie.Trie `json:"-"`
 	DNSBlacklistFile string       `json:"dns_blacklist_file"`
 	AnomalyThreshold int          `json:"anomaly_threshold"`

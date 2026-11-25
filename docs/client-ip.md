@@ -30,6 +30,7 @@ If the peer is **not** trusted, forwarding headers are ignored entirely — head
 |---|---|---|---|
 | `trusted_proxies` | `<entry> [<entry> …]` | unset | Peers allowed to speak for their clients: bare IPs, CIDR ranges, or the token `private_ranges`. Repeatable. Empty = ignore forwarding headers, use the peer. |
 | `client_ip_header` | `<name>` | unset | A single-IP header (`CF-Connecting-IP`, `True-Client-IP`, `X-Real-IP`, …) read for the client IP once the peer is trusted, instead of `X-Forwarded-For`. |
+| `client_ip_source` | `waf` or `caddy` | `waf` | `waf`: resolve the client IP with the two directives above. `caddy`: use the client IP Caddy's server already resolved with its global `trusted_proxies` and `client_ip_headers` options, which accept IP source modules. See [Let Caddy resolve the client IP](#let-caddy-resolve-the-client-ip). |
 
 ## What uses the resolved client IP
 
@@ -56,7 +57,36 @@ waf {
 }
 ```
 
-Keep the list in sync with Cloudflare's published ranges (<https://www.cloudflare.com/ips/>). Because [`whitelist_file`](/configuration#ip-whitelist) demonstrates the pattern, a scheduled job can even refresh a ranges file on disk and have it hot-reloaded.
+A static list has to be kept in sync with Cloudflare's published ranges (<https://www.cloudflare.com/ips/>) by hand. To have the ranges fetched and refreshed for you, let Caddy resolve the client IP instead, as below.
+
+## Let Caddy resolve the client IP
+
+Caddy's own server options `trusted_proxies` and `client_ip_headers` resolve the client IP before any handler runs, and `trusted_proxies` accepts IP source modules that fetch and refresh provider ranges, for example [`cloudflare`](https://github.com/WeidiDeng/caddy-cloudflare-ip) or [`list`](https://github.com/monobilisim/caddy-ip-list). With `client_ip_source caddy` the WAF uses that resolved IP, so it agrees with Caddy's logs and matchers and needs no list of its own:
+
+```caddyfile
+{
+    servers {
+        trusted_proxies cloudflare
+        client_ip_headers CF-Connecting-IP
+    }
+}
+
+example.com {
+    route {
+        waf {
+            rule_file /etc/caddy/rules.json
+            client_ip_source caddy
+        }
+        reverse_proxy localhost:8080
+    }
+}
+```
+
+Build Caddy with the source module next to caddy-waf, for example `xcaddy build --with github.com/fabriziosalmi/caddy-waf --with github.com/WeidiDeng/caddy-cloudflare-ip` (see [Build Caddy with plugins](/build-caddy)). The `static` source needs no module: `trusted_proxies static 173.245.48.0/20 ...`.
+
+- With `client_ip_source caddy`, `trusted_proxies` and `client_ip_header` inside the `waf` block are rejected at startup: they would be ignored, and the config would read as if they applied.
+- When Caddy does not trust the peer, its client IP is the peer address, so a spoofed `CF-Connecting-IP` from outside Cloudflare changes nothing.
+- The IP blacklist and IP whitelist keep the behaviour in the table above.
 
 ## Generic reverse proxy
 

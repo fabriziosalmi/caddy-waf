@@ -197,6 +197,7 @@ func (cl *ConfigLoader) UnmarshalCaddyfile(d *caddyfile.Dispenser, m *Middleware
 		"whitelist_file":              cl.parseWhitelistFile,
 		"trusted_proxies":             cl.parseTrustedProxies,
 		"client_ip_header":            cl.parseClientIPHeader,
+		"client_ip_source":            cl.parseClientIPSource,
 		"dns_blacklist_file":          cl.parseBlacklistFileDirective(false), // Use directive-specific helper
 		"anomaly_threshold":           cl.parseAnomalyThreshold,
 		"custom_response":             cl.parseCustomResponse,
@@ -683,6 +684,22 @@ func (cl *ConfigLoader) parseClientIPHeader(d *caddyfile.Dispenser, m *Middlewar
 	}
 	m.ClientIPHeader = d.Val()
 	cl.logger.Debug("Client IP header set", zap.String("header", m.ClientIPHeader))
+	return nil
+}
+
+// parseClientIPSource parses the client_ip_source directive: "waf" resolves
+// the client IP with the WAF's own trusted_proxies, "caddy" takes the client IP
+// Caddy's server already resolved.
+func (cl *ConfigLoader) parseClientIPSource(d *caddyfile.Dispenser, m *Middleware) error {
+	if !d.NextArg() {
+		return d.ArgErr()
+	}
+	v := d.Val()
+	if v != clientIPSourceWAF && v != clientIPSourceCaddy {
+		return d.Errf("client_ip_source must be %q or %q, got %q", clientIPSourceWAF, clientIPSourceCaddy, v)
+	}
+	m.ClientIPSource = v
+	cl.logger.Debug("Client IP source set", zap.String("source", v))
 	return nil
 }
 

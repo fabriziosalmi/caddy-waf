@@ -1,11 +1,37 @@
 package caddywaf
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"net/netip"
 	"strings"
+
+	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 )
+
+// Values of client_ip_source.
+const (
+	clientIPSourceWAF   = "waf"
+	clientIPSourceCaddy = "caddy"
+)
+
+// validateClientIPSource rejects an unknown client_ip_source, and the WAF's own
+// trust settings next to client_ip_source caddy: they would be silently
+// ignored, and an operator reading the config would believe they apply.
+func (m *Middleware) validateClientIPSource() error {
+	switch m.ClientIPSource {
+	case "", clientIPSourceWAF:
+		return nil
+	case clientIPSourceCaddy:
+		if len(m.TrustedProxies) > 0 || m.ClientIPHeader != "" {
+			return fmt.Errorf("client_ip_source caddy uses the client IP resolved by Caddy's global trusted_proxies and client_ip_headers options; remove trusted_proxies and client_ip_header from the waf block")
+		}
+		return nil
+	default:
+		return fmt.Errorf("client_ip_source must be %q or %q, got %q", clientIPSourceWAF, clientIPSourceCaddy, m.ClientIPSource)
+	}
+}
 
 // clientIPKey carries the resolved client IP in the request context, so every
 // consumer (rate limiter, GeoIP/ASN checks, the REMOTE_IP rule target) uses the
@@ -23,9 +49,24 @@ type clientIPKey struct{}
 // right and returning the first address that is not itself a trusted proxy --
 // the real client at the far end of a trusted proxy chain.
 //
+// With client_ip_source caddy, the client IP Caddy's server already resolved is
+// used instead, and the WAF's own trusted_proxies do not apply.
+//
 // The returned value is a bare IP (no port).
 func (m *Middleware) resolveClientIP(r *http.Request) string {
 	peer := extractIP(r.RemoteAddr)
+	if m.ClientIPSource == clientIPSourceCaddy {
+		// Caddy's server resolved the client under its own trust boundary
+		// (global trusted_proxies / client_ip_headers) before any handler ran.
+		// Without that variable (a request that did not come through a Caddy
+		// server), fall back to the peer: forwarding headers are never read here.
+		if v, ok := caddyhttp.GetVar(r.Context(), caddyhttp.ClientIPVarKey).(string); ok {
+			if addr, err := netip.ParseAddr(v); err == nil {
+				return addr.String()
+			}
+		}
+		return peer
+	}
 	if m.trustedProxies == nil {
 		return peer
 	}
