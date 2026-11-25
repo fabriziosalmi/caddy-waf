@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.4.19] - 2026-11-25
+
 ### Added
 - `client_ip_source caddy`: the WAF uses the client IP Caddy's server already resolved with its global `trusted_proxies` and `client_ip_headers` options, so IP source modules such as `cloudflare` keep the trusted ranges current and the WAF agrees with Caddy's logs and matchers. `trusted_proxies` or `client_ip_header` inside the `waf` block next to it fail at startup. The default, `waf`, keeps the existing behaviour (discussion #55).
+
+### Changed
+- Bundled Caddy pin moved to 2.11.9.
+- Dependabot waits 7 days after an upstream release before proposing it.
 
 ## [v0.4.18] - 2026-11-14
 
