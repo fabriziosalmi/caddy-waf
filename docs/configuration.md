@@ -124,7 +124,7 @@ Parsed in [`config.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/con
 | Sub-directive | Arguments | Default | Description |
 |---|---|---|---|
 | `requests` | `<positive int>` | `100` | Maximum requests permitted per `window` per IP (or per `ip+path` when `paths` is set and `match_all_paths=false`). |
-| `window` | `<duration>` | `10s` | Sliding-window duration. Accepts Go duration syntax (`10s`, `1m`, `1h`). |
+| `window` | `<duration>` | `10s` | Length of the fixed window, which starts at a client's first request and resets when it expires. Accepts Go duration syntax (`10s`, `1m`, `1h`). |
 | `cleanup_interval` | `<duration>` | `300s` | How often expired entries are swept from the in-memory map. |
 | `paths` | `<regex…>` | empty | One or more Go regex patterns. When non-empty and `match_all_paths=false`, only matching paths are rate-limited; non-matching paths bypass the limiter. |
 | `match_all_paths` | `true` \| `false` | `false` | When `true`, rate-limit every request regardless of `paths` (key is the IP only). When `false` and `paths` is empty, the limiter is effectively a no-op. |

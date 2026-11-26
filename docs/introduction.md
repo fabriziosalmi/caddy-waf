@@ -30,7 +30,7 @@ If the configured `metrics_endpoint` matches the request path, the middleware se
 - Country block / whitelist using a MaxMind GeoLite2 Country MMDB.
 - ASN block using a MaxMind GeoLite2 ASN MMDB.
 - Tor exit-node block, periodically refreshed from `check.torproject.org`.
-- Sliding-window rate limiter, optionally restricted to regex-matched paths.
+- Fixed-window rate limiter, optionally restricted to regex-matched paths.
 - Custom block responses per status code (Content-Type, headers, inline body or file).
 - Optional sensitive-data redaction in logs and query parameters.
 - Hot reload via `fsnotify` watchers on the rule and blacklist files.

@@ -37,7 +37,7 @@ features:
     linkText: File formats
   - title: Rate limiting
     icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 1 8-8"/><path d="m12 12 5-3"/><path d="M12 4v2"/><path d="M4.9 7.5 6.3 8.6"/></svg>'
-    details: Per-IP sliding window, optionally scoped to specific paths with regular expressions.
+    details: Per-IP fixed-window counter, optionally scoped to specific paths with regular expressions.
     link: /ratelimit
     linkText: Limiter behaviour
   - title: Observability
@@ -97,7 +97,7 @@ A first-time reader is recommended to follow this sequence:
 3. [Configuration](configuration.md) — the request lifecycle, every Caddyfile directive, every JSON-only field, blocking precedence.
 4. [Rules](rules.md) — the JSON rule schema and target identifiers.
 5. [Blacklists](blacklists.md) — file formats for IP and DNS blacklists.
-6. [Rate limiting](ratelimit.md) — sliding-window limiter, path matching.
+6. [Rate limiting](ratelimit.md) — fixed-window limiter, path matching.
 7. [Country and ASN blocking](geoblocking.md) — GeoIP / ASN behaviour.
 
 ## Every page
