@@ -2,7 +2,7 @@
   {
     "id": "block-scanners",
     "phase": 1,
-    "pattern": "(?i)\\b(?:nikto|sqlmap|nmap|masscan|acunetix|nessus|openvas|wpscan|dirbuster|dirsearch|burpsuite|owasp[ -]?zap|zaproxy|netsparker|appscan|appspider|arachni|skipfish|gobuster|feroxbuster|wfuzz|ffuf|hydra|metasploit|qualys|rapid7|nuclei|zgrab|vega|gospider|whatweb|joomscan|uniscan|blindelephant|w3af)\\b",
+    "pattern": "(?i)\\b(?:nikto|sqlmap|nmap|masscan|acunetix|nessus|openvas|wpscan|dirbuster|dirsearch|burpsuite|owasp[ -]?zap|zaproxy|netsparker|appscan|appspider|arachni|skipfish|gobuster|feroxbuster|wfuzz|ffuf|fuzz faster u fool|hydra|metasploit|qualys|rapid7|nuclei|zgrab|vega|gospider|whatweb|joomscan|uniscan|blindelephant|w3af)\\b",
     "targets": [
       "HEADERS:User-Agent"
     ],
