@@ -1,11 +1,11 @@
 ---
-title: "Real client IP behind a proxy or CDN in Caddy"
-description: "How caddy-waf finds the client IP behind a CDN or reverse proxy: trusted_proxies, client_ip_header, and why X-Forwarded-For needs a trust boundary."
+title: "trusted_proxies and the real client IP in Caddy (Cloudflare, CDN)"
+description: "Get the real client IP behind Cloudflare, a CDN or a reverse proxy in Caddy: trusted_proxies, private_ranges, client_ip_header, or Caddy's own client_ip."
 ---
 
-# Client IP & trusted proxies
+# trusted_proxies and the real client IP
 
-How the WAF decides *who* a request is from — and why that decision needs a trust boundary. Implementation: [`clientip.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/clientip.go).
+How the WAF decides *who* a request is from, and why that decision needs a trust boundary. In short: behind Cloudflare or another CDN, either list the proxies in `trusted_proxies` and name the header in `client_ip_header`, or let Caddy resolve the client with its global `trusted_proxies` and set [`client_ip_source caddy`](#let-caddy-resolve-the-client-ip). Without either, forwarding headers are ignored and the WAF sees the proxy. Implementation: [`clientip.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/clientip.go).
 
 ## The problem
 

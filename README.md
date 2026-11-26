@@ -37,7 +37,7 @@ The middleware is implemented as a single Caddy module registered under the ID `
 | GeoIP country block / whitelist | MaxMind GeoLite2 Country MMDB. |
 | ASN block | MaxMind GeoLite2 ASN MMDB. |
 | Tor exit-node block | Periodic fetch from `https://check.torproject.org/torbulkexitlist`. |
-| Rate limiting | Per-IP, sliding-window, optional per-path matching with regex patterns. |
+| Rate limiting | Per-IP, fixed-window, optional per-path matching with regex patterns. |
 | Custom block responses | Per-status-code response with custom Content-Type, headers, and body (inline or from file). |
 | Sensitive data redaction | Redaction of sensitive values in logs (by key name and by value content), **on by default**; disable with `redact_sensitive_data off`. |
 | Hot reload | `fsnotify` watchers on rule files, IP blacklist, and DNS blacklist. |
@@ -224,7 +224,7 @@ A fully annotated example is provided in [`Caddyfile`](Caddyfile) and [`caddyfil
 ├── request.go             Target extraction (URI, headers, body, JSON paths, ...)
 ├── response.go            Response recorder, block writer
 ├── blacklist.go           IP and DNS blacklist loaders and lookups
-├── ratelimiter.go         Per-IP / per-path sliding-window rate limiter
+├── ratelimiter.go         Per-IP / per-path fixed-window rate limiter
 ├── geoip.go               MaxMind country and ASN lookups, with optional cache
 ├── tor.go                 Periodic Tor exit-node list fetcher
 ├── logging.go             Async log worker, sensitive-data redaction

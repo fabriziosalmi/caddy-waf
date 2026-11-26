@@ -1,6 +1,6 @@
 ---
-title: "Prometheus and Grafana for Caddy WAF metrics"
-description: "Scrape caddy-waf natively with Prometheus: counters and a request-duration histogram in the text format, plus Grafana queries. No exporter needed."
+title: "Caddy, Prometheus and Grafana: WAF metrics and dashboards"
+description: "Caddy serves traffic; Prometheus collects metrics and Grafana charts them. Scrape caddy-waf natively, no exporter, and use the Grafana queries."
 ---
 
 # Prometheus and Grafana

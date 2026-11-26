@@ -1,6 +1,6 @@
 ---
-title: "Ship Caddy WAF logs to Elasticsearch and Kibana"
-description: "Send the structured JSON logs of caddy-waf to Elasticsearch and Kibana with Filebeat: log_path, log_json and the fields each record carries."
+title: "Caddy and ELK: send WAF logs to Elasticsearch and Kibana"
+description: "Caddy is a web server; Elasticsearch and Kibana store and search logs. They work together: send caddy-waf JSON logs to ELK with Filebeat."
 ---
 
 # ELK Observability

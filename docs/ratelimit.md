@@ -1,11 +1,11 @@
 ---
-title: "Rate limiting in Caddy"
-description: "Per-IP sliding-window rate limiting in Caddy with caddy-waf: limit a login endpoint, an API or every path, answer 429, and keep memory bounded."
+title: "Rate limiting in Caddy: caddy-waf and caddy-ratelimit"
+description: "Rate limit a login endpoint, an API or every path in Caddy with caddy-waf, and when to use the caddy-ratelimit module instead. Tested configs."
 ---
 
 # Rate limiting in Caddy
 
-Per-IP, sliding-window rate limiting. Implemented in [`ratelimiter.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/ratelimiter.go) and configured through the `rate_limit` block inside the `waf` directive.
+Per-IP, fixed-window rate limiting: each client gets a counter that starts at its first request and resets when the window expires. Implemented in [`ratelimiter.go`](https://github.com/fabriziosalmi/caddy-waf/blob/main/ratelimiter.go) and configured through the `rate_limit` block inside the `waf` directive.
 
 ## Quick start: rate limit a login endpoint
 
@@ -30,6 +30,41 @@ example.com {
 
 Each client IP gets 5 requests per minute on `/login`; the sixth gets `429 Too Many Requests` and other paths are not counted. Behind a CDN or reverse proxy set [`trusted_proxies`](/client-ip) first, or every client shares the proxy's address. Use `match_all_paths true` to limit every path.
 
+## caddy-waf or caddy-ratelimit?
+
+[`mholt/caddy-ratelimit`](https://github.com/mholt/caddy-ratelimit) is a dedicated rate limiting module for Caddy. Both answer `429 Too Many Requests`; they differ in what they are built for. The rows marked *measured* were run with Caddy v2.11.9, caddy-waf v0.4.19 and caddy-ratelimit v0.1.0 compiled into one binary, 5 requests per minute on `/login`: both let 5 through and answered the sixth with 429.
+
+| | caddy-waf `rate_limit` | caddy-ratelimit |
+|---|---|---|
+| Algorithm | Fixed window per client, starting at its first request | Sliding window (ring buffer) |
+| What a limit is keyed on | Client IP, or client IP plus the exact path when `paths` is set | Any placeholder: `{client_ip}`, a header, the host, ... |
+| Scope | Paths matched by regular expressions | Any Caddy request matcher, several named zones |
+| `Retry-After` on 429 (*measured*) | Not sent | Sent (`Retry-After: 60`), with optional jitter |
+| Counters after `caddy reload` (*measured*) | Reset: the sixth request passed | Kept: the sixth request still got 429 |
+| Several Caddy instances | Each instance counts on its own | Optional distributed mode through Caddy storage |
+| Memory bound | `max_entries` caps the tracked clients | Expired limiters are swept periodically |
+| Part of | The WAF (rules, blacklists, GeoIP, dashboard); one `rate_limit` block per `waf` | A module that only rate limits |
+
+Use caddy-waf's limiter when you already run caddy-waf and need a simple per-client limit on a few paths, with the same client IP resolution as the rest of the WAF ([`trusted_proxies` or `client_ip_source caddy`](/client-ip)). Use caddy-ratelimit when you need a true sliding window, limits keyed on something other than the client, `Retry-After`, counters that survive reloads, or one limit shared by several instances.
+
+The two can run in the same binary: `xcaddy build --with github.com/fabriziosalmi/caddy-waf --with github.com/mholt/caddy-ratelimit`. The same `/login` limit with caddy-ratelimit (its `rate_limit` directive is ordered by the module itself, so no `route` is needed):
+
+```caddyfile
+example.com {
+    rate_limit {
+        zone login {
+            match {
+                path /login
+            }
+            key    {client_ip}
+            events 5
+            window 1m
+        }
+    }
+    reverse_proxy localhost:8080
+}
+```
+
 ## Caddyfile
 
 ```caddyfile
@@ -47,7 +82,7 @@ waf {
 | Sub-directive | Type | Default | Description |
 |---|---|---|---|
 | `requests` | positive integer | `100` | Maximum requests permitted per `window`, per bucket key. |
-| `window` | Go duration (`10s`, `1m`, `1h`) | `10s` | Width of the sliding window. |
+| `window` | Go duration (`10s`, `1m`, `1h`) | `10s` | Length of the window. It starts at the bucket's first request; when it has expired, the next request resets the count. |
 | `cleanup_interval` | Go duration | `300s` (5 min) | How often the cleanup goroutine sweeps expired entries from the in-memory map. |
 | `paths` | one or more regex patterns | empty | When non-empty (and `match_all_paths=false`), only requests whose path matches one of these regex patterns are subject to the limit. |
 | `match_all_paths` | `true` / `false` | `false` | When `true`, the limiter applies to **every** request regardless of `paths`. |
