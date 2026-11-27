@@ -11,7 +11,7 @@ blocklist_sources = {
     "BlockList.de": "https://www.blocklist.de/lists/all.txt",
     "Blocklist.de - SSH": "https://www.blocklist.de/lists/ssh.txt",
     "Greensnow": "https://blocklist.greensnow.co/greensnow.txt",
-    "NetAPI": "https://netapi.com/zf-api/f/compromised/ip/live/",
+    "NetAPI": "https://netapi.com/api2/netapi-compromised-ips.txt",
 }
 
 # Tor Exit Node Source
