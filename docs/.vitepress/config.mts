@@ -81,6 +81,20 @@ export default defineConfig({
     ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32.png' }],
     ['link', { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }],
     ['meta', { name: 'theme-color', content: '#0369a1' }],
+    // Cookieless page-view counts from the publisher's own Umami instance,
+    // described in /privacy. /s.js is the instance's public tracker path (its
+    // default /script.js is closed on purpose). data-domains keeps the
+    // github.io origin, previews and local dev out of the numbers. No SRI hash:
+    // the script's bytes change with every Umami upgrade.
+    [
+      'script',
+      {
+        defer: '',
+        src: 'https://umami.edge99.net/s.js',
+        'data-website-id': '509ccb78-e6a2-48ae-a6c9-0a6eee39c03e',
+        'data-domains': 'www.caddy-waf.com',
+      },
+    ],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: 'caddy-waf' }],
     // Absolute URL: relative og:image values are not resolved by most crawlers.
@@ -210,13 +224,10 @@ export default defineConfig({
     outline: { level: [2, 3] },
 
     footer: {
-      // The privacy notice lives once, at fabriziosalmi.github.io/privacy, and
-      // is shared by every project site published from this account — same
-      // publisher, same GitHub Pages hosting, same absence of analytics,
-      // cookies and forms. A copy here would start drifting from it the day it
-      // was written, which is the reason there is one document rather than
-      // thirty.
-      message: `Released under the AGPL-3.0 licence. <a href="${repo}/security/advisories">Security advisories</a>. <a href="https://fabriziosalmi.github.io/privacy">Privacy &amp; legal</a>.`,
+      // This site has its own privacy notice (/privacy) because, unlike the
+      // other project sites covered by fabriziosalmi.github.io/privacy, it
+      // runs page-view analytics.
+      message: `Released under the AGPL-3.0 licence. <a href="${repo}/security/advisories">Security advisories</a>. <a href="/privacy">Privacy &amp; legal</a>.`,
       copyright: `Copyright © ${new Date().getFullYear()} Fabrizio Salmi`,
     },
   },
