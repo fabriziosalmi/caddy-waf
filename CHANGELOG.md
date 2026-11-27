@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`block-scanners` catches FFUF's default User-Agent.** FFUF sends `Fuzz Faster U Fool v<version>`, which has no `ffuf` token, so directory enumeration with default settings scored 0 and reached upstream. The pattern in `rules.json` and `rules-browser-friendly.json` now also matches `fuzz faster u fool` (case-insensitive). `scanner_ua_test.go` pins it at `anomaly_threshold` 10.
+
 ## [v0.4.19] - 2026-11-25
 
 ### Added
